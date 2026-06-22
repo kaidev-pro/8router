@@ -189,12 +189,255 @@ tr:hover td{background:var(--bg4)}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+
+/* ═══ MOBILE RESPONSIVE ═══ */
+@media (max-width: 768px) {
+  :root {
+    --sidebar: 0px;
+  }
+
+  /* Sidebar - hidden by default on mobile */
+  .sidebar {
+    width: 280px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 200;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Overlay when sidebar is open */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 199;
+  }
+
+  .sidebar-overlay.show {
+    display: block;
+  }
+
+  /* Main content - full width on mobile */
+  .main {
+    margin-left: 0;
+  }
+
+  /* Topbar - add hamburger menu */
+  .topbar {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .topbar .hamburger {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    padding: 8px;
+  }
+
+  .topbar .hamburger span {
+    width: 20px;
+    height: 2px;
+    background: var(--text);
+    border-radius: 2px;
+  }
+
+  .topbar .title {
+    font-size: 14px;
+  }
+
+  .topbar .subtitle {
+    display: none;
+  }
+
+  .topbar .pill {
+    display: none;
+  }
+
+  .topbar .badge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  /* Content - reduce padding */
+  .content {
+    padding: 12px;
+  }
+
+  /* Stats grid - 2 columns on mobile */
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Usage grid - stack on mobile */
+  .usage-grid {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+  }
+
+  .usage-left, .usage-right {
+    overflow: visible;
+  }
+
+  /* Quota grid - 1 column on mobile */
+  .quota-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Endpoint rows - stack on mobile */
+  .ep-row {
+    flex-wrap: wrap;
+  }
+
+  .ep-row .url {
+    width: 100%;
+    order: 3;
+    margin-top: 4px;
+    word-break: break-all;
+  }
+
+  /* Toggle rows - stack on mobile */
+  .toggle-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .toggle {
+    align-self: flex-end;
+  }
+
+  /* Caveman slider - stack on mobile */
+  .caveman-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .caveman-val {
+    align-self: flex-end;
+  }
+
+  /* Tables - horizontal scroll */
+  .tbl-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 600px;
+  }
+
+  /* Combo cards - 1 column on mobile */
+  #combo-cards {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Recent requests - full height on mobile */
+  .recent-card {
+    min-height: 300px;
+  }
+
+  /* Topology - fixed height on mobile */
+  .topo-card {
+    min-height: 250px;
+  }
+
+  /* Warning box - stack on mobile */
+  .warning-box {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .warning-box .action {
+    margin-left: 0;
+    width: 100%;
+    text-align: right;
+  }
+
+  /* Model chips - wrap on mobile */
+  .model-chips {
+    gap: 6px;
+  }
+
+  .model-chip {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
+/* Tablet (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root {
+    --sidebar: 200px;
+  }
+
+  .sidebar {
+    width: 200px;
+  }
+
+  .sb-header {
+    padding: 16px 12px;
+  }
+
+  .sb-brand .name {
+    font-size: 14px;
+  }
+
+  .sb-item {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  .sb-update {
+    display: none;
+  }
+
+  .content {
+    padding: 16px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  .usage-grid {
+    grid-template-columns: 1fr 280px !important;
+  }
+
+  .quota-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Large screens (1440px+) */
+@media (min-width: 1440px) {
+  .stats-row {
+    grid-template-columns: repeat(6, 1fr) !important;
+  }
+
+  .quota-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+
+  #combo-cards {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
 </style>
 </head>
 <body>
 
 <!-- ═══ SIDEBAR ═══ -->
-<div class="sidebar">
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<div class="sidebar" id="sidebar">
   <div class="sb-header">
     <div class="sb-logo">⚡</div>
     <div class="sb-brand">
@@ -242,6 +485,7 @@ tr:hover td{background:var(--bg4)}
 <!-- ═══ MAIN ═══ -->
 <div class="main">
   <div class="topbar">
+    <div class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></div>
     <div class="title" id="tb-title">🔌 Endpoint</div>
     <div class="subtitle" id="tb-sub">API endpoint configuration</div>
     <div class="spacer"></div>
@@ -433,12 +677,22 @@ tr:hover td{background:var(--bg4)}
 const API = '';
 let curPage = 'endpoint';
 
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("sidebar-overlay").classList.toggle("show");
+}
+
 function go(name) {
   curPage = name;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(n => n.classList.remove('active'));
   document.getElementById('pg-' + name).classList.add('active');
   event.currentTarget.classList.add('active');
+  // Close sidebar on mobile
+  if (window.innerWidth <= 768) {
+    document.getElementById("sidebar").classList.remove("open");
+    document.getElementById("sidebar-overlay").classList.remove("show");
+  }
   const titles = {
     endpoint: ['🔌 Endpoint','API endpoint configuration'],
     usage: ['📊 Usage & Analytics','Monitor your API usage, token consumption, and request logs'],
@@ -641,6 +895,9 @@ function setCaveman(v) {
 
 // Init
 refresh();
+// Close sidebar when clicking overlay
+document.getElementById("sidebar-overlay").addEventListener("click", toggleSidebar);
+
 setInterval(refresh, 5000);
 </script>
 </body>
