@@ -1,868 +1,846 @@
-// 8Router — Pro Dashboard v3
-// Full-featured dashboard inspired by 9Router with topology, usage charts, combo cascade, etc.
-
 import express from 'express';
 import cors from 'cors';
 
-export function createDashboard(apiPort: number): express.Express {
-  const app = express();
-  app.use(cors());
-
-  app.get('/', (_req, res) => {
-    res.send(getDashboardHTML(apiPort));
-  });
-
-  return app;
-}
-
-function getDashboardHTML(apiPort: number): string {
+export function getDashboardHTML(_engineOrPort?: any, apiPort?: number): string {
+  // Support both createDashboard(port) and createDashboard(engine, port)
+  const port = typeof apiPort === 'number' ? apiPort : (typeof _engineOrPort === 'number' ? _engineOrPort : 8081);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>8Router — AI Gateway</title>
-  <style>
-    :root {
-      --bg-primary: #0b0d17;
-      --bg-secondary: #111327;
-      --bg-card: #161832;
-      --bg-card-hover: #1c1f40;
-      --bg-input: #1a1d3a;
-      --border: #252850;
-      --border-light: #2d3060;
-      --text-primary: #e8e9f0;
-      --text-secondary: #8b8ea8;
-      --text-muted: #5a5d7a;
-      --accent: #6c5ce7;
-      --accent-light: #8577ed;
-      --green: #00d68f;
-      --green-dim: rgba(0,214,143,0.12);
-      --red: #ff6b6b;
-      --red-dim: rgba(255,107,107,0.12);
-      --orange: #ffa94d;
-      --orange-dim: rgba(255,169,77,0.12);
-      --blue: #4dabf7;
-      --blue-dim: rgba(77,171,247,0.12);
-      --purple: #b197fc;
-      --purple-dim: rgba(177,151,252,0.12);
-      --cyan: #22d3ee;
-      --cyan-dim: rgba(34,211,238,0.12);
-      --yellow: #ffd43b;
-      --sidebar-width: 220px;
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-primary); color: var(--text-primary); display:flex; min-height:100vh; }
-    
-    /* Sidebar */
-    .sidebar { 
-      width: var(--sidebar-width); background: var(--bg-secondary); border-right:1px solid var(--border);
-      position: fixed; top:0; left:0; bottom:0; z-index:100; display:flex; flex-direction:column;
-    }
-    .sidebar-logo { 
-      padding:20px; display:flex; align-items:center; gap:10px; 
-      border-bottom:1px solid var(--border);
-    }
-    .sidebar-logo .bolt { font-size:24px; }
-    .sidebar-logo span { font-size:18px; font-weight:700; color:var(--text-primary); }
-    .sidebar-logo .version { font-size:10px; color:var(--text-muted); margin-left:auto; background:var(--bg-card); padding:2px 6px; border-radius:4px; }
-    
-    .sidebar-nav { flex:1; padding:12px 8px; }
-    .nav-item { 
-      display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; 
-      cursor:pointer; color:var(--text-secondary); font-size:13px; font-weight:500; transition:all .15s;
-      margin-bottom:2px;
-    }
-    .nav-item:hover { background:var(--bg-card); color:var(--text-primary); }
-    .nav-item.active { background:var(--accent); color:#fff; }
-    .nav-item .icon { font-size:16px; width:20px; text-align:center; }
-    .nav-item .badge-count { 
-      margin-left:auto; background:var(--red); color:#fff; font-size:10px; 
-      padding:1px 6px; border-radius:10px; font-weight:600;
-    }
-    
-    .sidebar-footer { 
-      padding:16px; border-top:1px solid var(--border); font-size:11px; color:var(--text-muted);
-    }
-    .sidebar-footer .status-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:4px; }
-    .sidebar-footer .status-dot.on { background:var(--green); }
-    .sidebar-footer .status-dot.off { background:var(--red); }
-    
-    /* Main */
-    .main { margin-left: var(--sidebar-width); flex:1; min-height:100vh; }
-    
-    /* Top Bar */
-    .topbar { 
-      height:56px; background:var(--bg-secondary); border-bottom:1px solid var(--border);
-      display:flex; align-items:center; justify-content:space-between; padding:0 24px; position:sticky; top:0; z-index:50;
-    }
-    .topbar-left { display:flex; align-items:center; gap:12px; }
-    .topbar-left h2 { font-size:15px; font-weight:600; }
-    .topbar-right { display:flex; align-items:center; gap:16px; }
-    .endpoint-pill { 
-      background:var(--bg-card); border:1px solid var(--border); border-radius:20px;
-      padding:5px 14px; font-size:11px; color:var(--accent-light); font-family:monospace;
-      cursor:pointer; transition:all .15s;
-    }
-    .endpoint-pill:hover { border-color:var(--accent); }
-    .connection-badge { 
-      display:flex; align-items:center; gap:6px; font-size:12px; font-weight:500;
-      padding:4px 10px; border-radius:20px;
-    }
-    .connection-badge.connected { background:var(--green-dim); color:var(--green); }
-    .connection-badge.disconnected { background:var(--red-dim); color:var(--red); }
-    
-    /* Content */
-    .content { padding:24px; }
-    .page { display:none; }
-    .page.active { display:block; }
-    
-    /* Stats Row */
-    .stats-row { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:24px; }
-    .stat-card { 
-      background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:16px;
-      transition:all .15s;
-    }
-    .stat-card:hover { border-color:var(--border-light); background:var(--bg-card-hover); }
-    .stat-card .label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; margin-bottom:6px; }
-    .stat-card .value { font-size:26px; font-weight:700; }
-    .stat-card .sub { font-size:11px; color:var(--text-muted); margin-top:4px; }
-    .stat-card .value.blue { color:var(--blue); }
-    .stat-card .value.green { color:var(--green); }
-    .stat-card .value.orange { color:var(--orange); }
-    .stat-card .value.purple { color:var(--purple); }
-    .stat-card .value.red { color:var(--red); }
-    .stat-card .value.cyan { color:var(--cyan); }
-    
-    /* Table */
-    .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-    .section-header h3 { font-size:15px; font-weight:600; }
-    .section-header .actions { display:flex; gap:8px; }
-    .btn { 
-      padding:6px 14px; border-radius:6px; font-size:12px; font-weight:500; cursor:pointer;
-      border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); transition:all .15s;
-    }
-    .btn:hover { background:var(--bg-card-hover); border-color:var(--border-light); }
-    .btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
-    .btn.primary:hover { background:var(--accent-light); }
-    
-    .table-wrap { 
-      background:var(--bg-card); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:24px;
-    }
-    table { width:100%; border-collapse:collapse; }
-    th { 
-      background:var(--bg-secondary); padding:10px 16px; text-align:left;
-      font-size:10px; text-transform:uppercase; letter-spacing:1.2px; color:var(--text-muted); font-weight:600;
-    }
-    td { padding:12px 16px; border-top:1px solid var(--border); font-size:13px; }
-    tr:hover td { background:var(--bg-card-hover); }
-    
-    /* Badges */
-    .badge { display:inline-flex; align-items:center; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; gap:4px; }
-    .badge.healthy { background:var(--green-dim); color:var(--green); }
-    .badge.unhealthy { background:var(--red-dim); color:var(--red); }
-    .badge.unknown { background:rgba(90,93,122,0.15); color:var(--text-muted); }
-    .badge.subscription { background:var(--purple-dim); color:var(--purple); }
-    .badge.cheap { background:var(--orange-dim); color:var(--orange); }
-    .badge.free { background:var(--green-dim); color:var(--green); }
-    .badge.active { background:var(--green-dim); color:var(--green); }
-    .badge.ready { background:var(--orange-dim); color:var(--orange); }
-    .badge.error { background:var(--red-dim); color:var(--red); }
-    .badge .dot { width:5px; height:5px; border-radius:50%; }
-    .badge .dot.green { background:var(--green); }
-    .badge .dot.red { background:var(--red); }
-    .badge .dot.orange { background:var(--orange); }
-    
-    /* Provider Topology (Simple Canvas) */
-    .topology-container { 
-      background:var(--bg-card); border:1px solid var(--border); border-radius:12px; 
-      padding:20px; margin-bottom:24px; position:relative; overflow:hidden;
-    }
-    .topology-container h3 { font-size:14px; margin-bottom:16px; color:var(--text-secondary); }
-    #topology-canvas { width:100%; height:300px; }
-    
-    /* Combo Cards */
-    .combo-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:16px; margin-bottom:24px; }
-    .combo-card { 
-      background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:20px;
-      transition:all .15s; position:relative; overflow:hidden;
-    }
-    .combo-card:hover { border-color:var(--accent); background:var(--bg-card-hover); }
-    .combo-card::before { 
-      content:''; position:absolute; top:0; left:0; right:0; height:3px;
-      background:linear-gradient(90deg, var(--accent), var(--cyan));
-    }
-    .combo-card h4 { font-size:16px; color:var(--accent-light); margin-bottom:4px; display:flex; align-items:center; gap:8px; }
-    .combo-card h4 .combo-icon { font-size:20px; }
-    .combo-card .desc { font-size:12px; color:var(--text-muted); margin-bottom:16px; }
-    .combo-tier { 
-      display:flex; align-items:center; gap:10px; padding:8px 0;
-      border-top:1px solid var(--border); font-size:13px;
-    }
-    .combo-tier .priority { 
-      width:24px; height:24px; background:var(--bg-secondary); border:1px solid var(--border);
-      border-radius:6px; display:flex; align-items:center; justify-content:center;
-      font-size:11px; color:var(--accent); font-weight:700; flex-shrink:0;
-    }
-    .combo-tier .arrow { color:var(--text-muted); font-size:10px; }
-    .combo-tier .provider-name { color:var(--text-primary); font-weight:500; }
-    .combo-tier .model-name { color:var(--text-muted); font-size:12px; font-family:monospace; }
-    
-    /* Provider Limit Cards */
-    .limits-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(250px,1fr)); gap:16px; margin-bottom:24px; }
-    .limit-card { 
-      background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:16px;
-    }
-    .limit-card .provider-name { font-size:14px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
-    .limit-card .quota-bar { 
-      width:100%; height:8px; background:var(--bg-primary); border-radius:4px; overflow:hidden; margin-bottom:8px;
-    }
-    .limit-card .quota-fill { height:100%; border-radius:4px; transition:width .3s; }
-    .limit-card .quota-text { font-size:11px; color:var(--text-muted); display:flex; justify-content:space-between; }
-    .limit-card .reset-timer { font-size:10px; color:var(--orange); margin-top:4px; }
-    
-    /* Usage Chart */
-    .chart-container { 
-      background:var(--bg-card); border:1px solid var(--border); border-radius:12px;
-      padding:20px; margin-bottom:24px;
-    }
-    .chart-container h3 { font-size:14px; margin-bottom:16px; color:var(--text-secondary); }
-    .chart-bars { display:flex; align-items:flex-end; gap:8px; height:160px; padding:0 10px; }
-    .chart-bar-group { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
-    .chart-bar { 
-      width:100%; min-height:4px; border-radius:4px 4px 0 0; transition:height .3s;
-      position:relative;
-    }
-    .chart-bar.input { background:var(--accent); }
-    .chart-bar.output { background:var(--cyan); }
-    .chart-label { font-size:10px; color:var(--text-muted); white-space:nowrap; }
-    .chart-legend { display:flex; gap:16px; margin-top:12px; justify-content:center; }
-    .chart-legend-item { display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-muted); }
-    .chart-legend-dot { width:8px; height:8px; border-radius:2px; }
-    
-    /* Caveman Slider */
-    .caveman-section { 
-      background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:24px;
-    }
-    .caveman-section h3 { font-size:14px; margin-bottom:4px; }
-    .caveman-section .desc { font-size:12px; color:var(--text-muted); margin-bottom:16px; }
-    .slider-container { display:flex; align-items:center; gap:16px; }
-    .caveman-slider { flex:1; -webkit-appearance:none; height:6px; background:var(--bg-primary); border-radius:3px; outline:none; }
-    .caveman-slider::-webkit-slider-thumb { 
-      -webkit-appearance:none; width:18px; height:18px; background:var(--accent); border-radius:50%; cursor:pointer;
-      border:3px solid var(--bg-card);
-    }
-    .caveman-level { 
-      font-size:28px; font-weight:700; color:var(--accent); min-width:40px; text-align:center;
-    }
-    .caveman-desc { font-size:12px; color:var(--text-secondary); margin-top:8px; }
-    .caveman-levels { display:flex; justify-content:space-between; margin-top:8px; }
-    .caveman-levels span { font-size:10px; color:var(--text-muted); }
-    
-    /* Feature Toggle */
-    .toggle-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:16px; margin-bottom:24px; }
-    .toggle-card { 
-      background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:16px;
-      display:flex; justify-content:space-between; align-items:center;
-    }
-    .toggle-card .info h4 { font-size:13px; margin-bottom:2px; }
-    .toggle-card .info p { font-size:11px; color:var(--text-muted); }
-    .toggle-switch { 
-      width:44px; height:24px; background:var(--bg-primary); border-radius:12px; cursor:pointer;
-      position:relative; transition:background .2s; border:1px solid var(--border);
-    }
-    .toggle-switch.on { background:var(--accent); border-color:var(--accent); }
-    .toggle-switch::after { 
-      content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; 
-      background:#fff; border-radius:50%; transition:transform .2s;
-    }
-    .toggle-switch.on::after { transform:translateX(20px); }
-    
-    /* Request Log */
-    .log-entry { 
-      display:flex; align-items:center; gap:12px; padding:8px 16px; border-bottom:1px solid var(--border);
-      font-size:12px; font-family:monospace;
-    }
-    .log-entry .time { color:var(--text-muted); min-width:80px; }
-    .log-entry .method { color:var(--accent); min-width:50px; }
-    .log-entry .model { color:var(--cyan); min-width:120px; }
-    .log-entry .provider { color:var(--purple); min-width:100px; }
-    .log-entry .status-ok { color:var(--green); }
-    .log-entry .status-err { color:var(--red); }
-    .log-entry .tokens { color:var(--text-muted); }
-    
-    /* Scrollbar */
-    ::-webkit-scrollbar { width:6px; }
-    ::-webkit-scrollbar-track { background:transparent; }
-    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
-    ::-webkit-scrollbar-thumb:hover { background:var(--border-light); }
-    
-    @media (max-width:1200px) { .stats-row { grid-template-columns:repeat(3,1fr); } }
-    @media (max-width:768px) { 
-      .sidebar { display:none; }
-      .main { margin-left:0; }
-      .stats-row { grid-template-columns:repeat(2,1fr); }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8Router — Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg-primary:#020309;--bg-secondary:#0c111f;--bg-card:#060911;--bg-card-hover:#0e1525;
+--bg-input:#111524;--border:#1a2135;--border-light:#252d45;
+--text-primary:#f2f2f2;--text-secondary:#8a8f9c;--text-muted:#5a6070;
+--accent:#84abff;--accent-hover:#9dbdff;--accent-dim:rgba(132,171,255,0.12);
+--green:#00d294;--green-dim:rgba(0,210,148,0.12);
+--red:#ff6568;--red-dim:rgba(255,101,104,0.12);
+--orange:#e18528;--orange-dim:rgba(225,133,40,0.12);
+--blue:#84abff;--purple:#6c5594;--purple-dim:rgba(108,85,148,0.12);
+--cyan:#009399;--cyan-dim:rgba(0,147,153,0.12);
+--yellow:#fcbb00;
+--sidebar-w:56px;--sidebar-expanded:200px;
+--font-body:'Inter',system-ui,-apple-system,sans-serif;
+--font-mono:'JetBrains Mono','SF Mono','Cascadia Code',monospace;
+}
+html{font-size:13px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{
+font-family:var(--font-body);color:var(--text-primary);background:var(--bg-primary);
+background-image:linear-gradient(rgba(26,33,53,0.3) 1px,transparent 1px),
+                  linear-gradient(90deg,rgba(26,33,53,0.3) 1px,transparent 1px);
+background-size:48px 48px;min-height:100vh;display:flex;
+}
+body::before{
+content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.025;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+background-repeat:repeat;background-size:256px;
+}
+
+/* SIDEBAR */
+.sidebar{
+position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);background:var(--bg-secondary);
+border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;
+transition:width .2s ease;overflow:hidden;
+}
+.sidebar:hover{width:var(--sidebar-expanded)}
+.sidebar-logo{
+display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;
+border-bottom:1px solid var(--border);flex-shrink:0;white-space:nowrap;overflow:hidden;
+}
+.sidebar-logo svg{width:24px;height:24px;flex-shrink:0;color:var(--accent)}
+.sidebar-logo span{font-size:15px;font-weight:700;color:var(--text-primary);opacity:0;transition:opacity .2s}
+.sidebar:hover .sidebar-logo span{opacity:1}
+.sidebar nav{flex:1;display:flex;flex-direction:column;padding:8px;gap:2px}
+.nav-item{
+display:flex;align-items:center;gap:12px;height:40px;padding:0 14px;border-radius:8px;
+color:var(--text-secondary);cursor:pointer;transition:all .15s ease;white-space:nowrap;
+overflow:hidden;text-decoration:none;font-size:13px;font-weight:500;
+}
+.nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:.7}
+.nav-item:hover{background:var(--accent-dim);color:var(--text-primary)}
+.nav-item:hover svg{opacity:1}
+.nav-item.active{background:var(--accent-dim);color:var(--accent)}
+.nav-item.active svg{opacity:1;color:var(--accent)}
+.nav-item .nav-label{opacity:0;transition:opacity .2s}
+.sidebar:hover .nav-item .nav-label{opacity:1}
+.sidebar-footer{
+padding:8px;border-top:1px solid var(--border);flex-shrink:0;
+}
+#sidebar-status{
+display:flex;align-items:center;gap:8px;padding:0 14px;height:36px;
+font-family:var(--font-mono);font-size:11px;color:var(--text-muted);overflow:hidden;
+}
+#sidebar-status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+#sidebar-status-text{white-space:nowrap;opacity:0;transition:opacity .2s}
+.sidebar:hover #sidebar-status-text{opacity:1}
+
+/* HAMBURGER (mobile) */
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;
+width:40px;height:40px;background:var(--bg-secondary);border:1px solid var(--border);
+border-radius:8px;align-items:center;justify-content:center;cursor:pointer;color:var(--text-primary)}
+.hamburger svg{width:20px;height:20px}
+
+/* MAIN CONTENT */
+.main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;padding:0}
+.content{padding:24px 28px;max-width:1400px;margin:0 auto}
+
+/* PAGE HEADER */
+.page-header{display:flex;align-items:baseline;gap:16px;margin-bottom:20px}
+#page-title{
+font-size:clamp(28px,3vw,40px);font-weight:700;letter-spacing:-0.04em;
+color:var(--text-primary);line-height:1.1;
+}
+.endpoint-badge{
+font-family:var(--font-mono);font-size:11px;color:var(--text-muted);
+background:var(--bg-card);border:1px solid var(--border);padding:3px 10px;border-radius:20px;
+}
+
+/* STATUS BAR */
+.status-bar{
+background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;
+padding:8px 16px;margin-bottom:20px;
+display:flex;align-items:center;gap:0;overflow-x:auto;
+font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);
+}
+.status-bar .sep{color:var(--border-light);margin:0 10px;user-select:none}
+.status-bar .metric-label{color:var(--text-muted);margin-right:4px}
+.status-bar .metric-val{color:var(--text-primary)}
+
+/* BENTO GRID */
+.bento{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-bottom:12px}
+.bento-cell{
+background:var(--bg-card);border:1px solid var(--border);border-radius:8px;
+padding:14px 16px;transition:background .15s ease;overflow:hidden;
+}
+.bento-cell:hover{background:var(--bg-card-hover)}
+.bento-cell.span8{grid-column:span 8}
+.bento-cell.span7{grid-column:span 7}
+.bento-cell.span5{grid-column:span 5}
+.bento-cell.span4{grid-column:span 4}
+.bento-cell.span12{grid-column:span 12}
+.cell-title{
+font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;
+color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;
+}
+.cell-title .dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+
+/* PROVIDER HEALTH ROWS */
+.provider-row{
+display:flex;align-items:center;gap:10px;padding:6px 0;
+border-bottom:1px solid rgba(26,33,53,0.4);
+}
+.provider-row:last-child{border-bottom:none}
+.provider-row .p-name{flex:1;font-size:12px;color:var(--text-primary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.provider-row .p-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.provider-row .p-dot.ok{background:var(--green);box-shadow:0 0 6px rgba(0,210,148,0.4)}
+.provider-row .p-dot.warn{background:var(--orange);box-shadow:0 0 6px rgba(225,133,40,0.3)}
+.provider-row .p-dot.err{background:var(--red);box-shadow:0 0 6px rgba(255,101,104,0.3)}
+.provider-row .p-latency{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);width:52px;text-align:right}
+.provider-row .p-reqs{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);width:60px;text-align:right}
+@keyframes pulse-green{0%,100%{opacity:1}50%{opacity:.5}}
+.p-dot.ok{animation:pulse-green 2s ease-in-out infinite}
+
+/* QUICK STATS TERMINAL */
+.stat-readout{padding:4px 0;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid rgba(26,33,53,0.3)}
+.stat-readout:last-child{border-bottom:none}
+.stat-readout .sr-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em}
+.stat-readout .sr-val{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--accent)}
+
+/* SPARKLINE */
+.sparkline-container{height:100px;margin-top:4px}
+.sparkline-container svg{width:100%;height:100%}
+.sparkline-line{fill:none;stroke:var(--accent);stroke-width:1.5}
+.sparkline-area{fill:url(#sparkGrad);opacity:.3}
+
+/* QUOTA BARS */
+.quota-item{margin-bottom:10px}
+.quota-item:last-child{margin-bottom:0}
+.quota-header{display:flex;justify-content:space-between;margin-bottom:4px}
+.quota-header .q-name{font-size:12px;color:var(--text-secondary)}
+.quota-header .q-pct{font-family:var(--font-mono);font-size:11px;color:var(--text-muted)}
+.quota-bar{height:4px;background:var(--bg-input);border-radius:2px;overflow:hidden}
+.quota-bar-fill{height:100%;border-radius:2px;transition:width .4s ease}
+
+/* MODEL PILLS */
+.models-wrap{display:flex;flex-wrap:wrap;gap:6px}
+.model-pill{
+font-family:var(--font-mono);font-size:11px;padding:4px 10px;
+background:var(--bg-input);border:1px solid var(--border);border-radius:20px;
+color:var(--text-secondary);transition:all .15s;cursor:default;white-space:nowrap;
+}
+.model-pill:hover{background:var(--accent-dim);color:var(--accent);border-color:var(--accent)}
+
+/* GENERIC TABLE */
+table{width:100%;border-collapse:collapse}
+th{
+font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;
+color:var(--text-muted);text-align:left;padding:8px 12px;
+border-bottom:1px solid var(--border);font-family:var(--font-mono);
+}
+td{
+padding:8px 12px;font-size:12px;color:var(--text-secondary);
+border-bottom:1px solid rgba(26,33,53,0.3);
+}
+td.mono{font-family:var(--font-mono);font-size:11px}
+tr:hover td{background:var(--bg-card-hover)}
+
+/* GRID LAYOUTS */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.card{
+background:var(--bg-card);border:1px solid var(--border);border-radius:8px;
+padding:16px;transition:background .15s;
+}
+.card:hover{background:var(--bg-card-hover)}
+.card-title{
+font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;
+color:var(--text-muted);margin-bottom:12px;
+}
+
+/* COMBOS GRID */
+#combos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.combo-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px 16px;transition:background .15s}
+.combo-card:hover{background:var(--bg-card-hover)}
+.combo-card h3{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:8px}
+.combo-card p{font-size:12px;color:var(--text-secondary);line-height:1.5}
+
+/* CHART */
+#usage-chart{width:100%;height:220px}
+
+/* LOGS */
+#logs-container{
+font-family:var(--font-mono);font-size:11px;line-height:1.6;
+max-height:60vh;overflow-y:auto;background:var(--bg-card);border:1px solid var(--border);
+border-radius:8px;padding:12px 16px;color:var(--text-secondary);
+}
+#logs-container .log-line{padding:1px 0;white-space:pre-wrap;word-break:break-all}
+#logs-container .log-line .log-ts{color:var(--text-muted)}
+#logs-container .log-line .log-err{color:var(--red)}
+
+/* TOPOLOGY (used in providers page) */
+#topology-canvas{width:100%;height:300px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px}
+
+/* SETTINGS */
+#system-info-body{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary)}
+#system-info-body tr:hover td{background:transparent}
+#limits-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.toggle-row{
+display:flex;align-items:center;justify-content:space-between;padding:10px 0;
+border-bottom:1px solid rgba(26,33,53,0.3);
+}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{font-size:13px;color:var(--text-secondary)}
+.toggle{
+width:36px;height:20px;background:var(--bg-input);border:1px solid var(--border);
+border-radius:10px;position:relative;cursor:pointer;transition:all .2s;
+}
+.toggle.on{background:var(--accent-dim);border-color:var(--accent)}
+.toggle::after{
+content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;
+border-radius:50%;background:var(--text-muted);transition:all .2s;
+}
+.toggle.on::after{left:18px;background:var(--accent)}
+.slider-container{padding:10px 0}
+.slider-container label{font-size:12px;color:var(--text-secondary);display:block;margin-bottom:8px}
+input[type=range]{
+width:100%;height:4px;-webkit-appearance:none;background:var(--bg-input);
+border-radius:2px;outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+background:var(--accent);cursor:pointer;border:2px solid var(--bg-primary);
+}
+
+/* BADGE */
+.badge{
+display:inline-flex;align-items:center;font-family:var(--font-mono);font-size:11px;
+padding:2px 8px;border-radius:10px;font-weight:500;
+}
+.badge-green{background:var(--green-dim);color:var(--green)}
+.badge-red{background:var(--red-dim);color:var(--red)}
+.badge-orange{background:var(--orange-dim);color:var(--orange)}
+.badge-accent{background:var(--accent-dim);color:var(--accent)}
+#connection-badge{font-family:var(--font-mono);font-size:11px;color:var(--text-muted)}
+
+/* STATS GRID (providers page) */
+#stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.stat-card .sc-val{font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--text-primary)}
+.stat-card .sc-label{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-light)}
+
+/* PAGE SECTIONS */
+.page-section{display:none}
+.page-section.active{display:block}
+
+/* MOBILE */
+@media(max-width:768px){
+.sidebar{transform:translateX(-100%);width:var(--sidebar-expanded)}
+.sidebar.open{transform:translateX(0)}
+.hamburger{display:flex}
+.main{margin-left:0}
+.content{padding:16px}
+.bento-cell.span8,.bento-cell.span7{grid-column:span 12}
+.bento-cell.span5,.bento-cell.span4{grid-column:span 12}
+.grid-2,.grid-3{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <div class="sidebar-logo">
-      <span class="bolt">⚡</span>
-      <span>8Router</span>
-      <span class="version">v0.2.0</span>
-    </div>
-    <div class="sidebar-nav">
-      <div class="nav-item active" onclick="showPage('dashboard')">
-        <span class="icon">📊</span> Dashboard
-      </div>
-      <div class="nav-item" onclick="showPage('providers')">
-        <span class="icon">🔌</span> Providers
-        <span class="badge-count" id="provider-count">0</span>
-      </div>
-      <div class="nav-item" onclick="showPage('combos')">
-        <span class="icon">🔗</span> Combos
-      </div>
-      <div class="nav-item" onclick="showPage('usage')">
-        <span class="icon">📈</span> Usage
-      </div>
-      <div class="nav-item" onclick="showPage('connections')">
-        <span class="icon">🗄️</span> Connections
-      </div>
-      <div class="nav-item" onclick="showPage('logs')">
-        <span class="icon">📝</span> Request Log
-      </div>
-      <div class="nav-item" onclick="showPage('settings')">
-        <span class="icon">⚙️</span> Settings
-      </div>
-    </div>
-    <div class="sidebar-footer">
-      <div><span class="status-dot on" id="sidebar-status"></span> <span id="sidebar-status-text">Connected</span></div>
-      <div style="margin-top:4px">8Agents Ecosystem</div>
-    </div>
-  </div>
 
-  <!-- MAIN -->
-  <div class="main">
-    <div class="topbar">
-      <div class="topbar-left">
-        <h2 id="page-title">Dashboard</h2>
-      </div>
-      <div class="topbar-right">
-        <div class="endpoint-pill" onclick="navigator.clipboard.writeText('http://localhost:${apiPort}/v1')" title="Click to copy">
-          http://localhost:${apiPort}/v1
-        </div>
-        <div class="connection-badge disconnected" id="connection-badge">
-          <span class="dot red"></span> Disconnected
-        </div>
-      </div>
-    </div>
+<!-- HAMBURGER -->
+<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+</button>
 
-    <div class="content">
-      <!-- ═══════ DASHBOARD PAGE ═══════ -->
-      <div id="page-dashboard" class="page active">
-        <div class="stats-row" id="stats-grid">
-          <div class="stat-card">
-            <div class="label">Total Requests</div>
-            <div class="value blue" id="s-req">0</div>
-            <div class="sub">All time</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">Tokens Used</div>
-            <div class="value green" id="s-tokens">0</div>
-            <div class="sub">Input + Output</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">Fallbacks</div>
-            <div class="value orange" id="s-fallbacks">0</div>
-            <div class="sub">Auto-recovery</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">RTK Saved</div>
-            <div class="value purple" id="s-rtk">0</div>
-            <div class="sub">Tokens compressed</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">Success Rate</div>
-            <div class="value green" id="s-rate">100%</div>
-            <div class="sub" id="s-rate-sub">0 ok / 0 fail</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">Uptime</div>
-            <div class="value cyan" id="s-uptime">0s</div>
-            <div class="sub">Since start</div>
-          </div>
-        </div>
+<!-- SIDEBAR -->
+<div class="sidebar">
+<div class="sidebar-logo">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+<span>8Router</span>
+</div>
+<nav>
+<a href="javascript:void(0)" class="nav-item active" onclick="showPage('dashboard')" data-page="dashboard">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+<span class="nav-label">Dashboard</span>
+</a>
+<a href="javascript:void(0)" class="nav-item" onclick="showPage('providers')" data-page="providers">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="4" rx="1"/><rect x="2" y="10" width="20" height="4" rx="1"/><rect x="2" y="17" width="20" height="4" rx="1"/><circle cx="6" cy="5" r="1" fill="currentColor"/><circle cx="6" cy="12" r="1" fill="currentColor"/><circle cx="6" cy="19" r="1" fill="currentColor"/></svg>
+<span class="nav-label">Providers</span>
+</a>
+<a href="javascript:void(0)" class="nav-item" onclick="showPage('combos')" data-page="combos">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="5"/><circle cx="15" cy="15" r="5"/></svg>
+<span class="nav-label">Combos</span>
+</a>
+<a href="javascript:void(0)" class="nav-item" onclick="showPage('usage')" data-page="usage">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+<span class="nav-label">Usage</span>
+</a>
+<a href="javascript:void(0)" class="nav-item" onclick="showPage('connections')" data-page="connections">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+<span class="nav-label">Connections</span>
+</a>
+<a href="javascript:void(0)" class="nav-item" onclick="showPage('logs')" data-page="logs">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+<span class="nav-label">Logs</span>
+</a>
+<a href="javascript:void(0)" class="nav-item" onclick="showPage('settings')" data-page="settings">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+<span class="nav-label">Settings</span>
+</a>
+</nav>
+<div class="sidebar-footer">
+<div id="sidebar-status"><span id="sidebar-status-text">connected ${port}</span></div>
+</div>
+</div>
 
-        <!-- Topology -->
-        <div class="topology-container">
-          <h3>Provider Topology</h3>
-          <canvas id="topology-canvas"></canvas>
-        </div>
+<!-- MAIN -->
+<div class="main">
+<div class="content">
 
-        <!-- Provider Limits -->
-        <div class="section-header">
-          <h3>Provider Quotas</h3>
-        </div>
-        <div class="limits-grid" id="limits-grid"></div>
+<!-- ===== DASHBOARD ===== -->
+<div id="page-dashboard" class="page-section active">
+<div class="page-header">
+<h1 id="page-title">Command Center</h1>
+<span class="endpoint-badge">localhost:${port}</span>
+</div>
 
-        <!-- Providers Table -->
-        <div class="section-header">
-          <h3>Active Providers</h3>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Provider</th><th>Tier</th><th>Status</th><th>Requests</th><th>Tokens</th><th>Avg Latency</th><th>Errors</th></tr></thead>
-            <tbody id="providers-body"></tbody>
-          </table>
-        </div>
+<!-- STATUS BAR -->
+<div class="status-bar">
+<span><span class="metric-label">REQ</span><span class="metric-val" id="s-req">—</span></span>
+<span class="sep">·</span>
+<span><span class="metric-label">TOK</span><span class="metric-val" id="s-tokens">—</span></span>
+<span class="sep">·</span>
+<span><span class="metric-label">FB</span><span class="metric-val" id="s-fallbacks">—</span></span>
+<span class="sep">·</span>
+<span><span class="metric-label">RTK</span><span class="metric-val" id="s-rtk">—</span></span>
+<span class="sep">·</span>
+<span><span class="metric-label">RATE</span><span class="metric-val" id="s-rate">—</span><span id="s-rate-sub" style="color:var(--text-muted);margin-left:4px"></span></span>
+<span class="sep">·</span>
+<span><span class="metric-label">UP</span><span class="metric-val" id="s-uptime">—</span></span>
+<span class="sep">·</span>
+<span><span class="metric-label">PROV</span><span class="metric-val" id="provider-count">—</span></span>
+</div>
 
-        <!-- Models Table -->
-        <div class="section-header">
-          <h3>Available Models</h3>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Model</th><th>Providers</th><th>Type</th></tr></thead>
-            <tbody id="models-body"></tbody>
-          </table>
-        </div>
-      </div>
+<!-- BENTO ROW 1 -->
+<div class="bento">
+<div class="bento-cell span8">
+<div class="cell-title"><span class="dot"></span> Provider Health</div>
+<div id="providers-body"></div>
+</div>
+<div class="bento-cell span4">
+<div class="cell-title">System Readout</div>
+<div id="stats-grid">
+<div class="stat-readout"><span class="sr-label">Requests</span><span class="sr-val" id="sr-reqs">—</span></div>
+<div class="stat-readout"><span class="sr-label">Tokens</span><span class="sr-val" id="sr-tokens">—</span></div>
+<div class="stat-readout"><span class="sr-label">Fallbacks</span><span class="sr-val" id="sr-fb">—</span></div>
+<div class="stat-readout"><span class="sr-label">Uptime</span><span class="sr-val" id="sr-up">—</span></div>
+<div class="stat-readout"><span class="sr-label">Providers</span><span class="sr-val" id="sr-prov">—</span></div>
+<div class="stat-readout"><span class="sr-label">Connections</span><span class="sr-val" id="sr-conn">—</span></div>
+</div>
+</div>
+</div>
 
-      <!-- ═══════ PROVIDERS PAGE ═══════ -->
-      <div id="page-providers" class="page">
-        <div class="section-header">
-          <h3>All Provider Connections</h3>
-          <div class="actions"><button class="btn primary" onclick="loadAllProviders()">Refresh</button></div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>ID</th><th>Name</th><th>Provider</th><th>Tier</th><th>API Key</th><th>Status</th><th>Requests</th><th>Tokens</th><th>Errors</th></tr></thead>
-            <tbody id="all-providers-body"></tbody>
-          </table>
-        </div>
-      </div>
+<!-- BENTO ROW 2 -->
+<div class="bento">
+<div class="bento-cell span7">
+<div class="cell-title">Token Usage Trend</div>
+<div class="sparkline-container" id="usage-sparkline">
+<svg viewBox="0 0 400 100" preserveAspectRatio="none">
+<defs><linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent)" stop-opacity="0.4"/><stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+<polyline class="sparkline-line" id="sparkline-path" points="0,100 400,100"/>
+<polygon class="sparkline-area" id="sparkline-area" points="0,100 400,100 400,100"/>
+</svg>
+</div>
+</div>
+<div class="bento-cell span5">
+<div class="cell-title">Provider Quotas</div>
+<div id="limits-grid"></div>
+</div>
+</div>
 
-      <!-- ═══════ COMBOS PAGE ═══════ -->
-      <div id="page-combos" class="page">
-        <div class="section-header">
-          <h3>Named Combos — Fallback Chains</h3>
-          <div class="actions"><button class="btn primary" onclick="loadCombos()">Refresh</button></div>
-        </div>
-        <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px">
-          Combos let you use a single model name that automatically falls back through a chain of providers.
-          Use a combo name as the <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px">model</code> parameter in your API requests.
-        </p>
-        <div class="combo-grid" id="combos-grid"></div>
-      </div>
+<!-- BENTO ROW 3 -->
+<div class="bento">
+<div class="bento-cell span12">
+<div class="cell-title">Available Models</div>
+<div id="models-body" class="models-wrap"></div>
+</div>
+</div>
+</div>
 
-      <!-- ═══════ USAGE PAGE ═══════ -->
-      <div id="page-usage" class="page">
-        <div class="section-header">
-          <h3>Usage Analytics</h3>
-          <div class="actions">
-            <button class="btn" onclick="loadUsage(7)">7 Days</button>
-            <button class="btn" onclick="loadUsage(14)">14 Days</button>
-            <button class="btn" onclick="loadUsage(30)">30 Days</button>
-          </div>
-        </div>
-        
-        <div class="chart-container">
-          <h3>Daily Token Usage</h3>
-          <div class="chart-bars" id="usage-chart"></div>
-          <div class="chart-legend">
-            <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--accent)"></div> Input Tokens</div>
-            <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--cyan)"></div> Output Tokens</div>
-          </div>
-        </div>
-        
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Date</th><th>Requests</th><th>Input Tokens</th><th>Output Tokens</th><th>Cost</th><th>Errors</th></tr></thead>
-            <tbody id="usage-table-body"></tbody>
-          </table>
-        </div>
-      </div>
+<!-- ===== PROVIDERS ===== -->
+<div id="page-providers" class="page-section">
+<div class="page-header"><h1 id="page-title">Providers</h1></div>
+<div id="stats-grid">
+<div class="stat-card"><div class="sc-val" id="sc-prov-count">—</div><div class="sc-label">Active Providers</div></div>
+<div class="stat-card"><div class="sc-val" id="sc-model-count">—</div><div class="sc-label">Models</div></div>
+<div class="stat-card"><div class="sc-val" id="sc-health">—</div><div class="sc-label">Health</div></div>
+</div>
+<div class="card" style="margin-bottom:16px">
+<div class="card-title">Topology</div>
+<canvas id="topology-canvas"></canvas>
+</div>
+<div class="card">
+<div class="card-title">All Providers</div>
+<div style="overflow-x:auto">
+<table><thead><tr><th>Provider</th><th>Status</th><th>Models</th><th>Requests</th><th>Latency</th></tr></thead>
+<tbody id="all-providers-body"></tbody></table>
+</div>
+</div>
+</div>
 
-      <!-- ═══════ CONNECTIONS PAGE ═══════ -->
-      <div id="page-connections" class="page">
-        <div class="section-header">
-          <h3>Database Connections</h3>
-          <div class="actions"><button class="btn primary" onclick="loadConnections()">Refresh</button></div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>ID</th><th>Provider</th><th>Name</th><th>Auth</th><th>Status</th><th>Backoff</th><th>Requests</th><th>Tokens</th><th>Cost</th></tr></thead>
-            <tbody id="connections-body"></tbody>
-          </table>
-        </div>
-      </div>
+<!-- ===== COMBOS ===== -->
+<div id="page-combos" class="page-section">
+<div class="page-header"><h1 id="page-title">Combos</h1></div>
+<div id="combos-grid"></div>
+</div>
 
-      <!-- ═══════ LOGS PAGE ═══════ -->
-      <div id="page-logs" class="page">
-        <div class="section-header">
-          <h3>Request Log</h3>
-          <div class="actions"><button class="btn" onclick="loadLogs()">Refresh</button></div>
-        </div>
-        <div class="table-wrap" style="max-height:600px;overflow-y:auto">
-          <div id="logs-container"></div>
-        </div>
-      </div>
+<!-- ===== USAGE ===== -->
+<div id="page-usage" class="page-section">
+<div class="page-header"><h1 id="page-title">Usage</h1></div>
+<div class="card" style="margin-bottom:16px">
+<div class="card-title">Token Usage</div>
+<canvas id="usage-chart"></canvas>
+</div>
+<div class="card">
+<div class="card-title">Usage Log</div>
+<div style="overflow-x:auto">
+<table><thead><tr><th>Timestamp</th><th>Provider</th><th>Model</th><th>Tokens</th><th>Latency</th></tr></thead>
+<tbody id="usage-table-body"></tbody></table>
+</div>
+</div>
+</div>
 
-      <!-- ═══════ SETTINGS PAGE ═══════ -->
-      <div id="page-settings" class="page">
-        <div class="section-header"><h3>Caveman Mode</h3></div>
-        <div class="caveman-section">
-          <h3>Output Token Compression</h3>
-          <div class="desc">Makes LLM responses terse to save output tokens. Stackable with RTK compression.</div>
-          <div class="slider-container">
-            <input type="range" min="0" max="5" value="0" class="caveman-slider" id="caveman-slider" oninput="updateCaveman(this.value)">
-            <div class="caveman-level" id="caveman-level">0</div>
-          </div>
-          <div class="caveman-desc" id="caveman-desc">Disabled — Normal responses</div>
-          <div class="caveman-levels">
-            <span>0:Off</span><span>1:Mild</span><span>2:Medium</span><span>3:Aggressive</span><span>4:Extreme</span><span>5:Max</span>
-          </div>
-        </div>
+<!-- ===== CONNECTIONS ===== -->
+<div id="page-connections" class="page-section">
+<div class="page-header"><h1 id="page-title">Connections</h1><span id="connection-badge"></span></div>
+<div class="card">
+<div style="overflow-x:auto">
+<table><thead><tr><th>ID</th><th>Client</th><th>Provider</th><th>Model</th><th>Status</th><th>Duration</th></tr></thead>
+<tbody id="connections-body"></tbody></table>
+</div>
+</div>
+</div>
 
-        <div class="section-header"><h3>Features</h3></div>
-        <div class="toggle-grid">
-          <div class="toggle-card">
-            <div class="info"><h4>RTK Compression</h4><p>Compress tool output (git diff, grep, tree)</p></div>
-            <div class="toggle-switch on" id="toggle-rtk"></div>
-          </div>
-          <div class="toggle-card">
-            <div class="info"><h4>Circuit Breaker</h4><p>Auto-disable failing providers</p></div>
-            <div class="toggle-switch on" id="toggle-circuit"></div>
-          </div>
-          <div class="toggle-card">
-            <div class="info"><h4>Streaming</h4><p>SSE streaming for chat completions</p></div>
-            <div class="toggle-switch on" id="toggle-stream"></div>
-          </div>
-          <div class="toggle-card">
-            <div class="info"><h4>Model Locks</h4><p>Prevent concurrent requests to same key</p></div>
-            <div class="toggle-switch on" id="toggle-locks"></div>
-          </div>
-        </div>
+<!-- ===== LOGS ===== -->
+<div id="page-logs" class="page-section">
+<div class="page-header"><h1 id="page-title">Logs</h1></div>
+<div id="logs-container"></div>
+</div>
 
-        <div class="section-header"><h3>System Info</h3></div>
-        <div class="table-wrap">
-          <table>
-            <tbody id="system-info-body"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
+<!-- ===== SETTINGS ===== -->
+<div id="page-settings" class="page-section">
+<div class="page-header"><h1 id="page-title">Settings</h1></div>
+<div class="grid-2">
+<div class="card">
+<div class="card-title">Toggles</div>
+<div class="toggle-row"><span class="toggle-label">Real-time Keys</span><div class="toggle" id="toggle-rtk" onclick="this.classList.toggle('on')"></div></div>
+<div class="toggle-row"><span class="toggle-label">Circuit Breaker</span><div class="toggle on" id="toggle-circuit" onclick="this.classList.toggle('on')"></div></div>
+<div class="toggle-row"><span class="toggle-label">Streaming</span><div class="toggle on" id="toggle-stream" onclick="this.classList.toggle('on')"></div></div>
+<div class="toggle-row"><span class="toggle-label">Provider Locks</span><div class="toggle" id="toggle-locks" onclick="this.classList.toggle('on')"></div></div>
+</div>
+<div class="card">
+<div class="card-title">Caveman Mode</div>
+<div class="slider-container">
+<label>Level: <span id="caveman-level">0</span> — <span id="caveman-desc">Off</span></label>
+<input type="range" id="caveman-slider" min="0" max="3" value="0" oninput="updateCaveman(this.value)">
+</div>
+</div>
+</div>
+<div class="card" style="margin-top:16px">
+<div class="card-title">System Info</div>
+<table><tbody id="system-info-body"></tbody></table>
+</div>
+</div>
 
-  <script>
-    const API = '';
-    let currentPage = 'dashboard';
+</div><!-- .content -->
+</div><!-- .main -->
 
-    // ═══════ NAVIGATION ═══════
-    function showPage(name) {
-      currentPage = name;
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      document.getElementById('page-' + name).classList.add('active');
-      event.currentTarget.classList.add('active');
-      
-      const titles = {dashboard:'Dashboard',providers:'Providers',combos:'Combos',usage:'Usage Analytics',connections:'Connections',logs:'Request Log',settings:'Settings'};
-      document.getElementById('page-title').textContent = titles[name] || name;
-      
-      const loaders = {providers:loadAllProviders,combos:loadCombos,usage:()=>loadUsage(7),connections:loadConnections,logs:loadLogs,settings:loadSettings};
-      if (loaders[name]) loaders[name]();
-    }
+<script>
+let currentPage='dashboard';
+let usageHistory=[];
 
-    // ═══════ DASHBOARD ═══════
-    async function refresh() {
-      try {
-        const [statsRes, providersRes, healthRes, modelsRes] = await Promise.all([
-          fetch(API+'/8router/stats').then(r=>r.json()),
-          fetch(API+'/8router/providers').then(r=>r.json()),
-          fetch(API+'/8router/health').then(r=>r.json()),
-          fetch(API+'/8router/models').then(r=>r.json()),
-        ]);
+function showPage(page){
+currentPage=page;
+document.querySelectorAll('.page-section').forEach(el=>el.classList.remove('active'));
+document.getElementById('page-'+page).classList.add('active');
+document.querySelectorAll('.nav-item').forEach(el=>{
+el.classList.toggle('active',el.dataset.page===page);
+});
+if(page==='providers') loadAllProviders();
+if(page==='combos') loadCombos();
+if(page==='usage') loadUsage();
+if(page==='connections') loadConnections();
+if(page==='logs') loadLogs();
+if(page==='settings') loadSettings();
+}
 
-        const stats = statsRes.session || statsRes;
-        const allTime = statsRes.allTime || {};
-        const total = (allTime.totalRequests||0);
-        const ok = (allTime.successfulRequests||0);
-        const fail = (allTime.failedRequests||0);
+function formatUptime(seconds){
+if(!seconds&&seconds!==0) return '—';
+const d=Math.floor(seconds/86400);
+const h=Math.floor((seconds%86400)/3600);
+const m=Math.floor((seconds%3600)/60);
+if(d>0) return d+'d '+h+'h';
+if(h>0) return h+'h '+m+'m';
+return m+'m';
+}
 
-        document.getElementById('s-req').textContent = total.toLocaleString();
-        document.getElementById('s-tokens').textContent = (allTime.totalTokens||stats.totalTokens||0).toLocaleString();
-        document.getElementById('s-fallbacks').textContent = (stats.fallbackCount||0).toLocaleString();
-        document.getElementById('s-rtk').textContent = (stats.compressionSaved||0).toLocaleString();
-        document.getElementById('s-rate').textContent = total > 0 ? Math.round(ok/total*100)+'%' : '100%';
-        document.getElementById('s-rate-sub').textContent = ok + ' ok / ' + fail + ' fail';
-        document.getElementById('s-uptime').textContent = formatUptime(stats.uptime||0);
+function formatNum(n){
+if(!n&&n!==0) return '—';
+if(n>=1e6) return (n/1e6).toFixed(1)+'M';
+if(n>=1e3) return (n/1e3).toFixed(1)+'K';
+return n.toLocaleString();
+}
 
-        const healthMap = Object.fromEntries((healthRes||[]).map(h=>[h.providerId,h]));
-        const provStats = allTime.providerStats||stats.providerStats||{};
+function renderProviderLimits(providers){
+const grid=document.getElementById('limits-grid');
+if(!grid) return;
+let html='';
+(providers||[]).forEach(p=>{
+const pct=p.usage&&p.limit?Math.min(100,(p.usage/p.limit)*100):0;
+const color=pct>80?'var(--red)':pct>50?'var(--orange)':'var(--accent)';
+html+=\`<div class="quota-item">
+<div class="quota-header"><span class="q-name">\${p.name||p.provider}</span><span class="q-pct">\${pct.toFixed(0)}%</span></div>
+<div class="quota-bar"><div class="quota-bar-fill" style="width:\${pct}%;background:\${color}"></div></div>
+</div>\`;
+});
+grid.innerHTML=html||'<div style="color:var(--text-muted);font-size:12px">No quota data</div>';
+}
 
-        document.getElementById('provider-count').textContent = providersRes.length;
+function drawTopology(){
+const canvas=document.getElementById('topology-canvas');
+if(!canvas) return;
+const ctx=canvas.getContext('2d');
+const rect=canvas.getBoundingClientRect();
+canvas.width=rect.width*2;canvas.height=rect.height*2;
+ctx.scale(2,2);
+const w=rect.width,h=rect.height;
+ctx.fillStyle='#060911';ctx.fillRect(0,0,w,h);
 
-        // Providers table
-        document.getElementById('providers-body').innerHTML = providersRes.map(p => {
-          const h = healthMap[p.id]||{};
-          const ps = provStats[p.id]||{};
-          const statusClass = h.healthy!==false ? 'healthy' : 'unhealthy';
-          const statusText = h.healthy!==false ? 'Healthy' : 'Circuit Open';
-          return '<tr><td><strong>'+p.name+'</strong> <span style="color:var(--text-muted);font-size:11px">('+p.id+')</span></td>'+
-            '<td><span class="badge '+p.tier+'">'+p.tier+'</span></td>'+
-            '<td><span class="badge '+statusClass+'"><span class="dot '+(h.healthy!==false?'green':'red')+'"></span> '+statusText+'</span></td>'+
-            '<td>'+(ps.requests||0).toLocaleString()+'</td>'+
-            '<td>'+(ps.tokens||0).toLocaleString()+'</td>'+
-            '<td>'+(h.avgLatencyMs?Math.round(h.avgLatencyMs)+'ms':'-')+'</td>'+
-            '<td>'+(ps.errors||0)+'</td></tr>';
-        }).join('');
+fetch('/8router/providers').then(r=>r.json()).then(data=>{
+const providers=Array.isArray(data)?data:(data.providers||[]);
+const cx=w/2,cy=h/2;
+const centerX=cx,centerY=cy;
+ctx.beginPath();ctx.arc(centerX,centerY,20,0,Math.PI*2);
+ctx.fillStyle='rgba(132,171,255,0.15)';ctx.fill();
+ctx.strokeStyle='var(--accent)';ctx.lineWidth=1.5;ctx.stroke();
+ctx.fillStyle='#84abff';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
+ctx.fillText('8R',centerX,centerY+3);
 
-        // Models table
-        document.getElementById('models-body').innerHTML = modelsRes.map(m =>
-          '<tr><td><code style="color:var(--cyan)">'+m.id+'</code></td>'+
-          '<td>'+m.providers.join(', ')+'</td>'+
-          '<td><span class="badge '+(m.providers[0]==='combo'?'free':'cheap')+'">'+(m.providers[0]==='combo'?'Combo':'Model')+'</span></td></tr>'
-        ).join('');
+const count=providers.length||1;
+providers.forEach((p,i)=>{
+const angle=(i/count)*Math.PI*2-Math.PI/2;
+const radius=Math.min(w,h)*0.35;
+const px=centerX+Math.cos(angle)*radius;
+const py=centerY+Math.sin(angle)*radius;
+ctx.beginPath();ctx.moveTo(centerX,centerY);ctx.lineTo(px,py);
+ctx.strokeStyle='rgba(26,33,53,0.8)';ctx.lineWidth=1;ctx.stroke();
+ctx.beginPath();ctx.arc(px,py,8,0,Math.PI*2);
+ctx.fillStyle=p.status==='healthy'||p.status==='ok'?'rgba(0,210,148,0.2)':'rgba(255,101,104,0.2)';
+ctx.fill();
+ctx.strokeStyle=p.status==='healthy'||p.status==='ok'?'#00d294':'#ff6568';
+ctx.lineWidth=1;ctx.stroke();
+ctx.fillStyle='#8a8f9c';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
+ctx.fillText((p.name||p.provider||'').slice(0,12),px,py+22);
+});
+}).catch(()=>{});
+}
 
-        // Provider limits (estimated)
-        renderProviderLimits(providersRes, provStats);
+function loadAllProviders(){
+Promise.all([
+fetch('/8router/providers').then(r=>r.json()).catch(()=>({})),
+fetch('/8router/models').then(r=>r.json()).catch(()=>({}))
+]).then(([pData,mData])=>{
+const providers=Array.isArray(pData)?pData:(pData.providers||[]);
+const models=Array.isArray(mData)?mData:(mData.models||[]);
+const body=document.getElementById('all-providers-body');
+const scProv=document.getElementById('sc-prov-count');
+const scModel=document.getElementById('sc-model-count');
+const scHealth=document.getElementById('sc-health');
+if(scProv) scProv.textContent=providers.length;
+if(scModel) scModel.textContent=models.length;
+const healthy=providers.filter(p=>p.status==='healthy'||p.status==='ok').length;
+if(scHealth) scHealth.textContent=healthy+'/'+providers.length;
+let html='';
+providers.forEach(p=>{
+const st=p.status==='healthy'||p.status==='ok'?'<span class="badge badge-green">OK</span>'
+:p.status==='degraded'?'<span class="badge badge-orange">DEG</span>'
+:'<span class="badge badge-red">ERR</span>';
+html+=\`<tr><td>\${p.name||p.provider}</td><td>\${st}</td>
+<td class="mono">\${(p.models||[]).length||'—'}</td>
+<td class="mono">\${formatNum(p.requests)}</td>
+<td class="mono">\${p.latency?p.latency+'ms':'—'}</td></tr>\`;
+});
+if(body) body.innerHTML=html||'<tr><td colspan="5" style="color:var(--text-muted)">No providers</td></tr>';
+drawTopology();
+});
+}
 
-        // Topology
-        drawTopology(providersRes, healthRes||[]);
+function loadCombos(){
+fetch('/8router/combos').then(r=>r.json()).then(data=>{
+const combos=Array.isArray(data)?data:(data.combos||[]);
+const grid=document.getElementById('combos-grid');
+let html='';
+combos.forEach(c=>{
+html+=\`<div class="combo-card"><h3>\${c.name||'Combo'}</h3>
+<p>\${c.description||JSON.stringify(c.providers||c.models||c)}</p></div>\`;
+});
+if(grid) grid.innerHTML=html||'<div style="color:var(--text-muted)">No combos configured</div>';
+}).catch(()=>{});
+}
 
-        // Status
-        document.getElementById('connection-badge').className = 'connection-badge connected';
-        document.getElementById('connection-badge').innerHTML = '<span class="dot green"></span> Connected';
-        document.getElementById('sidebar-status').className = 'status-dot on';
-        document.getElementById('sidebar-status-text').textContent = 'Connected';
-      } catch(err) {
-        document.getElementById('connection-badge').className = 'connection-badge disconnected';
-        document.getElementById('connection-badge').innerHTML = '<span class="dot red"></span> Disconnected';
-        document.getElementById('sidebar-status').className = 'status-dot off';
-        document.getElementById('sidebar-status-text').textContent = 'Disconnected';
-      }
-    }
+function loadUsage(){
+fetch('/8router/usage').then(r=>r.json()).then(data=>{
+const entries=Array.isArray(data)?data:(data.entries||data.usage||[]);
+const tbody=document.getElementById('usage-table-body');
+let html='';
+entries.slice(-50).reverse().forEach(e=>{
+html+=\`<tr><td class="mono">\${e.timestamp||e.ts||'—'}</td>
+<td>\${e.provider||'—'}</td><td>\${e.model||'—'}</td>
+<td class="mono">\${formatNum(e.tokens||e.total_tokens)}</td>
+<td class="mono">\${e.latency?e.latency+'ms':'—'}</td></tr>\`;
+});
+if(tbody) tbody.innerHTML=html||'<tr><td colspan="5" style="color:var(--text-muted)">No usage data</td></tr>';
+const canvas=document.getElementById('usage-chart');
+if(canvas&&entries.length){
+const ctx=canvas.getContext('2d');
+const rect=canvas.getBoundingClientRect();
+canvas.width=rect.width*2;canvas.height=rect.height*2;
+ctx.scale(2,2);
+const w=rect.width,h=rect.height;
+ctx.fillStyle='#060911';ctx.fillRect(0,0,w,h);
+const vals=entries.map(e=>e.tokens||e.total_tokens||0);
+const max=Math.max(...vals,1);
+const step=w/(vals.length-1||1);
+ctx.beginPath();ctx.moveTo(0,h);
+vals.forEach((v,i)=>{
+const x=i*step;
+const y=h-(v/max)*(h-20);
+if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+});
+ctx.strokeStyle='#84abff';ctx.lineWidth=1.5;ctx.stroke();
+ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();
+ctx.fillStyle='rgba(132,171,255,0.08)';ctx.fill();
+}
+}).catch(()=>{});
+}
 
-    function formatUptime(ms) {
-      const s = Math.floor(ms/1000);
-      if (s < 60) return s+'s';
-      if (s < 3600) return Math.floor(s/60)+'m '+s%60+'s';
-      return Math.floor(s/3600)+'h '+Math.floor(s%3600/60)+'m';
-    }
+function loadConnections(){
+fetch('/8router/connections').then(r=>r.json()).then(data=>{
+const conns=Array.isArray(data)?data:(data.connections||[]);
+const body=document.getElementById('connections-body');
+const badge=document.getElementById('connection-badge');
+if(badge) badge.textContent=conns.length+' active';
+let html='';
+conns.forEach(c=>{
+const st=c.status==='active'?'<span class="badge badge-green">ACTIVE</span>'
+:'<span class="badge badge-accent">IDLE</span>';
+html+=\`<tr><td class="mono">\${c.id||'—'}</td><td>\${c.client||'—'}</td>
+<td>\${c.provider||'—'}</td><td>\${c.model||'—'}</td>
+<td>\${st}</td><td class="mono">\${c.duration||'—'}</td></tr>\`;
+});
+if(body) body.innerHTML=html||'<tr><td colspan="6" style="color:var(--text-muted)">No connections</td></tr>';
+}).catch(()=>{});
+}
 
-    // ═══════ PROVIDER LIMITS ═══════
-    function renderProviderLimits(providers, stats) {
-      const grid = document.getElementById('limits-grid');
-      grid.innerHTML = providers.map(p => {
-        const ps = stats[p.id]||{};
-        const reqs = ps.requests||0;
-        const maxReqs = 1000;
-        const pct = Math.min(100, Math.round(reqs/maxReqs*100));
-        const color = pct > 80 ? 'var(--red)' : pct > 50 ? 'var(--orange)' : 'var(--green)';
-        return '<div class="limit-card">'+
-          '<div class="provider-name"><span class="badge '+p.tier+'">'+p.tier+'</span> '+p.name+'</div>'+
-          '<div class="quota-bar"><div class="quota-fill" style="width:'+pct+'%;background:'+color+'"></div></div>'+
-          '<div class="quota-text"><span>'+reqs.toLocaleString()+' requests</span><span>'+pct+'%</span></div>'+
-          '</div>';
-      }).join('');
-    }
+function loadLogs(){
+fetch('/8router/health').then(r=>r.json()).then(data=>{
+const container=document.getElementById('logs-container');
+const logs=data.logs||data.recent||[];
+let html='';
+(Array.isArray(logs)?logs:[]).forEach(l=>{
+const ts=l.timestamp||l.ts||'';
+const msg=l.message||l.msg||JSON.stringify(l);
+const cls=l.level==='error'?'log-err':'';
+html+=\`<div class="log-line"><span class="log-ts">\${ts}</span> \${cls?'<span class="'+cls+'">'+msg+'</span>':msg}</div>\`;
+});
+if(container) container.innerHTML=html||'<div style="color:var(--text-muted)">No logs available</div>';
+}).catch(()=>{
+const container=document.getElementById('logs-container');
+if(container) container.innerHTML='<div style="color:var(--text-muted)">No logs available</div>';
+});
+}
 
-    // ═══════ TOPOLOGY ═══════
-    function drawTopology(providers, health) {
-      const canvas = document.getElementById('topology-canvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const W = canvas.parentElement.clientWidth - 40;
-      const H = 300;
-      canvas.width = W;
-      canvas.height = H;
-      ctx.clearRect(0,0,W,H);
+function loadSettings(){
+fetch('/8router/info').then(r=>r.json()).then(data=>{
+const body=document.getElementById('system-info-body');
+let html='';
+Object.entries(data).forEach(([k,v])=>{
+if(typeof v==='object') v=JSON.stringify(v);
+html+=\`<tr><td style="color:var(--text-muted);font-family:var(--font-mono);width:180px">\${k}</td>
+<td style="color:var(--text-secondary);font-family:var(--font-mono)">\${v}</td></tr>\`;
+});
+if(body) body.innerHTML=html;
+}).catch(()=>{});
+}
 
-      const cx = W/2, cy = H/2;
-      
-      // Draw center node (8Router)
-      ctx.beginPath();
-      ctx.arc(cx, cy, 30, 0, Math.PI*2);
-      ctx.fillStyle = '#6c5ce7';
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 11px Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('8Router', cx, cy+4);
+function updateCaveman(val){
+const slider=document.getElementById('caveman-slider');
+const level=document.getElementById('caveman-level');
+if(level) level.textContent=val;
+fetch('/8router/caveman',{method:'POST',headers:{'Content-Type':'application/json'},
+body:JSON.stringify({level:parseInt(val)})}).catch(()=>{});
+updateCavemanDesc(val);
+}
 
-      // Draw provider nodes
-      const n = providers.length;
-      const radius = Math.min(W,H)/2 - 50;
-      providers.forEach((p, i) => {
-        const angle = (i/n) * Math.PI * 2 - Math.PI/2;
-        const px = cx + Math.cos(angle) * radius;
-        const py = cy + Math.sin(angle) * radius;
-        
-        // Line
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(px, py);
-        ctx.strokeStyle = '#252850';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+function updateCavemanDesc(val){
+const desc=document.getElementById('caveman-desc');
+const descs=['Off','Low — basic fallbacks','Medium — aggressive retry','High — maximum resilience'];
+if(desc) desc.textContent=descs[parseInt(val)]||'Off';
+}
 
-        // Node
-        const h = health.find(x=>x.providerId===p.id);
-        const healthy = !h || h.healthy!==false;
-        ctx.beginPath();
-        ctx.arc(px, py, 20, 0, Math.PI*2);
-        ctx.fillStyle = healthy ? '#1a3a2a' : '#3a1a1a';
-        ctx.fill();
-        ctx.strokeStyle = healthy ? '#00d68f' : '#ff6b6b';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+function refresh(){
+fetch('/8router/stats').then(r=>r.json()).then(d=>{
+const el=(id)=>document.getElementById(id);
+const sReq=el('s-req'),sTokens=el('s-tokens'),sFb=el('s-fallbacks');
+const sRtk=el('s-rtk'),sRate=el('s-rate'),sRateSub=el('s-rate-sub');
+const sUp=el('s-uptime'),pCount=el('provider-count');
+const srReqs=el('sr-reqs'),srTokens=el('sr-tokens'),srFb=el('sr-fb');
+const srUp=el('sr-up'),srProv=el('sr-prov'),srConn=el('sr-conn');
 
-        // Label
-        ctx.fillStyle = '#e8e9f0';
-        ctx.font = '10px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(p.name, px, py+4);
-      });
-    }
+if(sReq) sReq.textContent=formatNum(d.requests);
+if(sTokens) sTokens.textContent=formatNum(d.tokens);
+if(sFb) sFb.textContent=formatNum(d.fallbacks);
+if(sRtk) sRtk.textContent=d.realtimeKeys||d.rtk||'—';
+if(sRate) sRate.textContent=d.rateLimit?d.rateLimit.toFixed(1)+'%':'—';
+if(sRateSub) sRateSub.textContent=d.rateLimitSub?'('+d.rateLimitSub.toFixed(1)+'%)':'';
+if(sUp) sUp.textContent=formatUptime(d.uptime);
+if(pCount) pCount.textContent=d.providers||'—';
 
-    // ═══════ ALL PROVIDERS ═══════
-    async function loadAllProviders() {
-      try {
-        const res = await fetch(API+'/8router/providers').then(r=>r.json());
-        document.getElementById('all-providers-body').innerHTML = res.map(p =>
-          '<tr><td style="font-family:monospace;font-size:11px">'+p.id+'</td>'+
-          '<td><strong>'+p.name+'</strong></td>'+
-          '<td>'+p.provider+'</td>'+
-          '<td><span class="badge '+p.tier+'">'+p.tier+'</span></td>'+
-          '<td style="font-family:monospace;font-size:11px">'+(p.apiKey||'***')+'</td>'+
-          '<td><span class="badge healthy">active</span></td>'+
-          '<td>'+(p.totalRequests||0)+'</td>'+
-          '<td>'+(p.totalTokens||0).toLocaleString()+'</td>'+
-          '<td>'+(p.errors||0)+'</td></tr>'
-        ).join('');
-      } catch {}
-    }
+if(srReqs) srReqs.textContent=formatNum(d.requests);
+if(srTokens) srTokens.textContent=formatNum(d.tokens);
+if(srFb) srFb.textContent=formatNum(d.fallbacks);
+if(srUp) srUp.textContent=formatUptime(d.uptime);
+if(srProv) srProv.textContent=d.providers||'—';
+if(srConn) srConn.textContent=d.connections||'—';
 
-    // ═══════ COMBOS ═══════
-    async function loadCombos() {
-      try {
-        const combos = await fetch(API+'/8router/combos').then(r=>r.json());
-        const icons = {MIMO:'🤖',Groq:'⚡',Mistral:'🌊',OpenRouter:'🔀',Free:'🆓',Cheap:'💰'};
-        document.getElementById('combos-grid').innerHTML = combos.map(c =>
-          '<div class="combo-card">'+
-            '<h4><span class="combo-icon">'+(icons[c.name]||'🔗')+'</span> '+c.name+'</h4>'+
-            '<div class="desc">'+c.description+'</div>'+
-            c.tiers.map((t,i) =>
-              '<div class="combo-tier">'+
-                '<div class="priority">'+(i+1)+'</div>'+
-                '<span class="provider-name">'+t.provider+'</span>'+
-                '<span class="arrow">→</span>'+
-                '<span class="model-name">'+t.model+'</span>'+
-              '</div>'
-            ).join('')+
-          '</div>'
-        ).join('');
-      } catch {}
-    }
+// Sparkline
+if(d.tokens!==undefined){
+usageHistory.push(d.tokens);
+if(usageHistory.length>60) usageHistory.shift();
+const max=Math.max(...usageHistory,1);
+const pts=usageHistory.map((v,i)=>{
+const x=(i/(usageHistory.length-1||1))*400;
+const y=100-(v/max)*80;
+return x.toFixed(1)+','+y.toFixed(1);
+}).join(' ');
+const path=el('sparkline-path');
+const area=el('sparkline-area');
+if(path) path.setAttribute('points',pts);
+if(area) area.setAttribute('points','0,100 '+pts+' 400,100');
+}
 
-    // ═══════ USAGE ═══════
-    async function loadUsage(days) {
-      try {
-        const usage = await fetch(API+'/8router/usage?days='+days).then(r=>r.json());
-        
-        // Chart
-        const maxTokens = Math.max(1, ...usage.map(u=>(u.inputTokens||0)+(u.outputTokens||0)));
-        document.getElementById('usage-chart').innerHTML = usage.reverse().map(u => {
-          const inH = Math.max(4, (u.inputTokens||0)/maxTokens*140);
-          const outH = Math.max(4, (u.outputTokens||0)/maxTokens*140);
-          return '<div class="chart-bar-group">'+
-            '<div style="display:flex;gap:2px;align-items:flex-end;height:150px">'+
-              '<div class="chart-bar input" style="height:'+inH+'px;width:16px"></div>'+
-              '<div class="chart-bar output" style="height:'+outH+'px;width:16px"></div>'+
-            '</div>'+
-            '<div class="chart-label">'+(u.date||'').slice(5)+'</div>'+
-          '</div>';
-        }).join('');
+// Provider health list
+fetch('/8router/providers').then(r=>r.json()).then(pData=>{
+const providers=Array.isArray(pData)?pData:(pData.providers||[]);
+const body=el('providers-body');
+let html='';
+providers.slice(0,10).forEach(p=>{
+const ok=p.status==='healthy'||p.status==='ok';
+const cls=ok?'ok':p.status==='degraded'?'warn':'err';
+html+=\`<div class="provider-row">
+<div class="p-dot \${cls}"></div>
+<div class="p-name">\${p.name||p.provider}</div>
+<div class="p-latency">\${p.latency?p.latency+'ms':'—'}</div>
+<div class="p-reqs">\${formatNum(p.requests)}</div>
+</div>\`;
+});
+if(body) body.innerHTML=html||'<div style="color:var(--text-muted);font-size:12px">No providers</div>';
+}).catch(()=>{});
 
-        // Table
-        document.getElementById('usage-table-body').innerHTML = usage.reverse().map(u =>
-          '<tr><td>'+u.date+'</td>'+
-          '<td>'+(u.requests||0).toLocaleString()+'</td>'+
-          '<td>'+(u.inputTokens||0).toLocaleString()+'</td>'+
-          '<td>'+(u.outputTokens||0).toLocaleString()+'</td>'+
-          '<td>$'+(u.cost||0).toFixed(4)+'</td>'+
-          '<td>'+(u.errors||0)+'</td></tr>'
-        ).join('');
-      } catch {}
-    }
+// Quotas
+fetch('/8router/providers').then(r=>r.json()).then(pData=>{
+const providers=Array.isArray(pData)?pData:(pData.providers||[]);
+renderProviderLimits(providers);
+}).catch(()=>{});
 
-    // ═══════ CONNECTIONS ═══════
-    async function loadConnections() {
-      try {
-        const conns = await fetch(API+'/8router/connections').then(r=>r.json());
-        document.getElementById('connections-body').innerHTML = conns.map(c =>
-          '<tr><td style="font-family:monospace;font-size:11px">'+c.id.slice(0,16)+'</td>'+
-          '<td>'+c.provider+'</td>'+
-          '<td>'+(c.name||'-')+'</td>'+
-          '<td>'+c.authType+'</td>'+
-          '<td><span class="badge '+(c.testStatus||'unknown')+'">'+(c.testStatus||'unknown')+'</span></td>'+
-          '<td>'+(c.backoffLevel>0?'<span style="color:var(--orange)">L'+c.backoffLevel+'</span>':'-')+'</td>'+
-          '<td>'+(c.totalRequests||0).toLocaleString()+'</td>'+
-          '<td>'+(c.totalTokens||0).toLocaleString()+'</td>'+
-          '<td>$'+(c.totalCost||0).toFixed(4)+'</td></tr>'
-        ).join('');
-      } catch {}
-    }
+// Models
+fetch('/8router/models').then(r=>r.json()).then(mData=>{
+const models=Array.isArray(mData)?mData:(mData.models||[]);
+const body=el('models-body');
+let html='';
+models.forEach(m=>{
+const name=typeof m==='string'?m:(m.name||m.model||m.id||'');
+html+=\`<span class="model-pill">\${name}</span>\`;
+});
+if(body) body.innerHTML=html||'<span style="color:var(--text-muted);font-size:12px">No models</span>';
+}).catch(()=>{});
 
-    // ═══════ LOGS ═══════
-    async function loadLogs() {
-      // Show recent requests from stats (since we don't have per-request log endpoint yet)
-      document.getElementById('logs-container').innerHTML = 
-        '<div style="padding:40px;text-align:center;color:var(--text-muted)">'+
-          '<p style="font-size:14px;margin-bottom:8px">Request logging is active</p>'+
-          '<p style="font-size:12px">All requests are tracked in SQLite database</p>'+
-          '<p style="font-size:12px;margin-top:12px">View stats in <strong>Usage</strong> tab for detailed analytics</p>'+
-        '</div>';
-    }
+// Status bar status text
+const ssText=el('sidebar-status-text');
+if(ssText) ssText.textContent='connected ${port}';
+}).catch(()=>{});
+}
 
-    // ═══════ SETTINGS ═══════
-    async function loadSettings() {
-      try {
-        const caveman = await fetch(API+'/8router/caveman').then(r=>r.json());
-        document.getElementById('caveman-slider').value = caveman.level;
-        document.getElementById('caveman-level').textContent = caveman.level;
-        updateCavemanDesc(caveman.level);
-
-        const info = await fetch(API+'/8router/info').then(r=>r.json());
-        document.getElementById('system-info-body').innerHTML = 
-          '<tr><td style="color:var(--text-muted);width:140px">Name</td><td>'+info.name+'</td></tr>'+
-          '<tr><td style="color:var(--text-muted)">Version</td><td>'+info.version+'</td></tr>'+
-          '<tr><td style="color:var(--text-muted)">Description</td><td>'+info.description+'</td></tr>'+
-          '<tr><td style="color:var(--text-muted)">Features</td><td>'+info.features.join(', ')+'</td></tr>'+
-          Object.entries(info.endpoints).map(([k,v]) =>
-            '<tr><td style="color:var(--text-muted)">'+k+'</td><td style="font-family:monospace;font-size:12px">'+v+'</td></tr>'
-          ).join('');
-      } catch {}
-    }
-
-    function updateCaveman(level) {
-      level = parseInt(level);
-      document.getElementById('caveman-level').textContent = level;
-      updateCavemanDesc(level);
-      fetch(API+'/8router/caveman',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({level})});
-    }
-    function updateCavemanDesc(level) {
-      const descs = ['Disabled — Normal responses','Mild — Short sentences','Medium — One-line answers',
-                     'Aggressive — Keywords only','Extreme — Caveman grunts','Maximum — Classical Chinese compression'];
-      document.getElementById('caveman-desc').textContent = descs[level]||'Unknown';
-    }
-
-    // Init
-    refresh();
-    setInterval(refresh, 5000);
-  </script>
+// INIT
+refresh();
+setInterval(refresh,5000);
+</script>
 </body>
 </html>`;
+}
+
+export function createDashboard(engineOrPort: any, portOrUndef?: number): express.Express {
+  const app = express();
+  app.use(cors());
+  app.use(express.json());
+  const port = typeof portOrUndef === 'number' ? portOrUndef : (typeof engineOrPort === 'number' ? engineOrPort : 8081);
+
+  app.get('/', (_req, res) => {
+    res.type('html').send(getDashboardHTML(null, port));
+  });
+
+  return app;
 }
