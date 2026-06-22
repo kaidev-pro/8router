@@ -1,6 +1,8 @@
 // 8Router — Hermes Agent Integration
 // Provides OpenAI-compatible proxy that Hermes can connect to
 
+import express from 'express';
+import cors from 'cors';
 import { RouterEngine } from '../router/engine.js';
 import { resolveModelAlias, MODEL_ALIASES } from '../providers/catalog.js';
 
@@ -9,9 +11,7 @@ import { resolveModelAlias, MODEL_ALIASES } from '../providers/catalog.js';
 // Translates between Hermes expectations and 8Router
 // ═══════════════════════════════════════════════════════════════
 export function createHermesProxy(engine: RouterEngine) {
-  const express = require('express');
   const app = express();
-  const cors = require('cors');
 
   app.use(cors());
   app.use(express.json({ limit: '10mb' }));

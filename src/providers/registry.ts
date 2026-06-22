@@ -52,6 +52,11 @@ export class ProviderRegistry {
     return result;
   }
 
+  // Get a specific provider by ID
+  getProvider(providerId: string): ProviderKey | undefined {
+    return this.providers.get(providerId);
+  }
+
   // Get all providers (for dashboard)
   getAllProviders(): ProviderKey[] {
     return Array.from(this.providers.values());
