@@ -3,11 +3,31 @@
 
 import express from 'express';
 import cors from 'cors';
+import http from 'http';
 
-export function createDashboard(apiPort: number): express.Express {
+export function createDashboard(engineOrPort: any, portOrUndef?: number): express.Express {
   const app = express();
   app.use(cors());
-  app.get('/', (_req, res) => { res.send(getHTML(apiPort)); });
+  const port = typeof portOrUndef === 'number' ? portOrUndef : (typeof engineOrPort === 'number' ? engineOrPort : 8081);
+  const apiPort = 8080;
+
+  // Proxy /8router/* to main API server
+  app.all('/8router/*', (req, res) => {
+    const opts = {
+      hostname: 'localhost', port: apiPort,
+      path: req.originalUrl, method: req.method,
+      headers: { ...req.headers, host: `localhost:${apiPort}` },
+    };
+    const proxy = http.request(opts, (proxyRes) => {
+      res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
+      proxyRes.pipe(res, { end: true });
+    });
+    proxy.on('error', () => res.status(502).json({ error: 'API unreachable' }));
+    if (req.method === 'POST' || req.method === 'PUT') req.pipe(proxy, { end: true });
+    else proxy.end();
+  });
+
+  app.get('/', (_req, res) => { res.send(getHTML(port)); });
   return app;
 }
 
