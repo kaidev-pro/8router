@@ -7,3 +7,8 @@ dist/
 8router.env
 8router.env
 8router.yaml
+
+# Config with API keys
+8router.yaml
+8router.env
+.env
