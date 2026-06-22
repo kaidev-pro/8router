@@ -1,846 +1,628 @@
+// 8Router — Command Center Dashboard v4
+// Inspired by 9Router: Endpoint config, Usage with topology + recent requests, Quota Tracker, etc.
+
 import express from 'express';
 import cors from 'cors';
 
-export function getDashboardHTML(_engineOrPort?: any, apiPort?: number): string {
-  // Support both createDashboard(port) and createDashboard(engine, port)
-  const port = typeof apiPort === 'number' ? apiPort : (typeof _engineOrPort === 'number' ? _engineOrPort : 8081);
+export function createDashboard(apiPort: number): express.Express {
+  const app = express();
+  app.use(cors());
+  app.get('/', (_req, res) => { res.send(getHTML(apiPort)); });
+  return app;
+}
+
+function getHTML(apiPort: number): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>8Router — Command Center</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
---bg-primary:#020309;--bg-secondary:#0c111f;--bg-card:#060911;--bg-card-hover:#0e1525;
---bg-input:#111524;--border:#1a2135;--border-light:#252d45;
---text-primary:#f2f2f2;--text-secondary:#8a8f9c;--text-muted:#5a6070;
---accent:#84abff;--accent-hover:#9dbdff;--accent-dim:rgba(132,171,255,0.12);
---green:#00d294;--green-dim:rgba(0,210,148,0.12);
---red:#ff6568;--red-dim:rgba(255,101,104,0.12);
---orange:#e18528;--orange-dim:rgba(225,133,40,0.12);
---blue:#84abff;--purple:#6c5594;--purple-dim:rgba(108,85,148,0.12);
---cyan:#009399;--cyan-dim:rgba(0,147,153,0.12);
---yellow:#fcbb00;
---sidebar-w:56px;--sidebar-expanded:200px;
---font-body:'Inter',system-ui,-apple-system,sans-serif;
---font-mono:'JetBrains Mono','SF Mono','Cascadia Code',monospace;
+  --bg:#0f1117;--bg2:#161822;--bg3:#1c1f2e;--bg4:#232640;
+  --border:#2a2d45;--border2:#353860;
+  --text:#e4e5f1;--text2:#9496b0;--text3:#5d5f78;
+  --accent:#ff6b35;--accent2:#ff8c5a;--accent-dim:rgba(255,107,53,0.12);
+  --green:#00e676;--green-dim:rgba(0,230,118,0.12);
+  --red:#ff5252;--red-dim:rgba(255,82,82,0.12);
+  --blue:#448aff;--blue-dim:rgba(68,138,255,0.12);
+  --purple:#b388ff;--purple-dim:rgba(179,136,255,0.12);
+  --cyan:#18ffff;--cyan-dim:rgba(24,255,255,0.12);
+  --yellow:#ffd740;--yellow-dim:rgba(255,215,64,0.12);
+  --pink:#ff4081;
+  --sidebar:240px;
 }
-html{font-size:13px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-body{
-font-family:var(--font-body);color:var(--text-primary);background:var(--bg-primary);
-background-image:linear-gradient(rgba(26,33,53,0.3) 1px,transparent 1px),
-                  linear-gradient(90deg,rgba(26,33,53,0.3) 1px,transparent 1px);
-background-size:48px 48px;min-height:100vh;display:flex;
-}
-body::before{
-content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.025;
-background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-background-repeat:repeat;background-size:256px;
-}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow:hidden}
 
-/* SIDEBAR */
-.sidebar{
-position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);background:var(--bg-secondary);
-border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;
-transition:width .2s ease;overflow:hidden;
-}
-.sidebar:hover{width:var(--sidebar-expanded)}
-.sidebar-logo{
-display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;
-border-bottom:1px solid var(--border);flex-shrink:0;white-space:nowrap;overflow:hidden;
-}
-.sidebar-logo svg{width:24px;height:24px;flex-shrink:0;color:var(--accent)}
-.sidebar-logo span{font-size:15px;font-weight:700;color:var(--text-primary);opacity:0;transition:opacity .2s}
-.sidebar:hover .sidebar-logo span{opacity:1}
-.sidebar nav{flex:1;display:flex;flex-direction:column;padding:8px;gap:2px}
-.nav-item{
-display:flex;align-items:center;gap:12px;height:40px;padding:0 14px;border-radius:8px;
-color:var(--text-secondary);cursor:pointer;transition:all .15s ease;white-space:nowrap;
-overflow:hidden;text-decoration:none;font-size:13px;font-weight:500;
-}
-.nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:.7}
-.nav-item:hover{background:var(--accent-dim);color:var(--text-primary)}
-.nav-item:hover svg{opacity:1}
-.nav-item.active{background:var(--accent-dim);color:var(--accent)}
-.nav-item.active svg{opacity:1;color:var(--accent)}
-.nav-item .nav-label{opacity:0;transition:opacity .2s}
-.sidebar:hover .nav-item .nav-label{opacity:1}
-.sidebar-footer{
-padding:8px;border-top:1px solid var(--border);flex-shrink:0;
-}
-#sidebar-status{
-display:flex;align-items:center;gap:8px;padding:0 14px;height:36px;
-font-family:var(--font-mono);font-size:11px;color:var(--text-muted);overflow:hidden;
-}
-#sidebar-status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
-#sidebar-status-text{white-space:nowrap;opacity:0;transition:opacity .2s}
-.sidebar:hover #sidebar-status-text{opacity:1}
+/* ═══ SIDEBAR ═══ */
+.sidebar{width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--border);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:100}
+.sb-header{padding:20px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.sb-logo{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),#ff3d00);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.sb-brand{flex:1}
+.sb-brand .name{font-size:16px;font-weight:700;color:var(--text)}
+.sb-brand .ver{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace}
 
-/* HAMBURGER (mobile) */
-.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:200;
-width:40px;height:40px;background:var(--bg-secondary);border:1px solid var(--border);
-border-radius:8px;align-items:center;justify-content:center;cursor:pointer;color:var(--text-primary)}
-.hamburger svg{width:20px;height:20px}
+.sb-update{margin:8px 12px;padding:10px;background:var(--accent-dim);border:1px solid rgba(255,107,53,0.3);border-radius:8px}
+.sb-update .new{font-size:11px;color:var(--accent);font-weight:600;margin-bottom:4px}
+.sb-update .cmd{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace}
 
-/* MAIN CONTENT */
-.main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;padding:0}
-.content{padding:24px 28px;max-width:1400px;margin:0 auto}
+.sb-nav{flex:1;padding:8px;overflow-y:auto}
+.sb-section{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);padding:12px 12px 6px;font-weight:700}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;margin-bottom:1px}
+.sb-item:hover{background:var(--bg3);color:var(--text)}
+.sb-item.active{background:var(--accent);color:#fff}
+.sb-item .ico{width:20px;text-align:center;font-size:15px}
+.sb-item .cnt{margin-left:auto;font-size:10px;background:var(--bg4);padding:1px 6px;border-radius:8px;color:var(--text3)}
+.sb-item.active .cnt{background:rgba(255,255,255,0.2);color:#fff}
 
-/* PAGE HEADER */
-.page-header{display:flex;align-items:baseline;gap:16px;margin-bottom:20px}
-#page-title{
-font-size:clamp(28px,3vw,40px);font-weight:700;letter-spacing:-0.04em;
-color:var(--text-primary);line-height:1.1;
-}
-.endpoint-badge{
-font-family:var(--font-mono);font-size:11px;color:var(--text-muted);
-background:var(--bg-card);border:1px solid var(--border);padding:3px 10px;border-radius:20px;
-}
+.sb-footer{padding:12px}
+.sb-shutdown{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.sb-shutdown:hover{background:var(--red-dim);color:var(--red);border-color:var(--red)}
 
-/* STATUS BAR */
-.status-bar{
-background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;
-padding:8px 16px;margin-bottom:20px;
-display:flex;align-items:center;gap:0;overflow-x:auto;
-font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);
-}
-.status-bar .sep{color:var(--border-light);margin:0 10px;user-select:none}
-.status-bar .metric-label{color:var(--text-muted);margin-right:4px}
-.status-bar .metric-val{color:var(--text-primary)}
+/* ═══ MAIN ═══ */
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;height:100vh}
+.topbar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0}
+.topbar .title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+.topbar .subtitle{font-size:11px;color:var(--text3)}
+.topbar .spacer{flex:1}
+.topbar .actions{display:flex;gap:8px}
+.topbar .pill{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:11px;color:var(--text2);cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s}
+.topbar .pill:hover{border-color:var(--accent);color:var(--accent)}
+.topbar .badge{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px}
+.topbar .badge.on{background:var(--green-dim);color:var(--green)}
+.topbar .badge.off{background:var(--red-dim);color:var(--red)}
 
-/* BENTO GRID */
-.bento{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-bottom:12px}
-.bento-cell{
-background:var(--bg-card);border:1px solid var(--border);border-radius:8px;
-padding:14px 16px;transition:background .15s ease;overflow:hidden;
-}
-.bento-cell:hover{background:var(--bg-card-hover)}
-.bento-cell.span8{grid-column:span 8}
-.bento-cell.span7{grid-column:span 7}
-.bento-cell.span5{grid-column:span 5}
-.bento-cell.span4{grid-column:span 4}
-.bento-cell.span12{grid-column:span 12}
-.cell-title{
-font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;
-color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;
-}
-.cell-title .dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.content{flex:1;overflow-y:auto;padding:20px}
+.page{display:none}.page.active{display:block}
 
-/* PROVIDER HEALTH ROWS */
-.provider-row{
-display:flex;align-items:center;gap:10px;padding:6px 0;
-border-bottom:1px solid rgba(26,33,53,0.4);
-}
-.provider-row:last-child{border-bottom:none}
-.provider-row .p-name{flex:1;font-size:12px;color:var(--text-primary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.provider-row .p-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.provider-row .p-dot.ok{background:var(--green);box-shadow:0 0 6px rgba(0,210,148,0.4)}
-.provider-row .p-dot.warn{background:var(--orange);box-shadow:0 0 6px rgba(225,133,40,0.3)}
-.provider-row .p-dot.err{background:var(--red);box-shadow:0 0 6px rgba(255,101,104,0.3)}
-.provider-row .p-latency{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);width:52px;text-align:right}
-.provider-row .p-reqs{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);width:60px;text-align:right}
-@keyframes pulse-green{0%,100%{opacity:1}50%{opacity:.5}}
-.p-dot.ok{animation:pulse-green 2s ease-in-out infinite}
+/* ═══ ENDPOINT PAGE ═══ */
+.endpoint-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.endpoint-card h3{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.endpoint-card h3 .ico{font-size:18px}
+.ep-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px}
+.ep-row .label{font-size:11px;color:var(--text3);min-width:60px;font-weight:600;text-transform:uppercase}
+.ep-row .url{flex:1;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent2);cursor:pointer}
+.ep-row .url:hover{text-decoration:underline}
+.ep-row .copy{width:28px;height:28px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--text3);transition:all .15s}
+.ep-row .copy:hover{color:var(--accent);border-color:var(--accent)}
+.ep-status{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green)}
+.ep-status .dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* QUICK STATS TERMINAL */
-.stat-readout{padding:4px 0;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid rgba(26,33,53,0.3)}
-.stat-readout:last-child{border-bottom:none}
-.stat-readout .sr-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em}
-.stat-readout .sr-val{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--accent)}
+.warning-box{background:var(--yellow-dim);border:1px solid rgba(255,215,64,0.3);border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--yellow)}
+.warning-box .icon{font-size:16px}
+.warning-box .action{margin-left:auto;color:var(--accent);font-weight:600;cursor:pointer;text-decoration:underline}
 
-/* SPARKLINE */
-.sparkline-container{height:100px;margin-top:4px}
-.sparkline-container svg{width:100%;height:100%}
-.sparkline-line{fill:none;stroke:var(--accent);stroke-width:1.5}
-.sparkline-area{fill:url(#sparkGrad);opacity:.3}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px}
+.toggle-row .info{font-size:13px;font-weight:500}
+.toggle-row .desc{font-size:11px;color:var(--text3);margin-top:2px}
+.toggle{width:44px;height:24px;background:var(--bg4);border-radius:12px;cursor:pointer;position:relative;transition:all .2s;border:1px solid var(--border)}
+.toggle.on{background:var(--accent);border-color:var(--accent)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle.on::after{transform:translateX(20px)}
 
-/* QUOTA BARS */
-.quota-item{margin-bottom:10px}
-.quota-item:last-child{margin-bottom:0}
-.quota-header{display:flex;justify-content:space-between;margin-bottom:4px}
-.quota-header .q-name{font-size:12px;color:var(--text-secondary)}
-.quota-header .q-pct{font-family:var(--font-mono);font-size:11px;color:var(--text-muted)}
-.quota-bar{height:4px;background:var(--bg-input);border-radius:2px;overflow:hidden}
-.quota-bar-fill{height:100%;border-radius:2px;transition:width .4s ease}
+/* Token Saver */
+.caveman-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:16px}
+.caveman-card h3{font-size:13px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.caveman-card .sub{font-size:11px;color:var(--text3);margin-bottom:16px}
+.caveman-row{display:flex;align-items:center;gap:16px}
+.caveman-slider{flex:1;-webkit-appearance:none;height:6px;background:var(--bg);border-radius:3px;outline:none}
+.caveman-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:var(--accent);border-radius:50%;cursor:pointer;border:3px solid var(--bg3)}
+.caveman-val{font-size:32px;font-weight:800;color:var(--accent);min-width:40px;text-align:center}
+.caveman-levels{display:flex;justify-content:space-between;margin-top:12px;font-size:10px;color:var(--text3)}
 
-/* MODEL PILLS */
-.models-wrap{display:flex;flex-wrap:wrap;gap:6px}
-.model-pill{
-font-family:var(--font-mono);font-size:11px;padding:4px 10px;
-background:var(--bg-input);border:1px solid var(--border);border-radius:20px;
-color:var(--text-secondary);transition:all .15s;cursor:default;white-space:nowrap;
-}
-.model-pill:hover{background:var(--accent-dim);color:var(--accent);border-color:var(--accent)}
+/* ═══ USAGE PAGE ═══ */
+.usage-grid{display:grid;grid-template-columns:1fr 320px;gap:16px;height:calc(100vh - 140px)}
+.usage-left{display:flex;flex-direction:column;gap:16px;overflow:hidden}
+.usage-right{display:flex;flex-direction:column;gap:16px;overflow:hidden}
 
-/* GENERIC TABLE */
+/* Topology */
+.topo-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;flex:1;overflow:hidden;display:flex;flex-direction:column}
+.topo-card .hdr{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.topo-card canvas{flex:1;width:100%}
+
+/* Recent Requests */
+.recent-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
+.recent-card .hdr{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600}
+.recent-list{flex:1;overflow-y:auto;padding:4px 0}
+.recent-item{display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--border);font-size:12px}
+.recent-item .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.recent-item .model{flex:1;font-weight:500;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text)}
+.recent-item .tokens{text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px}
+.recent-item .tokens .in{color:var(--accent2)}
+.recent-item .tokens .out{color:var(--cyan)}
+
+/* ═══ QUOTA TRACKER ═══ */
+.quota-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.quota-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px}
+.quota-card .name{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.quota-card .name .tier{font-size:10px;padding:2px 6px;border-radius:4px}
+.quota-bar{width:100%;height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:8px}
+.quota-fill{height:100%;border-radius:4px;transition:width .3s}
+.quota-info{display:flex;justify-content:space-between;font-size:11px;color:var(--text3)}
+.quota-reset{font-size:10px;color:var(--yellow);margin-top:6px}
+
+/* ═══ PROV TABLE ═══ */
+.tbl-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 table{width:100%;border-collapse:collapse}
-th{
-font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;
-color:var(--text-muted);text-align:left;padding:8px 12px;
-border-bottom:1px solid var(--border);font-family:var(--font-mono);
-}
-td{
-padding:8px 12px;font-size:12px;color:var(--text-secondary);
-border-bottom:1px solid rgba(26,33,53,0.3);
-}
-td.mono{font-family:var(--font-mono);font-size:11px}
-tr:hover td{background:var(--bg-card-hover)}
+th{background:var(--bg2);padding:10px 16px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);font-weight:700}
+td{padding:12px 16px;border-top:1px solid var(--border);font-size:13px}
+tr:hover td{background:var(--bg4)}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;gap:4px}
+.badge.free{background:var(--green-dim);color:var(--green)}
+.badge.cheap{background:var(--accent-dim);color:var(--accent)}
+.badge.subscription{background:var(--purple-dim);color:var(--purple)}
+.badge.healthy{background:var(--green-dim);color:var(--green)}
+.badge.unhealthy{background:var(--red-dim);color:var(--red)}
 
-/* GRID LAYOUTS */
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
-.card{
-background:var(--bg-card);border:1px solid var(--border);border-radius:8px;
-padding:16px;transition:background .15s;
-}
-.card:hover{background:var(--bg-card-hover)}
-.card-title{
-font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;
-color:var(--text-muted);margin-bottom:12px;
-}
+/* ═══ MODELS ═══ */
+.model-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.model-chip{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;display:flex;align-items:center;gap:6px;transition:all .15s;cursor:default}
+.model-chip:hover{border-color:var(--accent);background:var(--bg4)}
+.model-chip .provider{font-size:10px;color:var(--text3)}
 
-/* COMBOS GRID */
-#combos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.combo-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px 16px;transition:background .15s}
-.combo-card:hover{background:var(--bg-card-hover)}
-.combo-card h3{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:8px}
-.combo-card p{font-size:12px;color:var(--text-secondary);line-height:1.5}
-
-/* CHART */
-#usage-chart{width:100%;height:220px}
-
-/* LOGS */
-#logs-container{
-font-family:var(--font-mono);font-size:11px;line-height:1.6;
-max-height:60vh;overflow-y:auto;background:var(--bg-card);border:1px solid var(--border);
-border-radius:8px;padding:12px 16px;color:var(--text-secondary);
-}
-#logs-container .log-line{padding:1px 0;white-space:pre-wrap;word-break:break-all}
-#logs-container .log-line .log-ts{color:var(--text-muted)}
-#logs-container .log-line .log-err{color:var(--red)}
-
-/* TOPOLOGY (used in providers page) */
-#topology-canvas{width:100%;height:300px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px}
-
-/* SETTINGS */
-#system-info-body{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary)}
-#system-info-body tr:hover td{background:transparent}
-#limits-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
-.toggle-row{
-display:flex;align-items:center;justify-content:space-between;padding:10px 0;
-border-bottom:1px solid rgba(26,33,53,0.3);
-}
-.toggle-row:last-child{border-bottom:none}
-.toggle-label{font-size:13px;color:var(--text-secondary)}
-.toggle{
-width:36px;height:20px;background:var(--bg-input);border:1px solid var(--border);
-border-radius:10px;position:relative;cursor:pointer;transition:all .2s;
-}
-.toggle.on{background:var(--accent-dim);border-color:var(--accent)}
-.toggle::after{
-content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;
-border-radius:50%;background:var(--text-muted);transition:all .2s;
-}
-.toggle.on::after{left:18px;background:var(--accent)}
-.slider-container{padding:10px 0}
-.slider-container label{font-size:12px;color:var(--text-secondary);display:block;margin-bottom:8px}
-input[type=range]{
-width:100%;height:4px;-webkit-appearance:none;background:var(--bg-input);
-border-radius:2px;outline:none;
-}
-input[type=range]::-webkit-slider-thumb{
--webkit-appearance:none;width:14px;height:14px;border-radius:50%;
-background:var(--accent);cursor:pointer;border:2px solid var(--bg-primary);
-}
-
-/* BADGE */
-.badge{
-display:inline-flex;align-items:center;font-family:var(--font-mono);font-size:11px;
-padding:2px 8px;border-radius:10px;font-weight:500;
-}
-.badge-green{background:var(--green-dim);color:var(--green)}
-.badge-red{background:var(--red-dim);color:var(--red)}
-.badge-orange{background:var(--orange-dim);color:var(--orange)}
-.badge-accent{background:var(--accent-dim);color:var(--accent)}
-#connection-badge{font-family:var(--font-mono);font-size:11px;color:var(--text-muted)}
-
-/* STATS GRID (providers page) */
-#stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px}
-.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
-.stat-card .sc-val{font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--text-primary)}
-.stat-card .sc-label{font-size:11px;color:var(--text-muted);margin-top:2px}
-
-/* SCROLLBAR */
-::-webkit-scrollbar{width:6px;height:6px}
+/* ═══ SCROLLBAR ═══ */
+::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--border-light)}
-
-/* PAGE SECTIONS */
-.page-section{display:none}
-.page-section.active{display:block}
-
-/* MOBILE */
-@media(max-width:768px){
-.sidebar{transform:translateX(-100%);width:var(--sidebar-expanded)}
-.sidebar.open{transform:translateX(0)}
-.hamburger{display:flex}
-.main{margin-left:0}
-.content{padding:16px}
-.bento-cell.span8,.bento-cell.span7{grid-column:span 12}
-.bento-cell.span5,.bento-cell.span4{grid-column:span 12}
-.grid-2,.grid-3{grid-template-columns:1fr}
-}
+::-webkit-scrollbar-thumb:hover{background:var(--border2)}
 </style>
 </head>
 <body>
 
-<!-- HAMBURGER -->
-<button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-</button>
-
-<!-- SIDEBAR -->
+<!-- ═══ SIDEBAR ═══ -->
 <div class="sidebar">
-<div class="sidebar-logo">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-<span>8Router</span>
-</div>
-<nav>
-<a href="javascript:void(0)" class="nav-item active" onclick="showPage('dashboard')" data-page="dashboard">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-<span class="nav-label">Dashboard</span>
-</a>
-<a href="javascript:void(0)" class="nav-item" onclick="showPage('providers')" data-page="providers">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="4" rx="1"/><rect x="2" y="10" width="20" height="4" rx="1"/><rect x="2" y="17" width="20" height="4" rx="1"/><circle cx="6" cy="5" r="1" fill="currentColor"/><circle cx="6" cy="12" r="1" fill="currentColor"/><circle cx="6" cy="19" r="1" fill="currentColor"/></svg>
-<span class="nav-label">Providers</span>
-</a>
-<a href="javascript:void(0)" class="nav-item" onclick="showPage('combos')" data-page="combos">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="5"/><circle cx="15" cy="15" r="5"/></svg>
-<span class="nav-label">Combos</span>
-</a>
-<a href="javascript:void(0)" class="nav-item" onclick="showPage('usage')" data-page="usage">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-<span class="nav-label">Usage</span>
-</a>
-<a href="javascript:void(0)" class="nav-item" onclick="showPage('connections')" data-page="connections">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-<span class="nav-label">Connections</span>
-</a>
-<a href="javascript:void(0)" class="nav-item" onclick="showPage('logs')" data-page="logs">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-<span class="nav-label">Logs</span>
-</a>
-<a href="javascript:void(0)" class="nav-item" onclick="showPage('settings')" data-page="settings">
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-<span class="nav-label">Settings</span>
-</a>
-</nav>
-<div class="sidebar-footer">
-<div id="sidebar-status"><span id="sidebar-status-text">connected ${port}</span></div>
-</div>
+  <div class="sb-header">
+    <div class="sb-logo">⚡</div>
+    <div class="sb-brand">
+      <div class="name">8Router</div>
+      <div class="ver">v0.2.0</div>
+    </div>
+  </div>
+
+  <div class="sb-update">
+    <div class="new">↑ 8Agents Ecosystem</div>
+    <div class="cmd">OpenAI-compatible AI gateway</div>
+  </div>
+
+  <div class="sb-nav">
+    <div class="sb-item active" onclick="go('endpoint')">
+      <span class="ico">🔌</span> Endpoint
+    </div>
+    <div class="sb-item" onclick="go('usage')">
+      <span class="ico">📊</span> Usage
+    </div>
+    <div class="sb-item" onclick="go('quota')">
+      <span class="ico">🔄</span> Quota Tracker
+    </div>
+    <div class="sb-item" onclick="go('providers')">
+      <span class="ico">🏢</span> Providers
+      <span class="cnt" id="prov-cnt">0</span>
+    </div>
+    <div class="sb-item" onclick="go('combos')">
+      <span class="ico">🔗</span> Combos
+    </div>
+    <div class="sb-section">System</div>
+    <div class="sb-item" onclick="go('settings')">
+      <span class="ico">⚙️</span> Settings
+    </div>
+    <div class="sb-item" onclick="go('connections')">
+      <span class="ico">🗄️</span> Connections
+    </div>
+  </div>
+
+  <div class="sb-footer">
+    <div class="sb-shutdown" onclick="if(confirm('Shutdown 8Router?'))fetch('/8router/shutdown',{method:'POST'})">⏻ Shutdown</div>
+  </div>
 </div>
 
-<!-- MAIN -->
+<!-- ═══ MAIN ═══ -->
 <div class="main">
-<div class="content">
+  <div class="topbar">
+    <div class="title" id="tb-title">🔌 Endpoint</div>
+    <div class="subtitle" id="tb-sub">API endpoint configuration</div>
+    <div class="spacer"></div>
+    <div class="pill" onclick="navigator.clipboard.writeText('http://localhost:${apiPort}/v1')" title="Copy endpoint">📋 http://localhost:${apiPort}/v1</div>
+    <div class="badge on" id="conn-badge"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--green)"></span> Connected</div>
+  </div>
 
-<!-- ===== DASHBOARD ===== -->
-<div id="page-dashboard" class="page-section active">
-<div class="page-header">
-<h1 id="page-title">Command Center</h1>
-<span class="endpoint-badge">localhost:${port}</span>
-</div>
+  <div class="content">
 
-<!-- STATUS BAR -->
-<div class="status-bar">
-<span><span class="metric-label">REQ</span><span class="metric-val" id="s-req">—</span></span>
-<span class="sep">·</span>
-<span><span class="metric-label">TOK</span><span class="metric-val" id="s-tokens">—</span></span>
-<span class="sep">·</span>
-<span><span class="metric-label">FB</span><span class="metric-val" id="s-fallbacks">—</span></span>
-<span class="sep">·</span>
-<span><span class="metric-label">RTK</span><span class="metric-val" id="s-rtk">—</span></span>
-<span class="sep">·</span>
-<span><span class="metric-label">RATE</span><span class="metric-val" id="s-rate">—</span><span id="s-rate-sub" style="color:var(--text-muted);margin-left:4px"></span></span>
-<span class="sep">·</span>
-<span><span class="metric-label">UP</span><span class="metric-val" id="s-uptime">—</span></span>
-<span class="sep">·</span>
-<span><span class="metric-label">PROV</span><span class="metric-val" id="provider-count">—</span></span>
-</div>
+    <!-- ═══ ENDPOINT ═══ -->
+    <div id="pg-endpoint" class="page active">
+      <div class="endpoint-card">
+        <h3><span class="ico">🌐</span> API Endpoint</h3>
+        <div class="ep-row">
+          <span class="label">Local</span>
+          <span class="url" onclick="navigator.clipboard.writeText('http://localhost:${apiPort}/v1')">http://localhost:${apiPort}/v1</span>
+          <span class="copy" onclick="navigator.clipboard.writeText('http://localhost:${apiPort}/v1')" title="Copy">📋</span>
+        </div>
+        <div class="ep-row">
+          <span class="label">Public</span>
+          <span class="url" onclick="navigator.clipboard.writeText('http://5.223.60.79/v1')">http://5.223.60.79/v1</span>
+          <span class="copy" onclick="navigator.clipboard.writeText('http://5.223.60.79/v1')" title="Copy">📋</span>
+          <span class="ep-status"><span class="dot"></span> Active</span>
+        </div>
+      </div>
 
-<!-- BENTO ROW 1 -->
-<div class="bento">
-<div class="bento-cell span8">
-<div class="cell-title"><span class="dot"></span> Provider Health</div>
-<div id="providers-body"></div>
-</div>
-<div class="bento-cell span4">
-<div class="cell-title">System Readout</div>
-<div id="stats-grid">
-<div class="stat-readout"><span class="sr-label">Requests</span><span class="sr-val" id="sr-reqs">—</span></div>
-<div class="stat-readout"><span class="sr-label">Tokens</span><span class="sr-val" id="sr-tokens">—</span></div>
-<div class="stat-readout"><span class="sr-label">Fallbacks</span><span class="sr-val" id="sr-fb">—</span></div>
-<div class="stat-readout"><span class="sr-label">Uptime</span><span class="sr-val" id="sr-up">—</span></div>
-<div class="stat-readout"><span class="sr-label">Providers</span><span class="sr-val" id="sr-prov">—</span></div>
-<div class="stat-readout"><span class="sr-label">Connections</span><span class="sr-val" id="sr-conn">—</span></div>
-</div>
-</div>
-</div>
+      <div class="warning-box">
+        <span class="icon">⚠️</span>
+        <span>Require API key is disabled — your endpoint is publicly accessible without authentication.</span>
+        <span class="action" onclick="go('settings')">Enable →</span>
+      </div>
 
-<!-- BENTO ROW 2 -->
-<div class="bento">
-<div class="bento-cell span7">
-<div class="cell-title">Token Usage Trend</div>
-<div class="sparkline-container" id="usage-sparkline">
-<svg viewBox="0 0 400 100" preserveAspectRatio="none">
-<defs><linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent)" stop-opacity="0.4"/><stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
-<polyline class="sparkline-line" id="sparkline-path" points="0,100 400,100"/>
-<polygon class="sparkline-area" id="sparkline-area" points="0,100 400,100 400,100"/>
-</svg>
-</div>
-</div>
-<div class="bento-cell span5">
-<div class="cell-title">Provider Quotas</div>
-<div id="limits-grid"></div>
-</div>
-</div>
+      <div class="toggle-row">
+        <div>
+          <div class="info">Enable API key authentication</div>
+          <div class="desc">Require API key for requests to your endpoint</div>
+        </div>
+        <div class="toggle" id="toggle-auth" onclick="this.classList.toggle('on')"></div>
+      </div>
 
-<!-- BENTO ROW 3 -->
-<div class="bento">
-<div class="bento-cell span12">
-<div class="cell-title">Available Models</div>
-<div id="models-body" class="models-wrap"></div>
-</div>
-</div>
-</div>
+      <div class="toggle-row">
+        <div>
+          <div class="info">Allow dashboard access via public IP</div>
+          <div class="desc">Dashboard is accessible at http://5.223.60.79/8router</div>
+        </div>
+        <div class="toggle on" id="toggle-dashboard"></div>
+      </div>
 
-<!-- ===== PROVIDERS ===== -->
-<div id="page-providers" class="page-section">
-<div class="page-header"><h1 id="page-title">Providers</h1></div>
-<div id="stats-grid">
-<div class="stat-card"><div class="sc-val" id="sc-prov-count">—</div><div class="sc-label">Active Providers</div></div>
-<div class="stat-card"><div class="sc-val" id="sc-model-count">—</div><div class="sc-label">Models</div></div>
-<div class="stat-card"><div class="sc-val" id="sc-health">—</div><div class="sc-label">Health</div></div>
-</div>
-<div class="card" style="margin-bottom:16px">
-<div class="card-title">Topology</div>
-<canvas id="topology-canvas"></canvas>
-</div>
-<div class="card">
-<div class="card-title">All Providers</div>
-<div style="overflow-x:auto">
-<table><thead><tr><th>Provider</th><th>Status</th><th>Models</th><th>Requests</th><th>Latency</th></tr></thead>
-<tbody id="all-providers-body"></tbody></table>
-</div>
-</div>
-</div>
+      <!-- Token Saver -->
+      <div class="caveman-card">
+        <h3>⚡ Token Saver</h3>
+        <div class="sub">Make LLM responses terse to save output tokens. Stackable with RTK compression.</div>
+        <div class="caveman-row">
+          <input type="range" min="0" max="5" value="0" class="caveman-slider" id="caveman" oninput="setCaveman(this.value)">
+          <div class="caveman-val" id="caveman-val">0</div>
+        </div>
+        <div id="caveman-desc" style="font-size:12px;color:var(--text2);margin-top:8px">Disabled — Normal responses</div>
+        <div class="caveman-levels">
+          <span>0:Off</span><span>1:Mild</span><span>2:Medium</span><span>3:Aggressive</span><span>4:Extreme</span><span>5:Max</span>
+        </div>
+      </div>
+    </div>
 
-<!-- ===== COMBOS ===== -->
-<div id="page-combos" class="page-section">
-<div class="page-header"><h1 id="page-title">Combos</h1></div>
-<div id="combos-grid"></div>
-</div>
+    <!-- ═══ USAGE ═══ -->
+    <div id="pg-usage" class="page">
+      <div class="usage-grid">
+        <div class="usage-left">
+          <div class="stats-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+            <div class="stat-mini" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px">
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Requests</div>
+              <div style="font-size:22px;font-weight:700;color:var(--blue)" id="u-req">0</div>
+            </div>
+            <div class="stat-mini" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px">
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Tokens</div>
+              <div style="font-size:22px;font-weight:700;color:var(--green)" id="u-tokens">0</div>
+            </div>
+            <div class="stat-mini" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px">
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Fallbacks</div>
+              <div style="font-size:22px;font-weight:700;color:var(--accent)" id="u-fb">0</div>
+            </div>
+            <div class="stat-mini" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px">
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">RTK Saved</div>
+              <div style="font-size:22px;font-weight:700;color:var(--purple)" id="u-rtk">0</div>
+            </div>
+          </div>
+          <div class="topo-card">
+            <div class="hdr">🌐 Provider Topology</div>
+            <canvas id="topo-canvas"></canvas>
+          </div>
+        </div>
+        <div class="usage-right">
+          <div class="recent-card">
+            <div class="hdr">📝 Recent Requests</div>
+            <div class="recent-list" id="recent-list">
+              <div style="padding:40px;text-align:center;color:var(--text3);font-size:12px">No requests yet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-<!-- ===== USAGE ===== -->
-<div id="page-usage" class="page-section">
-<div class="page-header"><h1 id="page-title">Usage</h1></div>
-<div class="card" style="margin-bottom:16px">
-<div class="card-title">Token Usage</div>
-<canvas id="usage-chart"></canvas>
-</div>
-<div class="card">
-<div class="card-title">Usage Log</div>
-<div style="overflow-x:auto">
-<table><thead><tr><th>Timestamp</th><th>Provider</th><th>Model</th><th>Tokens</th><th>Latency</th></tr></thead>
-<tbody id="usage-table-body"></tbody></table>
-</div>
-</div>
-</div>
+    <!-- ═══ QUOTA ═══ -->
+    <div id="pg-quota" class="page">
+      <div style="margin-bottom:16px">
+        <h3 style="font-size:15px;margin-bottom:4px">Quota Tracker</h3>
+        <p style="font-size:12px;color:var(--text3)">Monitor provider quotas and usage limits</p>
+      </div>
+      <div class="quota-grid" id="quota-grid"></div>
+    </div>
 
-<!-- ===== CONNECTIONS ===== -->
-<div id="page-connections" class="page-section">
-<div class="page-header"><h1 id="page-title">Connections</h1><span id="connection-badge"></span></div>
-<div class="card">
-<div style="overflow-x:auto">
-<table><thead><tr><th>ID</th><th>Client</th><th>Provider</th><th>Model</th><th>Status</th><th>Duration</th></tr></thead>
-<tbody id="connections-body"></tbody></table>
-</div>
-</div>
-</div>
+    <!-- ═══ PROVIDERS ═══ -->
+    <div id="pg-providers" class="page">
+      <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h3 style="font-size:15px;margin-bottom:4px">Provider Connections</h3>
+          <p style="font-size:12px;color:var(--text3)">All connected AI providers and their status</p>
+        </div>
+        <button style="padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer" onclick="loadProv()">Refresh</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Provider</th><th>Tier</th><th>Status</th><th>API Keys</th><th>Requests</th><th>Tokens</th><th>Errors</th></tr></thead>
+          <tbody id="prov-tbody"></tbody>
+        </table>
+      </div>
+    </div>
 
-<!-- ===== LOGS ===== -->
-<div id="page-logs" class="page-section">
-<div class="page-header"><h1 id="page-title">Logs</h1></div>
-<div id="logs-container"></div>
-</div>
+    <!-- ═══ COMBOS ═══ -->
+    <div id="pg-combos" class="page">
+      <div style="margin-bottom:16px">
+        <h3 style="font-size:15px;margin-bottom:4px">Model Combos</h3>
+        <p style="font-size:12px;color:var(--text3)">Fallback chains — use a single model name that auto-routes through provider tiers</p>
+      </div>
+      <div id="combo-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px"></div>
+    </div>
 
-<!-- ===== SETTINGS ===== -->
-<div id="page-settings" class="page-section">
-<div class="page-header"><h1 id="page-title">Settings</h1></div>
-<div class="grid-2">
-<div class="card">
-<div class="card-title">Toggles</div>
-<div class="toggle-row"><span class="toggle-label">Real-time Keys</span><div class="toggle" id="toggle-rtk" onclick="this.classList.toggle('on')"></div></div>
-<div class="toggle-row"><span class="toggle-label">Circuit Breaker</span><div class="toggle on" id="toggle-circuit" onclick="this.classList.toggle('on')"></div></div>
-<div class="toggle-row"><span class="toggle-label">Streaming</span><div class="toggle on" id="toggle-stream" onclick="this.classList.toggle('on')"></div></div>
-<div class="toggle-row"><span class="toggle-label">Provider Locks</span><div class="toggle" id="toggle-locks" onclick="this.classList.toggle('on')"></div></div>
-</div>
-<div class="card">
-<div class="card-title">Caveman Mode</div>
-<div class="slider-container">
-<label>Level: <span id="caveman-level">0</span> — <span id="caveman-desc">Off</span></label>
-<input type="range" id="caveman-slider" min="0" max="3" value="0" oninput="updateCaveman(this.value)">
-</div>
-</div>
-</div>
-<div class="card" style="margin-top:16px">
-<div class="card-title">System Info</div>
-<table><tbody id="system-info-body"></tbody></table>
-</div>
-</div>
+    <!-- ═══ SETTINGS ═══ -->
+    <div id="pg-settings" class="page">
+      <div style="margin-bottom:16px">
+        <h3 style="font-size:15px;margin-bottom:4px">Settings</h3>
+        <p style="font-size:12px;color:var(--text3)">Configure 8Router behavior</p>
+      </div>
+      <div class="toggle-row">
+        <div><div class="info">RTK Token Compression</div><div class="desc">Compress tool output (git diff, grep, tree) to save tokens</div></div>
+        <div class="toggle on" id="t-rtk"></div>
+      </div>
+      <div class="toggle-row">
+        <div><div class="info">Circuit Breaker</div><div class="desc">Auto-disable failing providers after consecutive errors</div></div>
+        <div class="toggle on" id="t-circuit"></div>
+      </div>
+      <div class="toggle-row">
+        <div><div class="info">SSE Streaming</div><div class="desc">Enable streaming responses for chat completions</div></div>
+        <div class="toggle on" id="t-stream"></div>
+      </div>
+      <div class="toggle-row">
+        <div><div class="info">Multi-Key Rotation</div><div class="desc">Round-robin across multiple API keys per provider</div></div>
+        <div class="toggle on" id="t-rotation"></div>
+      </div>
+      <div class="toggle-row">
+        <div><div class="info">Auto-Fallback</div><div class="desc">Automatically try next provider on failure</div></div>
+        <div class="toggle on" id="t-fallback"></div>
+      </div>
 
-</div><!-- .content -->
-</div><!-- .main -->
+      <div style="margin-top:24px">
+        <h3 style="font-size:15px;margin-bottom:12px">System Info</h3>
+        <div class="tbl-wrap">
+          <table><tbody id="sysinfo-tbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CONNECTIONS ═══ -->
+    <div id="pg-connections" class="page">
+      <div style="margin-bottom:16px">
+        <h3 style="font-size:15px;margin-bottom:4px">Database Connections</h3>
+        <p style="font-size:12px;color:var(--text3)">SQLite-backed connection tracking with backoff and cost</p>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Provider</th><th>Name</th><th>Auth</th><th>Status</th><th>Backoff</th><th>Requests</th><th>Tokens</th><th>Cost</th></tr></thead>
+          <tbody id="conn-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-let currentPage='dashboard';
-let usageHistory=[];
+const API = '';
+let curPage = 'endpoint';
 
-function showPage(page){
-currentPage=page;
-document.querySelectorAll('.page-section').forEach(el=>el.classList.remove('active'));
-document.getElementById('page-'+page).classList.add('active');
-document.querySelectorAll('.nav-item').forEach(el=>{
-el.classList.toggle('active',el.dataset.page===page);
-});
-if(page==='providers') loadAllProviders();
-if(page==='combos') loadCombos();
-if(page==='usage') loadUsage();
-if(page==='connections') loadConnections();
-if(page==='logs') loadLogs();
-if(page==='settings') loadSettings();
+function go(name) {
+  curPage = name;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('pg-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  const titles = {
+    endpoint: ['🔌 Endpoint','API endpoint configuration'],
+    usage: ['📊 Usage & Analytics','Monitor your API usage, token consumption, and request logs'],
+    quota: ['🔄 Quota Tracker','Monitor provider quotas and usage limits'],
+    providers: ['🏢 Providers','Connected AI providers'],
+    combos: ['🔗 Combos','Model fallback chains'],
+    settings: ['⚙️ Settings','Configure 8Router behavior'],
+    connections: ['🗄️ Connections','Database connection tracking']
+  };
+  const t = titles[name] || [name, ''];
+  document.getElementById('tb-title').textContent = t[0];
+  document.getElementById('tb-sub').textContent = t[1];
+  if (name === 'usage') loadUsage();
+  if (name === 'providers') loadProv();
+  if (name === 'combos') loadCombos();
+  if (name === 'connections') loadConns();
+  if (name === 'settings') loadSettings();
+  if (name === 'quota') loadQuota();
 }
 
-function formatUptime(seconds){
-if(!seconds&&seconds!==0) return '—';
-const d=Math.floor(seconds/86400);
-const h=Math.floor((seconds%86400)/3600);
-const m=Math.floor((seconds%3600)/60);
-if(d>0) return d+'d '+h+'h';
-if(h>0) return h+'h '+m+'m';
-return m+'m';
+// ═══ DASHBOARD DATA ═══
+async function refresh() {
+  try {
+    const [stats, provs, health, models] = await Promise.all([
+      fetch(API+'/8router/stats').then(r=>r.json()),
+      fetch(API+'/8router/providers').then(r=>r.json()),
+      fetch(API+'/8router/health').then(r=>r.json()),
+      fetch(API+'/8router/models').then(r=>r.json()),
+    ]);
+    const s = stats.session || stats;
+    const at = stats.allTime || {};
+    const total = at.totalRequests||0;
+
+    document.getElementById('u-req').textContent = total.toLocaleString();
+    document.getElementById('u-tokens').textContent = (at.totalTokens||0).toLocaleString();
+    document.getElementById('u-fb').textContent = (s.fallbackCount||0).toLocaleString();
+    document.getElementById('u-rtk').textContent = (s.compressionSaved||0).toLocaleString();
+    document.getElementById('prov-cnt').textContent = provs.length;
+
+    drawTopology(provs, health||[]);
+    document.getElementById('conn-badge').className = 'badge on';
+    document.getElementById('conn-badge').innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span> Connected';
+  } catch(e) {
+    document.getElementById('conn-badge').className = 'badge off';
+    document.getElementById('conn-badge').innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block"></span> Disconnected';
+  }
 }
 
-function formatNum(n){
-if(!n&&n!==0) return '—';
-if(n>=1e6) return (n/1e6).toFixed(1)+'M';
-if(n>=1e3) return (n/1e3).toFixed(1)+'K';
-return n.toLocaleString();
+// ═══ TOPOLOGY ═══
+function drawTopology(provs, health) {
+  const canvas = document.getElementById('topo-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.clientWidth;
+  const H = canvas.parentElement.clientHeight - 48;
+  canvas.width = W; canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+  const cx = W/2, cy = H/2;
+
+  // Center node
+  ctx.beginPath(); ctx.arc(cx, cy, 28, 0, Math.PI*2);
+  const grad = ctx.createRadialGradient(cx,cy,0,cx,cy,28);
+  grad.addColorStop(0,'#ff8c5a'); grad.addColorStop(1,'#ff3d00');
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.fillStyle='#fff'; ctx.font='bold 11px Inter,sans-serif'; ctx.textAlign='center';
+  ctx.fillText('8Router',cx,cy+4);
+
+  const hMap = Object.fromEntries(health.map(h=>[h.providerId,h]));
+  const n = provs.length;
+  const radius = Math.min(W,H)/2 - 50;
+
+  provs.forEach((p,i) => {
+    const angle = (i/n)*Math.PI*2 - Math.PI/2;
+    const px = cx + Math.cos(angle)*radius;
+    const py = cy + Math.sin(angle)*radius;
+    const h = hMap[p.id];
+    const ok = !h || h.healthy!==false;
+
+    // Connection line with gradient
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(px,py);
+    ctx.strokeStyle = ok ? 'rgba(0,230,118,0.3)' : 'rgba(255,82,82,0.3)';
+    ctx.lineWidth = 2; ctx.stroke();
+
+    // Animated dot
+    const t = (Date.now()/2000 + i*0.3) % 1;
+    const dx = cx + (px-cx)*t, dy = cy + (py-cy)*t;
+    ctx.beginPath(); ctx.arc(dx,dy,3,0,Math.PI*2);
+    ctx.fillStyle = ok ? '#00e676' : '#ff5252'; ctx.fill();
+
+    // Provider node
+    ctx.beginPath(); ctx.arc(px,py,18,0,Math.PI*2);
+    ctx.fillStyle = ok ? '#1a2a1a' : '#2a1a1a'; ctx.fill();
+    ctx.strokeStyle = ok ? '#00e676' : '#ff5252';
+    ctx.lineWidth = 2; ctx.stroke();
+
+    ctx.fillStyle='#e4e5f1'; ctx.font='10px Inter,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(p.name,px,py+4);
+  });
 }
 
-function renderProviderLimits(providers){
-const grid=document.getElementById('limits-grid');
-if(!grid) return;
-let html='';
-(providers||[]).forEach(p=>{
-const pct=p.usage&&p.limit?Math.min(100,(p.usage/p.limit)*100):0;
-const color=pct>80?'var(--red)':pct>50?'var(--orange)':'var(--accent)';
-html+=\`<div class="quota-item">
-<div class="quota-header"><span class="q-name">\${p.name||p.provider}</span><span class="q-pct">\${pct.toFixed(0)}%</span></div>
-<div class="quota-bar"><div class="quota-bar-fill" style="width:\${pct}%;background:\${color}"></div></div>
-</div>\`;
-});
-grid.innerHTML=html||'<div style="color:var(--text-muted);font-size:12px">No quota data</div>';
+// ═══ USAGE ═══
+async function loadUsage() {
+  try {
+    const provs = await fetch(API+'/8router/providers').then(r=>r.json());
+    const health = await fetch(API+'/8router/health').then(r=>r.json());
+    drawTopology(provs, health);
+  } catch {}
 }
 
-function drawTopology(){
-const canvas=document.getElementById('topology-canvas');
-if(!canvas) return;
-const ctx=canvas.getContext('2d');
-const rect=canvas.getBoundingClientRect();
-canvas.width=rect.width*2;canvas.height=rect.height*2;
-ctx.scale(2,2);
-const w=rect.width,h=rect.height;
-ctx.fillStyle='#060911';ctx.fillRect(0,0,w,h);
-
-fetch('/8router/providers').then(r=>r.json()).then(data=>{
-const providers=Array.isArray(data)?data:(data.providers||[]);
-const cx=w/2,cy=h/2;
-const centerX=cx,centerY=cy;
-ctx.beginPath();ctx.arc(centerX,centerY,20,0,Math.PI*2);
-ctx.fillStyle='rgba(132,171,255,0.15)';ctx.fill();
-ctx.strokeStyle='var(--accent)';ctx.lineWidth=1.5;ctx.stroke();
-ctx.fillStyle='#84abff';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
-ctx.fillText('8R',centerX,centerY+3);
-
-const count=providers.length||1;
-providers.forEach((p,i)=>{
-const angle=(i/count)*Math.PI*2-Math.PI/2;
-const radius=Math.min(w,h)*0.35;
-const px=centerX+Math.cos(angle)*radius;
-const py=centerY+Math.sin(angle)*radius;
-ctx.beginPath();ctx.moveTo(centerX,centerY);ctx.lineTo(px,py);
-ctx.strokeStyle='rgba(26,33,53,0.8)';ctx.lineWidth=1;ctx.stroke();
-ctx.beginPath();ctx.arc(px,py,8,0,Math.PI*2);
-ctx.fillStyle=p.status==='healthy'||p.status==='ok'?'rgba(0,210,148,0.2)':'rgba(255,101,104,0.2)';
-ctx.fill();
-ctx.strokeStyle=p.status==='healthy'||p.status==='ok'?'#00d294':'#ff6568';
-ctx.lineWidth=1;ctx.stroke();
-ctx.fillStyle='#8a8f9c';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
-ctx.fillText((p.name||p.provider||'').slice(0,12),px,py+22);
-});
-}).catch(()=>{});
+// ═══ PROVIDERS ═══
+async function loadProv() {
+  try {
+    const provs = await fetch(API+'/8router/providers').then(r=>r.json());
+    document.getElementById('prov-tbody').innerHTML = provs.map(p =>
+      '<tr><td><strong>'+p.name+'</strong> <span style="color:var(--text3);font-size:11px">('+p.id+')</span></td>'+
+      '<td><span class="badge '+p.tier+'">'+p.tier+'</span></td>'+
+      '<td><span class="badge healthy">● Active</span></td>'+
+      '<td>'+(p.apiKeys?p.apiKeys.length:1)+' keys</td>'+
+      '<td>'+(p.totalRequests||0).toLocaleString()+'</td>'+
+      '<td>'+(p.totalTokens||0).toLocaleString()+'</td>'+
+      '<td>'+(p.errors||0)+'</td></tr>'
+    ).join('');
+  } catch {}
 }
 
-function loadAllProviders(){
-Promise.all([
-fetch('/8router/providers').then(r=>r.json()).catch(()=>({})),
-fetch('/8router/models').then(r=>r.json()).catch(()=>({}))
-]).then(([pData,mData])=>{
-const providers=Array.isArray(pData)?pData:(pData.providers||[]);
-const models=Array.isArray(mData)?mData:(mData.models||[]);
-const body=document.getElementById('all-providers-body');
-const scProv=document.getElementById('sc-prov-count');
-const scModel=document.getElementById('sc-model-count');
-const scHealth=document.getElementById('sc-health');
-if(scProv) scProv.textContent=providers.length;
-if(scModel) scModel.textContent=models.length;
-const healthy=providers.filter(p=>p.status==='healthy'||p.status==='ok').length;
-if(scHealth) scHealth.textContent=healthy+'/'+providers.length;
-let html='';
-providers.forEach(p=>{
-const st=p.status==='healthy'||p.status==='ok'?'<span class="badge badge-green">OK</span>'
-:p.status==='degraded'?'<span class="badge badge-orange">DEG</span>'
-:'<span class="badge badge-red">ERR</span>';
-html+=\`<tr><td>\${p.name||p.provider}</td><td>\${st}</td>
-<td class="mono">\${(p.models||[]).length||'—'}</td>
-<td class="mono">\${formatNum(p.requests)}</td>
-<td class="mono">\${p.latency?p.latency+'ms':'—'}</td></tr>\`;
-});
-if(body) body.innerHTML=html||'<tr><td colspan="5" style="color:var(--text-muted)">No providers</td></tr>';
-drawTopology();
-});
+// ═══ COMBOS ═══
+async function loadCombos() {
+  try {
+    const combos = await fetch(API+'/8router/combos').then(r=>r.json());
+    document.getElementById('combo-cards').innerHTML = combos.map(c =>
+      '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden">'+
+        '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--cyan))"></div>'+
+        '<h4 style="font-size:16px;color:var(--accent);margin-bottom:4px">🔗 '+c.name+'</h4>'+
+        '<div style="font-size:12px;color:var(--text3);margin-bottom:16px">'+c.description+'</div>'+
+        c.tiers.map((t,i) =>
+          '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border)">'+
+            '<div style="width:24px;height:24px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--accent);font-weight:700">'+(i+1)+'</div>'+
+            '<span style="font-weight:500">'+t.provider+'</span>'+
+            '<span style="color:var(--text3)">→</span>'+
+            '<span style="font-family:JetBrains Mono,monospace;font-size:12px;color:var(--text3)">'+t.model+'</span>'+
+          '</div>'
+        ).join('')+
+      '</div>'
+    ).join('');
+  } catch {}
 }
 
-function loadCombos(){
-fetch('/8router/combos').then(r=>r.json()).then(data=>{
-const combos=Array.isArray(data)?data:(data.combos||[]);
-const grid=document.getElementById('combos-grid');
-let html='';
-combos.forEach(c=>{
-html+=\`<div class="combo-card"><h3>\${c.name||'Combo'}</h3>
-<p>\${c.description||JSON.stringify(c.providers||c.models||c)}</p></div>\`;
-});
-if(grid) grid.innerHTML=html||'<div style="color:var(--text-muted)">No combos configured</div>';
-}).catch(()=>{});
+// ═══ QUOTA ═══
+async function loadQuota() {
+  try {
+    const provs = await fetch(API+'/8router/providers').then(r=>r.json());
+    document.getElementById('quota-grid').innerHTML = provs.map(p => {
+      const reqs = p.totalRequests||0;
+      const max = 1000;
+      const pct = Math.min(100,Math.round(reqs/max*100));
+      const color = pct>80?'var(--red)':pct>50?'var(--yellow)':'var(--green)';
+      return '<div class="quota-card">'+
+        '<div class="name"><span class="badge '+p.tier+'">'+p.tier+'</span> '+p.name+'</div>'+
+        '<div class="quota-bar"><div class="quota-fill" style="width:'+pct+'%;background:'+color+'"></div></div>'+
+        '<div class="quota-info"><span>'+reqs.toLocaleString()+' requests</span><span>'+pct+'%</span></div>'+
+        '<div class="quota-reset">↻ Resets daily</div></div>';
+    }).join('');
+  } catch {}
 }
 
-function loadUsage(){
-fetch('/8router/usage').then(r=>r.json()).then(data=>{
-const entries=Array.isArray(data)?data:(data.entries||data.usage||[]);
-const tbody=document.getElementById('usage-table-body');
-let html='';
-entries.slice(-50).reverse().forEach(e=>{
-html+=\`<tr><td class="mono">\${e.timestamp||e.ts||'—'}</td>
-<td>\${e.provider||'—'}</td><td>\${e.model||'—'}</td>
-<td class="mono">\${formatNum(e.tokens||e.total_tokens)}</td>
-<td class="mono">\${e.latency?e.latency+'ms':'—'}</td></tr>\`;
-});
-if(tbody) tbody.innerHTML=html||'<tr><td colspan="5" style="color:var(--text-muted)">No usage data</td></tr>';
-const canvas=document.getElementById('usage-chart');
-if(canvas&&entries.length){
-const ctx=canvas.getContext('2d');
-const rect=canvas.getBoundingClientRect();
-canvas.width=rect.width*2;canvas.height=rect.height*2;
-ctx.scale(2,2);
-const w=rect.width,h=rect.height;
-ctx.fillStyle='#060911';ctx.fillRect(0,0,w,h);
-const vals=entries.map(e=>e.tokens||e.total_tokens||0);
-const max=Math.max(...vals,1);
-const step=w/(vals.length-1||1);
-ctx.beginPath();ctx.moveTo(0,h);
-vals.forEach((v,i)=>{
-const x=i*step;
-const y=h-(v/max)*(h-20);
-if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-});
-ctx.strokeStyle='#84abff';ctx.lineWidth=1.5;ctx.stroke();
-ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();
-ctx.fillStyle='rgba(132,171,255,0.08)';ctx.fill();
-}
-}).catch(()=>{});
+// ═══ CONNECTIONS ═══
+async function loadConns() {
+  try {
+    const c = await fetch(API+'/8router/connections').then(r=>r.json());
+    document.getElementById('conn-tbody').innerHTML = c.map(x =>
+      '<tr><td style="font-family:JetBrains Mono,monospace;font-size:11px">'+x.id.slice(0,12)+'...</td>'+
+      '<td>'+x.provider+'</td><td>'+(x.name||'-')+'</td><td>'+x.authType+'</td>'+
+      '<td><span class="badge '+(x.testStatus||'unknown')+'">'+(x.testStatus||'unknown')+'</span></td>'+
+      '<td>'+(x.backoffLevel>0?'<span style="color:var(--yellow)">L'+x.backoffLevel+'</span>':'—')+'</td>'+
+      '<td>'+(x.totalRequests||0)+'</td><td>'+(x.totalTokens||0).toLocaleString()+'</td>'+
+      '<td>$'+(x.totalCost||0).toFixed(4)+'</td></tr>'
+    ).join('');
+  } catch {}
 }
 
-function loadConnections(){
-fetch('/8router/connections').then(r=>r.json()).then(data=>{
-const conns=Array.isArray(data)?data:(data.connections||[]);
-const body=document.getElementById('connections-body');
-const badge=document.getElementById('connection-badge');
-if(badge) badge.textContent=conns.length+' active';
-let html='';
-conns.forEach(c=>{
-const st=c.status==='active'?'<span class="badge badge-green">ACTIVE</span>'
-:'<span class="badge badge-accent">IDLE</span>';
-html+=\`<tr><td class="mono">\${c.id||'—'}</td><td>\${c.client||'—'}</td>
-<td>\${c.provider||'—'}</td><td>\${c.model||'—'}</td>
-<td>\${st}</td><td class="mono">\${c.duration||'—'}</td></tr>\`;
-});
-if(body) body.innerHTML=html||'<tr><td colspan="6" style="color:var(--text-muted)">No connections</td></tr>';
-}).catch(()=>{});
+// ═══ SETTINGS ═══
+async function loadSettings() {
+  try {
+    const info = await fetch(API+'/8router/info').then(r=>r.json());
+    document.getElementById('sysinfo-tbody').innerHTML =
+      '<tr><td style="color:var(--text3);width:140px">Name</td><td>'+info.name+'</td></tr>'+
+      '<tr><td style="color:var(--text3)">Version</td><td>'+info.version+'</td></tr>'+
+      '<tr><td style="color:var(--text3)">Description</td><td>'+info.description+'</td></tr>'+
+      '<tr><td style="color:var(--text3)">Features</td><td>'+info.features.join(', ')+'</td></tr>';
+  } catch {}
 }
 
-function loadLogs(){
-fetch('/8router/health').then(r=>r.json()).then(data=>{
-const container=document.getElementById('logs-container');
-const logs=data.logs||data.recent||[];
-let html='';
-(Array.isArray(logs)?logs:[]).forEach(l=>{
-const ts=l.timestamp||l.ts||'';
-const msg=l.message||l.msg||JSON.stringify(l);
-const cls=l.level==='error'?'log-err':'';
-html+=\`<div class="log-line"><span class="log-ts">\${ts}</span> \${cls?'<span class="'+cls+'">'+msg+'</span>':msg}</div>\`;
-});
-if(container) container.innerHTML=html||'<div style="color:var(--text-muted)">No logs available</div>';
-}).catch(()=>{
-const container=document.getElementById('logs-container');
-if(container) container.innerHTML='<div style="color:var(--text-muted)">No logs available</div>';
-});
+// ═══ CAVEMAN ═══
+function setCaveman(v) {
+  document.getElementById('caveman-val').textContent = v;
+  const descs = ['Disabled — Normal responses','Mild — Short sentences','Medium — One-line answers','Aggressive — Keywords only','Extreme — Caveman grunts','Maximum — Classical Chinese compression'];
+  document.getElementById('caveman-desc').textContent = descs[v];
+  fetch(API+'/8router/caveman',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({level:parseInt(v)})});
 }
 
-function loadSettings(){
-fetch('/8router/info').then(r=>r.json()).then(data=>{
-const body=document.getElementById('system-info-body');
-let html='';
-Object.entries(data).forEach(([k,v])=>{
-if(typeof v==='object') v=JSON.stringify(v);
-html+=\`<tr><td style="color:var(--text-muted);font-family:var(--font-mono);width:180px">\${k}</td>
-<td style="color:var(--text-secondary);font-family:var(--font-mono)">\${v}</td></tr>\`;
-});
-if(body) body.innerHTML=html;
-}).catch(()=>{});
-}
-
-function updateCaveman(val){
-const slider=document.getElementById('caveman-slider');
-const level=document.getElementById('caveman-level');
-if(level) level.textContent=val;
-fetch('/8router/caveman',{method:'POST',headers:{'Content-Type':'application/json'},
-body:JSON.stringify({level:parseInt(val)})}).catch(()=>{});
-updateCavemanDesc(val);
-}
-
-function updateCavemanDesc(val){
-const desc=document.getElementById('caveman-desc');
-const descs=['Off','Low — basic fallbacks','Medium — aggressive retry','High — maximum resilience'];
-if(desc) desc.textContent=descs[parseInt(val)]||'Off';
-}
-
-function refresh(){
-fetch('/8router/stats').then(r=>r.json()).then(d=>{
-const el=(id)=>document.getElementById(id);
-const sReq=el('s-req'),sTokens=el('s-tokens'),sFb=el('s-fallbacks');
-const sRtk=el('s-rtk'),sRate=el('s-rate'),sRateSub=el('s-rate-sub');
-const sUp=el('s-uptime'),pCount=el('provider-count');
-const srReqs=el('sr-reqs'),srTokens=el('sr-tokens'),srFb=el('sr-fb');
-const srUp=el('sr-up'),srProv=el('sr-prov'),srConn=el('sr-conn');
-
-if(sReq) sReq.textContent=formatNum(d.requests);
-if(sTokens) sTokens.textContent=formatNum(d.tokens);
-if(sFb) sFb.textContent=formatNum(d.fallbacks);
-if(sRtk) sRtk.textContent=d.realtimeKeys||d.rtk||'—';
-if(sRate) sRate.textContent=d.rateLimit?d.rateLimit.toFixed(1)+'%':'—';
-if(sRateSub) sRateSub.textContent=d.rateLimitSub?'('+d.rateLimitSub.toFixed(1)+'%)':'';
-if(sUp) sUp.textContent=formatUptime(d.uptime);
-if(pCount) pCount.textContent=d.providers||'—';
-
-if(srReqs) srReqs.textContent=formatNum(d.requests);
-if(srTokens) srTokens.textContent=formatNum(d.tokens);
-if(srFb) srFb.textContent=formatNum(d.fallbacks);
-if(srUp) srUp.textContent=formatUptime(d.uptime);
-if(srProv) srProv.textContent=d.providers||'—';
-if(srConn) srConn.textContent=d.connections||'—';
-
-// Sparkline
-if(d.tokens!==undefined){
-usageHistory.push(d.tokens);
-if(usageHistory.length>60) usageHistory.shift();
-const max=Math.max(...usageHistory,1);
-const pts=usageHistory.map((v,i)=>{
-const x=(i/(usageHistory.length-1||1))*400;
-const y=100-(v/max)*80;
-return x.toFixed(1)+','+y.toFixed(1);
-}).join(' ');
-const path=el('sparkline-path');
-const area=el('sparkline-area');
-if(path) path.setAttribute('points',pts);
-if(area) area.setAttribute('points','0,100 '+pts+' 400,100');
-}
-
-// Provider health list
-fetch('/8router/providers').then(r=>r.json()).then(pData=>{
-const providers=Array.isArray(pData)?pData:(pData.providers||[]);
-const body=el('providers-body');
-let html='';
-providers.slice(0,10).forEach(p=>{
-const ok=p.status==='healthy'||p.status==='ok';
-const cls=ok?'ok':p.status==='degraded'?'warn':'err';
-html+=\`<div class="provider-row">
-<div class="p-dot \${cls}"></div>
-<div class="p-name">\${p.name||p.provider}</div>
-<div class="p-latency">\${p.latency?p.latency+'ms':'—'}</div>
-<div class="p-reqs">\${formatNum(p.requests)}</div>
-</div>\`;
-});
-if(body) body.innerHTML=html||'<div style="color:var(--text-muted);font-size:12px">No providers</div>';
-}).catch(()=>{});
-
-// Quotas
-fetch('/8router/providers').then(r=>r.json()).then(pData=>{
-const providers=Array.isArray(pData)?pData:(pData.providers||[]);
-renderProviderLimits(providers);
-}).catch(()=>{});
-
-// Models
-fetch('/8router/models').then(r=>r.json()).then(mData=>{
-const models=Array.isArray(mData)?mData:(mData.models||[]);
-const body=el('models-body');
-let html='';
-models.forEach(m=>{
-const name=typeof m==='string'?m:(m.name||m.model||m.id||'');
-html+=\`<span class="model-pill">\${name}</span>\`;
-});
-if(body) body.innerHTML=html||'<span style="color:var(--text-muted);font-size:12px">No models</span>';
-}).catch(()=>{});
-
-// Status bar status text
-const ssText=el('sidebar-status-text');
-if(ssText) ssText.textContent='connected ${port}';
-}).catch(()=>{});
-}
-
-// INIT
+// Init
 refresh();
-setInterval(refresh,5000);
+setInterval(refresh, 5000);
 </script>
 </body>
 </html>`;
-}
-
-export function createDashboard(engineOrPort: any, portOrUndef?: number): express.Express {
-  const app = express();
-  app.use(cors());
-  app.use(express.json());
-  const port = typeof portOrUndef === 'number' ? portOrUndef : (typeof engineOrPort === 'number' ? engineOrPort : 8081);
-
-  app.get('/', (_req, res) => {
-    res.type('html').send(getDashboardHTML(null, port));
-  });
-
-  return app;
 }
