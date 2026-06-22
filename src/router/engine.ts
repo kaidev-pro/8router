@@ -1,16 +1,19 @@
-// 8Router — Core Router Engine
-// Handles request routing with smart fallback, compression, and stats
+// 8Router — Core Router Engine v2
+// Combo support, multi-key rotation, SQLite persistence, caveman mode
 
 import { v4 as uuid } from 'uuid';
 import { RouterConfig, ChatCompletionRequest, ChatCompletionResponse, ChatMessage, RouterStats } from '../types.js';
 import { ProviderRegistry } from '../providers/registry.js';
 import { getAdapter } from '../providers/adapter.js';
 import { compress } from '../compressor/rtk.js';
+import { isCombo, resolveCombo, ensureDefaultCombos } from './combos.js';
+import { logRequest, getRequestStats, getDB } from '../database.js';
 
 export class RouterEngine {
   private config: RouterConfig;
   private registry: ProviderRegistry;
   private stats: RouterStats;
+  private dbInitialized = false;
 
   constructor(config: RouterConfig) {
     this.config = config;
@@ -26,21 +29,44 @@ export class RouterEngine {
       uptime: Date.now(),
       startedAt: Date.now(),
     };
+    
+    // Initialize database
+    this.initDB();
+  }
+
+  private initDB(): void {
+    if (this.dbInitialized) return;
+    try {
+      getDB();
+      ensureDefaultCombos();
+      this.dbInitialized = true;
+      console.log('[8Router] Database initialized');
+    } catch (e) {
+      console.warn('[8Router] Database init failed, running without persistence:', e);
+    }
   }
 
   async route(req: ChatCompletionRequest): Promise<ChatCompletionResponse> {
     this.stats.totalRequests++;
 
-    // 1. Compress messages
+    // 1. Compress messages (RTK)
     const { messages: compressedMessages, savedTokens } = compress(req.messages, this.config.compression);
     this.stats.compressionSaved += savedTokens;
 
+    // 2. Caveman mode (output compression)
+    let cavemanSaved = 0;
+    const cavemanLevel = parseInt(process.env.CAVEMAN_LEVEL || '0');
+    if (cavemanLevel > 0) {
+      const { applyCaveman } = await import('../compressor/caveman.js');
+      req = applyCaveman(req, cavemanLevel);
+    }
+
     const compressedReq = { ...req, messages: compressedMessages as ChatMessage[] };
 
-    // 2. Get providers for this model
-    const providers = this.registry.getProvidersForModel(req.model);
-
-    if (providers.length === 0) {
+    // 3. Check if model is a combo
+    const modelRoutes = this.resolveModelRoutes(req.model);
+    
+    if (modelRoutes.length === 0) {
       this.stats.failedRequests++;
       throw new RouterError(
         `No available provider for model "${req.model}". Check your config and provider health.`,
@@ -48,30 +74,48 @@ export class RouterEngine {
       );
     }
 
-    // 3. Try providers with fallback
+    // 4. Try providers with fallback
     let lastError: Error | null = null;
     let attemptedFallback = false;
+    const startTime = Date.now();
 
-    for (const provider of providers) {
+    for (const route of modelRoutes) {
       try {
+        const provider = this.registry.getProvider(route.provider);
+        if (!provider) continue;
+        
         const adapter = getAdapter(provider);
-        const startTime = Date.now();
-
         const response = await this.callProvider(adapter, provider, compressedReq);
 
         const latencyMs = Date.now() - startTime;
-        const tokens = response.usage?.total_tokens;
-        this.registry.recordSuccess(provider.id, latencyMs, tokens);
+        const inputTokens = response.usage?.prompt_tokens || 0;
+        const outputTokens = response.usage?.completion_tokens || 0;
+        const cachedTokens = (response.usage as any)?.prompt_tokens_details?.cached_tokens || 0;
+        
+        this.registry.recordSuccess(provider.id, latencyMs, response.usage?.total_tokens);
 
         this.stats.successfulRequests++;
-        this.stats.totalTokens += tokens || 0;
-        this.updateProviderStats(provider.id, tokens || 0, latencyMs, false);
+        this.stats.totalTokens += response.usage?.total_tokens || 0;
+        this.updateProviderStats(provider.id, response.usage?.total_tokens || 0, latencyMs, false);
 
         if (attemptedFallback) {
           this.stats.fallbackCount++;
         }
 
-        // Add 8Router metadata
+        // Log to database
+        logRequest({
+          provider: provider.id,
+          model: route.model,
+          comboName: isCombo(req.model) ? req.model : undefined,
+          inputTokens,
+          outputTokens,
+          cachedTokens,
+          compressedTokens: savedTokens,
+          latencyMs,
+          isSuccess: true,
+          isStream: false,
+        });
+
         return {
           ...response,
           _8router: {
@@ -79,16 +123,29 @@ export class RouterEngine {
             tier: provider.tier,
             compressionSaved: savedTokens,
             latencyMs,
+            combo: isCombo(req.model) ? req.model : undefined,
           },
         } as any;
 
       } catch (err: any) {
         lastError = err;
-        this.registry.recordFailure(provider.id, err.message);
-        this.updateProviderStats(provider.id, 0, 0, true);
+        this.registry.recordFailure(route.provider, err.message);
+        this.updateProviderStats(route.provider, 0, 0, true);
 
-        console.warn(`[8Router] Provider ${provider.id} failed: ${err.message}. Trying next...`);
+        console.warn(`[8Router] Provider ${route.provider} failed: ${err.message}. Trying next...`);
         attemptedFallback = true;
+
+        // Log failure
+        logRequest({
+          provider: route.provider,
+          model: route.model,
+          comboName: isCombo(req.model) ? req.model : undefined,
+          inputTokens: 0,
+          outputTokens: 0,
+          latencyMs: Date.now() - startTime,
+          isSuccess: false,
+          errorMessage: err.message,
+        });
 
         if (this.config.fallback.retryDelayMs > 0) {
           await sleep(this.config.fallback.retryDelayMs);
@@ -98,7 +155,7 @@ export class RouterEngine {
 
     this.stats.failedRequests++;
     throw new RouterError(
-      `All ${providers.length} provider(s) failed for model "${req.model}". Last error: ${lastError?.message}`,
+      `All ${modelRoutes.length} provider(s) failed for model "${req.model}". Last error: ${lastError?.message}`,
       'all_providers_failed'
     );
   }
@@ -111,14 +168,17 @@ export class RouterEngine {
     this.stats.compressionSaved += savedTokens;
 
     const compressedReq = { ...req, messages: compressedMessages as ChatMessage[], stream: true };
-    const providers = this.registry.getProvidersForModel(req.model);
+    const modelRoutes = this.resolveModelRoutes(req.model);
 
-    if (providers.length === 0) {
+    if (modelRoutes.length === 0) {
       throw new RouterError(`No available provider for model "${req.model}"`, 'no_provider');
     }
 
-    for (const provider of providers) {
+    for (const route of modelRoutes) {
       try {
+        const provider = this.registry.getProvider(route.provider);
+        if (!provider) continue;
+        
         const adapter = getAdapter(provider);
         const startTime = Date.now();
 
@@ -127,17 +187,57 @@ export class RouterEngine {
         const latencyMs = Date.now() - startTime;
         this.registry.recordSuccess(provider.id, latencyMs);
         this.stats.successfulRequests++;
+
+        logRequest({
+          provider: provider.id,
+          model: route.model,
+          inputTokens: 0,
+          outputTokens: 0,
+          latencyMs,
+          isSuccess: true,
+          isStream: true,
+        });
+
         return;
 
       } catch (err: any) {
-        this.registry.recordFailure(provider.id, err.message);
-        console.warn(`[8Router] Stream provider ${provider.id} failed: ${err.message}`);
+        this.registry.recordFailure(route.provider, err.message);
+        console.warn(`[8Router] Stream provider ${route.provider} failed: ${err.message}`);
+        
+        logRequest({
+          provider: route.provider,
+          model: route.model,
+          inputTokens: 0,
+          outputTokens: 0,
+          isSuccess: false,
+          errorMessage: err.message,
+          isStream: true,
+        });
       }
     }
 
     this.stats.failedRequests++;
     throw new RouterError('All providers failed for streaming', 'all_providers_failed');
   }
+
+  // ═══════════════════════════════════════════════
+  // MODEL ROUTING
+  // ═══════════════════════════════════════════════
+
+  private resolveModelRoutes(model: string): { provider: string; model: string }[] {
+    // Check if it's a combo
+    if (isCombo(model)) {
+      return resolveCombo(model);
+    }
+    
+    // Regular model - get providers from registry
+    const providers = this.registry.getProvidersForModel(model);
+    return providers.map(p => ({ provider: p.id, model }));
+  }
+
+  // ═══════════════════════════════════════════════
+  // PROVIDER CALLS
+  // ═══════════════════════════════════════════════
 
   private async callProvider(
     adapter: ReturnType<typeof getAdapter>,
@@ -152,7 +252,7 @@ export class RouterEngine {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(120000), // 2 min timeout
+      signal: AbortSignal.timeout(120000),
     });
 
     if (!response.ok) {
@@ -236,6 +336,14 @@ export class RouterEngine {
   getRegistry(): ProviderRegistry { return this.registry; }
   getStats(): RouterStats { return { ...this.stats, uptime: Date.now() - this.stats.startedAt }; }
   getConfig(): RouterConfig { return this.config; }
+  
+  getFullStats() {
+    const dbStats = this.dbInitialized ? getRequestStats() : null;
+    return {
+      ...this.getStats(),
+      database: dbStats,
+    };
+  }
 }
 
 export class RouterError extends Error {

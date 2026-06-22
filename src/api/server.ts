@@ -1,9 +1,12 @@
-// 8Router — OpenAI-Compatible API Server
+// 8Router — OpenAI-Compatible API Server v2
+// Full API with combos, analytics, connections, caveman mode
 
 import express from 'express';
 import cors from 'cors';
 import { RouterEngine, RouterError } from '../router/engine.js';
 import { ChatCompletionRequest } from '../types.js';
+import { getAllCombos, getAllComboNames, isCombo, createCombo } from '../router/combos.js';
+import { getAllCombos as dbGetAllCombos, getRequestStats, getDailyUsage, getActiveConnections, updateConnectionStatus, cleanupExpiredLocks } from '../database.js';
 
 export function createServer(engine: RouterEngine): express.Express {
   const app = express();
@@ -11,27 +14,45 @@ export function createServer(engine: RouterEngine): express.Express {
   app.use(cors());
   app.use(express.json({ limit: '10mb' }));
 
-  // Health check
+  // ═══════════════════════════════════════════════
+  // HEALTH CHECK
+  // ═══════════════════════════════════════════════
+
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', uptime: process.uptime() });
   });
 
-  // OpenAI-compatible: list models
+  // ═══════════════════════════════════════════════
+  // OPENAI-COMPATIBLE ENDPOINTS
+  // ═══════════════════════════════════════════════
+
+  // List models
   app.get('/v1/models', (_req, res) => {
     const models = engine.getRegistry().getAvailableModels();
-    res.json({
-      object: 'list',
-      data: models.map(m => ({
+    const comboNames = getAllComboNames();
+    
+    // Include combos as "models"
+    const allModels = [
+      ...models.map(m => ({
         id: m.id,
-        object: 'model',
+        object: 'model' as const,
         created: Date.now(),
         owned_by: '8router',
         providers: m.providers,
       })),
-    });
+      ...comboNames.map(name => ({
+        id: name,
+        object: 'model' as const,
+        created: Date.now(),
+        owned_by: '8router-combo',
+        providers: ['combo'],
+      })),
+    ];
+    
+    res.json({ object: 'list', data: allModels });
   });
 
-  // OpenAI-compatible: chat completions
+  // Chat completions
   app.post('/v1/chat/completions', async (req, res) => {
     try {
       const request: ChatCompletionRequest = req.body;
@@ -44,7 +65,6 @@ export function createServer(engine: RouterEngine): express.Express {
       }
 
       if (request.stream) {
-        // Streaming response
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
@@ -64,7 +84,6 @@ export function createServer(engine: RouterEngine): express.Express {
 
         res.end();
       } else {
-        // Non-streaming response
         const response = await engine.route(request);
         res.json(response);
       }
@@ -80,41 +99,180 @@ export function createServer(engine: RouterEngine): express.Express {
     }
   });
 
-  // 8Router API: stats
+  // ═══════════════════════════════════════════════
+  // 8ROUTER API: STATS & ANALYTICS
+  // ═══════════════════════════════════════════════
+
+  // Enhanced stats with database persistence
   app.get('/8router/stats', (_req, res) => {
     const stats = engine.getStats();
+    const dbStats = getRequestStats();
+    
     res.json({
-      ...stats,
-      providerStats: Object.fromEntries(stats.providerStats),
+      // In-memory stats (current session)
+      session: {
+        ...stats,
+        providerStats: Object.fromEntries(stats.providerStats),
+      },
+      // Database stats (all time)
+      allTime: dbStats,
     });
   });
 
-  // 8Router API: providers
+  // Daily usage analytics
+  app.get('/8router/usage', (req, res) => {
+    const days = parseInt(req.query.days as string) || 7;
+    const usage = getDailyUsage(days);
+    res.json(usage);
+  });
+
+  // ═══════════════════════════════════════════════
+  // 8ROUTER API: PROVIDERS
+  // ═══════════════════════════════════════════════
+
   app.get('/8router/providers', (_req, res) => {
     const providers = engine.getRegistry().getAllProviders().map(p => ({
       ...p,
-      apiKey: p.apiKey.slice(0, 8) + '...' + p.apiKey.slice(-4),
+      apiKey: p.apiKey ? (p.apiKey.slice(0, 8) + '...' + p.apiKey.slice(-4)) : '***',
     }));
     res.json(providers);
   });
 
-  // 8Router API: health
+  // Provider health
   app.get('/8router/health', (_req, res) => {
     const health = engine.getRegistry().getHealth();
     res.json(health);
   });
 
-  // 8Router API: models
+  // Available models
   app.get('/8router/models', (_req, res) => {
     const models = engine.getRegistry().getAvailableModels();
     res.json(models);
   });
 
-  // Catch-all for undefined routes
+  // ═══════════════════════════════════════════════
+  // 8ROUTER API: COMBOS
+  // ═══════════════════════════════════════════════
+
+  // List all combos
+  app.get('/8router/combos', (_req, res) => {
+    const combos = getAllCombos();
+    res.json(combos.map(c => ({
+      name: c.combo.name,
+      description: c.combo.description,
+      strategy: c.combo.strategy,
+      tiers: c.tiers.map(t => ({
+        provider: t.provider,
+        model: t.model,
+        priority: t.priority,
+        isActive: !!t.isActive,
+      })),
+    })));
+  });
+
+  // Create/update combo
+  app.post('/8router/combos', (req, res) => {
+    try {
+      const { name, description, tiers } = req.body;
+      if (!name || !tiers || !Array.isArray(tiers)) {
+        res.status(400).json({ error: 'Missing name or tiers array' });
+        return;
+      }
+      createCombo(name, description || '', tiers);
+      res.json({ ok: true, message: `Combo "${name}" created` });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ═══════════════════════════════════════════════
+  // 8ROUTER API: CONNECTIONS (DB-backed)
+  // ═══════════════════════════════════════════════
+
+  // List connections from database
+  app.get('/8router/connections', (req, res) => {
+    const provider = req.query.provider as string | undefined;
+    const conns = getActiveConnections(provider);
+    res.json(conns.map(c => ({
+      ...c,
+      apiKey: c.apiKey ? (c.apiKey.slice(0, 8) + '***') : null,
+      accessToken: c.accessToken ? '***' : null,
+    })));
+  });
+
+  // Update connection status
+  app.patch('/8router/connections/:id/status', (req, res) => {
+    try {
+      const { status, error, errorCode } = req.body;
+      updateConnectionStatus(req.params.id, status, error, errorCode);
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ═══════════════════════════════════════════════
+  // 8ROUTER API: CAVEMAN MODE
+  // ═══════════════════════════════════════════════
+
+  app.get('/8router/caveman', (_req, res) => {
+    const level = parseInt(process.env.CAVEMAN_LEVEL || '0');
+    const descriptions: Record<number, string> = {
+      0: 'Disabled', 1: 'Mild', 2: 'Medium', 3: 'Aggressive', 4: 'Extreme', 5: 'Maximum',
+    };
+    res.json({ level, description: descriptions[level] || 'Unknown' });
+  });
+
+  app.post('/8router/caveman', (req, res) => {
+    const { level } = req.body;
+    if (level === undefined || level < 0 || level > 5) {
+      res.status(400).json({ error: 'Level must be 0-5' });
+      return;
+    }
+    process.env.CAVEMAN_LEVEL = String(level);
+    res.json({ ok: true, level });
+  });
+
+  // ═══════════════════════════════════════════════
+  // 8ROUTER API: SYSTEM INFO
+  // ═══════════════════════════════════════════════
+
+  app.get('/8router/info', (_req, res) => {
+    res.json({
+      name: '8Router',
+      version: '0.2.0',
+      description: 'AI Routing Gateway for 8Agents',
+      uptime: process.uptime(),
+      features: [
+        'OpenAI-compatible API',
+        'Multi-provider routing with fallback',
+        'Named combos (fallback chains)',
+        'RTK token compression',
+        'Caveman output compression',
+        'SQLite persistence',
+        'Multi-key rotation',
+        'Usage analytics',
+      ],
+      endpoints: {
+        api: 'http://localhost:8080/v1',
+        dashboard: 'http://localhost:8081',
+        health: 'http://localhost:8080/health',
+        stats: 'http://localhost:8080/8router/stats',
+        combos: 'http://localhost:8080/8router/combos',
+        connections: 'http://localhost:8080/8router/connections',
+        usage: 'http://localhost:8080/8router/usage',
+      },
+    });
+  });
+
+  // Cleanup expired locks periodically
+  setInterval(cleanupExpiredLocks, 30000);
+
+  // Catch-all
   app.all('*', (_req, res) => {
     res.status(404).json({
       error: {
-        message: 'Not found. Use /v1/chat/completions or /v1/models',
+        message: 'Not found. See /8router/info for available endpoints',
         type: 'not_found',
       },
     });
