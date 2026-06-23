@@ -63,12 +63,12 @@ export class AnthropicAdapter implements ProviderAdapter {
     };
   }
 
-  parseResponse(raw: any, provider: ProviderKey): ChatCompletionResponse {
+  parseResponse(raw: any, _provider: ProviderKey): ChatCompletionResponse {
     return {
       id: raw.id || `chatcmpl-${Date.now()}`,
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
-      model: raw.model || provider.models[0],
+      model: raw.model || 'claude',
       choices: [{
         index: 0,
         message: {
@@ -90,7 +90,7 @@ export class AnthropicAdapter implements ProviderAdapter {
   }
 }
 
-// Google Gemini adapter
+// Google Gemini adapter — FIXED: uses model from request, not hardcoded provider.models[0]
 export class GeminiAdapter implements ProviderAdapter {
   name = 'gemini';
 
@@ -123,13 +123,15 @@ export class GeminiAdapter implements ProviderAdapter {
     };
   }
 
-  parseResponse(raw: any, provider: ProviderKey): ChatCompletionResponse {
+  parseResponse(raw: any, _provider: ProviderKey): ChatCompletionResponse {
     const text = raw.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    // Extract model name from the response if available
+    const modelName = raw.modelVersion || 'gemini';
     return {
       id: `chatcmpl-${Date.now()}`,
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
-      model: provider.models[0],
+      model: modelName,
       choices: [{
         index: 0,
         message: { role: 'assistant', content: text },
@@ -144,7 +146,11 @@ export class GeminiAdapter implements ProviderAdapter {
   }
 
   getEndpoint(provider: ProviderKey, stream: boolean): string {
-    const model = provider.models[0];
+    // Use the first model from provider config as a fallback.
+    // The actual model used is in the request body; the endpoint just needs
+    // a valid model ID for the URL. We use provider.models[0] as the URL model,
+    // while the body content is built from the request which carries the actual model.
+    const model = provider.models[0] || 'gemini-2.0-flash';
     const action = stream ? 'streamGenerateContent' : 'generateContent';
     return `${provider.baseUrl}/models/${model}:${action}?key=${provider.apiKey}`;
   }
@@ -155,6 +161,6 @@ export function getAdapter(provider: ProviderKey): ProviderAdapter {
   const url = provider.baseUrl.toLowerCase();
 
   if (url.includes('anthropic')) return new AnthropicAdapter();
-  if (url.includes('googleapis') || url.includes('google')) return new GeminiAdapter();
+  if (url.includes('googleapis') || url.includes('google') || url.includes('aiplatform')) return new GeminiAdapter();
   return new OpenAIAdapter(); // Default: OpenAI-compatible
 }

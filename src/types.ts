@@ -8,6 +8,7 @@ export interface ProviderKey {
   baseUrl: string;
   models: string[];
   enabled: boolean;
+  adapter?: string;
   requestsPerMinute?: number;
   dailyQuota?: number;
   lastUsed?: number;
@@ -38,6 +39,11 @@ export interface CompressionConfig {
   };
 }
 
+export interface DashboardConfig {
+  enabled: boolean;
+  port: number;
+}
+
 export interface RouterConfig {
   port: number;
   host: string;
@@ -45,9 +51,15 @@ export interface RouterConfig {
   compression: CompressionConfig;
   providers: ProviderKey[];
   logLevel: 'debug' | 'info' | 'warn' | 'error';
-  dashboard: {
-    enabled: boolean;
-    port: number;
+  dashboard: DashboardConfig;
+}
+
+export interface ToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
   };
 }
 
@@ -56,7 +68,18 @@ export interface ChatMessage {
   content: string | null;
   name?: string;
   tool_call_id?: string;
-  tool_calls?: any[];
+  tool_calls?: ToolCall[];
+}
+
+export interface FunctionDefinition {
+  name: string;
+  description?: string;
+  parameters: Record<string, unknown>;
+}
+
+export interface ToolDefinition {
+  type: 'function';
+  function: FunctionDefinition;
 }
 
 export interface ChatCompletionRequest {
@@ -64,8 +87,31 @@ export interface ChatCompletionRequest {
   messages: ChatMessage[];
   temperature?: number;
   max_tokens?: number;
+  top_p?: number;
   stream?: boolean;
-  [key: string]: any;
+  stop?: string | string[];
+  tools?: ToolDefinition[];
+  tool_choice?: string | Record<string, unknown>;
+  frequency_penalty?: number;
+  presence_penalty?: number;
+  logprobs?: boolean;
+  top_logprobs?: number;
+  n?: number;
+  seed?: number;
+  user?: string;
+}
+
+export interface ChoiceMessage {
+  index: number;
+  message: ChatMessage;
+  finish_reason: string;
+  logprobs?: Record<string, unknown> | null;
+}
+
+export interface TokenUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
 }
 
 export interface ChatCompletionResponse {
@@ -73,16 +119,8 @@ export interface ChatCompletionResponse {
   object: string;
   created: number;
   model: string;
-  choices: {
-    index: number;
-    message: ChatMessage;
-    finish_reason: string;
-  }[];
-  usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
+  choices: ChoiceMessage[];
+  usage?: TokenUsage;
 }
 
 export interface ProviderHealth {
@@ -94,6 +132,13 @@ export interface ProviderHealth {
   avgLatencyMs?: number;
 }
 
+export interface ProviderStatsEntry {
+  requests: number;
+  tokens: number;
+  errors: number;
+  avgLatency: number;
+}
+
 export interface RouterStats {
   totalRequests: number;
   totalTokens: number;
@@ -101,12 +146,35 @@ export interface RouterStats {
   failedRequests: number;
   fallbackCount: number;
   compressionSaved: number;
-  providerStats: Map<string, {
-    requests: number;
-    tokens: number;
-    errors: number;
-    avgLatency: number;
-  }>;
+  providerStats: Map<string, ProviderStatsEntry>;
   uptime: number;
   startedAt: number;
+}
+
+export interface HealthCheckResponse {
+  status: string;
+  uptime: number;
+  timestamp: number;
+  memory: {
+    heapUsed: number;
+    heapTotal: number;
+    rss: number;
+    external: number;
+  };
+  database: {
+    connected: boolean;
+    path: string;
+  };
+  providers: {
+    total: number;
+    healthy: number;
+    unhealthy: number;
+    details: ProviderHealth[];
+  };
+  metrics: {
+    totalRequests: number;
+    successfulRequests: number;
+    failedRequests: number;
+    successRate: string;
+  };
 }

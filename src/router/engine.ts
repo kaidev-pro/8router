@@ -160,8 +160,8 @@ export class RouterEngine {
     );
   }
 
-  // Route with streaming
-  async *routeStream(req: ChatCompletionRequest): AsyncGenerator<string> {
+  // Route with streaming — improved error handling with abort support
+  async *routeStream(req: ChatCompletionRequest, abortSignal?: AbortSignal): AsyncGenerator<string> {
     this.stats.totalRequests++;
 
     const { messages: compressedMessages, savedTokens } = compress(req.messages, this.config.compression);
@@ -175,6 +175,13 @@ export class RouterEngine {
     }
 
     for (const route of modelRoutes) {
+      // Check for abort before trying each provider
+      if (abortSignal?.aborted) {
+        yield this.formatStreamError('Request was aborted', 'aborted');
+        this.stats.failedRequests++;
+        return;
+      }
+
       try {
         const provider = this.registry.getProvider(route.provider);
         if (!provider) continue;
@@ -182,7 +189,20 @@ export class RouterEngine {
         const adapter = getAdapter(provider);
         const startTime = Date.now();
 
-        yield* this.streamProvider(adapter, provider, compressedReq);
+        // Create an AbortController with timeout for each provider attempt
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 120000); // 2 min timeout
+
+        // Link with parent abort signal if provided
+        if (abortSignal) {
+          abortSignal.addEventListener('abort', () => controller.abort(), { once: true });
+        }
+
+        try {
+          yield* this.streamProvider(adapter, provider, compressedReq, controller.signal);
+        } finally {
+          clearTimeout(timeout);
+        }
 
         const latencyMs = Date.now() - startTime;
         this.registry.recordSuccess(provider.id, latencyMs);
@@ -201,8 +221,21 @@ export class RouterEngine {
         return;
 
       } catch (err: any) {
+        // If aborted, stop trying
+        if (err.name === 'AbortError' || err.message?.includes('abort')) {
+          yield this.formatStreamError('Stream request timed out or was aborted', 'timeout');
+          this.stats.failedRequests++;
+          return;
+        }
+
         this.registry.recordFailure(route.provider, err.message);
         console.warn(`[8Router] Stream provider ${route.provider} failed: ${err.message}`);
+
+        // Yield an error event so the client knows about the fallback attempt
+        yield this.formatStreamError(
+          `Provider ${route.provider} failed: ${err.message}. Trying next provider...`,
+          'provider_error'
+        );
         
         logRequest({
           provider: route.provider,
@@ -213,11 +246,23 @@ export class RouterEngine {
           errorMessage: err.message,
           isStream: true,
         });
+
+        // Small delay before fallback
+        if (this.config.fallback.retryDelayMs > 0) {
+          await sleep(this.config.fallback.retryDelayMs);
+        }
       }
     }
 
     this.stats.failedRequests++;
     throw new RouterError('All providers failed for streaming', 'all_providers_failed');
+  }
+
+  // Format a stream error event as SSE
+  private formatStreamError(message: string, code: string): string {
+    return `data: ${JSON.stringify({
+      error: { message, type: 'stream_error', code },
+    })}\n\n`;
   }
 
   // ═══════════════════════════════════════════════
@@ -267,7 +312,8 @@ export class RouterEngine {
   private async *streamProvider(
     adapter: ReturnType<typeof getAdapter>,
     provider: any,
-    req: ChatCompletionRequest
+    req: ChatCompletionRequest,
+    signal?: AbortSignal
   ): AsyncGenerator<string> {
     const endpoint = adapter.getEndpoint(provider, true);
     const headers = adapter.buildHeaders(provider);
@@ -277,7 +323,7 @@ export class RouterEngine {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(120000),
+      signal: signal || AbortSignal.timeout(120000),
     });
 
     if (!response.ok) {
@@ -295,7 +341,14 @@ export class RouterEngine {
 
     try {
       while (true) {
-        const { done, value } = await reader.read();
+        // Support abort signal mid-stream
+        if (signal?.aborted) {
+          yield this.formatStreamError('Stream aborted by caller', 'aborted');
+          return;
+        }
+
+        const readResult = await reader.read();
+        const { done, value } = readResult;
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
@@ -314,8 +367,22 @@ export class RouterEngine {
           }
         }
       }
+
+      // Send [DONE] if we haven't already
+      yield 'data: [DONE]\n\n';
+    } catch (err: any) {
+      // Handle stream read errors gracefully
+      if (err.name === 'AbortError' || err.message?.includes('abort')) {
+        yield this.formatStreamError('Stream aborted', 'aborted');
+        return;
+      }
+      throw err;
     } finally {
-      reader.releaseLock();
+      try {
+        reader.releaseLock();
+      } catch {
+        // Reader may already be released or in error state
+      }
     }
   }
 

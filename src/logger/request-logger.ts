@@ -3,6 +3,7 @@
 
 import Database from 'better-sqlite3';
 import path from 'path';
+import { Request, Response, NextFunction } from 'express';
 
 const DB_PATH = path.join(process.cwd(), 'data', '8router.db');
 
@@ -237,4 +238,78 @@ export function getTotalStats(): {
   } catch {
     return { totalRequests: 0, totalTokens: 0, totalCost: 0, successfulRequests: 0, failedRequests: 0, avgLatencyMs: 0 };
   }
+}
+
+// ═══════════════════════════════════════════════
+// STRUCTURED HTTP REQUEST LOGGING (Express)
+// ═══════════════════════════════════════════════
+
+export interface HTTPLogEntry {
+  method: string;
+  path: string;
+  statusCode: number;
+  latencyMs: number;
+  ip: string;
+  userAgent: string;
+  apiKeyName: string;
+  timestamp: string;
+}
+
+const httpLogBuffer: HTTPLogEntry[] = [];
+const MAX_BUFFER = 1000;
+
+/**
+ * Express middleware that logs HTTP request/response details.
+ * Logs to console and buffers for API retrieval.
+ */
+export function httpRequestLogger(req: Request, res: Response, next: NextFunction): void {
+  const start = Date.now();
+
+  // Capture end event
+  res.on('finish', () => {
+    const latencyMs = Date.now() - start;
+    const logEntry: HTTPLogEntry = {
+      method: req.method,
+      path: req.originalUrl || req.url,
+      statusCode: res.statusCode,
+      latencyMs,
+      ip: req.ip || req.socket.remoteAddress || 'unknown',
+      userAgent: (req.headers['user-agent'] || 'unknown').slice(0, 120),
+      apiKeyName: (req as any).apiKey?.name || 'anonymous',
+      timestamp: new Date().toISOString(),
+    };
+
+    // Buffer for API retrieval
+    httpLogBuffer.push(logEntry);
+    if (httpLogBuffer.length > MAX_BUFFER) {
+      httpLogBuffer.splice(0, httpLogBuffer.length - MAX_BUFFER);
+    }
+
+    // Console log
+    const statusColor = res.statusCode >= 500 ? '\x1b[31m' : res.statusCode >= 400 ? '\x1b[33m' : '\x1b[32m';
+    console.log(
+      `\x1b[90m[${new Date().toLocaleTimeString()}]\x1b[0m ` +
+      `${statusColor}${res.statusCode}\x1b[0m ` +
+      `${req.method.padEnd(6)} ` +
+      `${logEntry.path.slice(0, 80)} ` +
+      `\x1b[90m${latencyMs}ms\x1b[0m ` +
+      `${logEntry.apiKeyName !== 'anonymous' ? `\x1b[36m[${logEntry.apiKeyName}]\x1b[0m` : ''}`
+    );
+  });
+
+  next();
+}
+
+/**
+ * Get recent HTTP request logs.
+ */
+export function getHttpLogs(count: number = 50): HTTPLogEntry[] {
+  return httpLogBuffer.slice(-count).reverse();
+}
+
+/**
+ * Clear HTTP logs.
+ */
+export function clearHttpLogs(): void {
+  httpLogBuffer.length = 0;
 }
