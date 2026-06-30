@@ -867,6 +867,9 @@ tr:hover td { background:var(--bg-card-hover) }
 .error-text { font-size:11px; color:var(--red); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .latency-text { font-family:'JetBrains Mono',monospace; font-size:12px }
 
+.prov-logo-box { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:4px; overflow:hidden; vertical-align:middle; margin-right:6px }
+.prov-logo-fb { width:100%; height:100%; display:flex; align-items:center; justify-content:center; border-radius:4px; font-weight:700 }
+
 </style>
 <body>
 
@@ -1537,6 +1540,36 @@ async function apiFetch(url, retries) {
   return _retryCache[url] || null;
 }
 
+// Provider logo helper
+var PROVIDER_LOGOS: Record<string, {logo: string, fallback: string, color: string}> = {
+  openai: {logo: '/assets/providers/openai.svg', fallback: 'OA', color: '#10A37F'},
+  anthropic: {logo: '/assets/providers/anthropic.svg', fallback: 'A', color: '#D4A27F'},
+  google: {logo: '/assets/providers/gemini.svg', fallback: 'G', color: '#8AB4F8'},
+  groq: {logo: '/assets/providers/groq.svg', fallback: 'GQ', color: '#F55036'},
+  openrouter: {logo: '/assets/providers/openrouter.svg', fallback: 'OR', color: '#FFFFFF'},
+  mistral: {logo: '/assets/providers/mistral.svg', fallback: 'M', color: '#FFAF00'},
+  deepseek: {logo: '/assets/providers/deepseek.svg', fallback: 'DS', color: '#4D6BFE'},
+  ollama: {logo: '/assets/providers/ollama.svg', fallback: 'OL', color: '#FFFFFF'},
+  together: {logo: '/assets/providers/together.svg', fallback: 'TG', color: '#FF4F00'},
+  mimo: {logo: '/assets/providers/mimo.svg', fallback: 'MM', color: '#FF6B35'},
+  'xiaomi-tokenplan': {logo: '/assets/providers/mimo.svg', fallback: 'XI', color: '#FF6B35'},
+  cerebras: {logo: '/assets/providers/cerebras.svg', fallback: 'CB', color: '#FF6B00'},
+  sambanova: {logo: '/assets/providers/sambanova.svg', fallback: 'SN', color: '#00B4D8'},
+  fireworks: {logo: '/assets/providers/fireworks.svg', fallback: 'FW', color: '#FF4500'},
+  perplexity: {logo: '/assets/providers/perplexity.svg', fallback: 'PX', color: '#20B8CD'},
+  cohere: {logo: '/assets/providers/cohere.svg', fallback: 'C', color: '#39594D'},
+  replicate: {logo: '/assets/providers/replicate.svg', fallback: 'RP', color: '#FFFFFF'},
+  xai: {logo: '/assets/providers/xai.svg', fallback: 'xAI', color: '#FFFFFF'},
+  azure: {logo: '/assets/providers/azure.svg', fallback: 'AZ', color: '#0078D4'},
+  bedrock: {logo: '/assets/providers/awsbedrock.svg', fallback: 'AWS', color: '#FF9900'},
+  antigravity: {logo: '/assets/providers/antigravity.svg', fallback: 'AG', color: '#9333EA'},
+};
+
+function provLogo(id: string, size: number = 20): string {
+  var p = PROVIDER_LOGOS[id] || {logo: '', fallback: id.slice(0,2).toUpperCase(), color: '#94A3B8'};
+  return '<span class="prov-logo-box" style="width:'+(size+4)+'px;height:'+(size+4)+'px"><img src="'+p.logo+'" width="'+size+'" height="'+size+'" style="object-fit:contain" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><span class="prov-logo-fb" style="display:none;background:'+p.color+'20;color:'+p.color+';font-size:'+Math.round(size*0.4)+'px">'+p.fallback+'</span></span>';
+}
+
 const pageIcons = {
   endpoint: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a6 6 0 0 1-6 6 6 6 0 0 1-6-6V8z"/></svg>',
   usage: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>',
@@ -1760,7 +1793,7 @@ async function loadUsage() {
         var latency = log.latencyMs || log.latency || log.duration || '-';
         if (typeof latency === 'number') latency = latency + 'ms';
         return '<tr><td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">' + ts + '</td>' +
-          '<td style="font-family:Inter,sans-serif;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">' + (log.provider || log.providerId || '-') + '</td>' +
+          '<td style="font-family:Inter,sans-serif;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">' + provLogo(log.provider || log.providerId || '', 16) + (log.provider || log.providerId || '-') + '</td>' +
           '<td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border);color:var(--accent)">' + (log.model || '-') + '</td>' +
           '<td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">' + tokens + '</td>' +
           '<td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">' + latency + '</td>' +
@@ -1791,7 +1824,7 @@ async function loadProv() {
       if (typeof latency === 'number') latency = latency + 'ms';
       var lastError = (h && (h.lastError || h.error)) || '';
       var lastErrorHtml = lastError ? '<span class="error-text" title="' + lastError.replace(/"/g,'&quot;') + '">' + lastError + '</span>' : '<span style="color:var(--text-muted)">\u2014</span>';
-      return '<tr><td style="font-family:Inter,sans-serif"><strong>'+p.name+'</strong> <span style="color:var(--text-muted);font-size:11px">('+p.id+')</span></td>' +
+      return '<tr><td style="font-family:Inter,sans-serif">'+provLogo(p.id)+'<strong>'+p.name+'</strong> <span style="color:var(--text-muted);font-size:11px">('+p.id+')</span></td>' +
       '<td><span class="badge '+p.tier+'">'+p.tier+'</span></td>' +
       '<td><span class="health-badge '+status+'"><span class="health-dot"></span> '+statusLabel+'</span></td>' +
       '<td><span class="latency-text">'+latency+'</span></td>' +
@@ -1842,7 +1875,7 @@ async function loadCombos() {
         c.tiers.map(function(t,i) {
           return '<div class="combo-tier">' +
             '<div class="step">'+(i+1)+'</div>' +
-            '<span class="provider-name">'+t.provider+'</span>' +
+            '<span class="provider-name">'+provLogo(t.provider, 16)+t.provider+'</span>' +
             '<span class="arrow">\u2192</span>' +
             '<span class="model-name">'+t.model+'</span>' +
           '</div>';
@@ -1893,7 +1926,7 @@ async function loadQuota() {
       var cardClass = pct > 80 ? 'danger' : pct > 50 ? 'warn' : '';
       
       return '<div class="quota-card ' + cardClass + '">' +
-        '<div class="name"><span class="badge ' + p.tier + '">' + p.tier + '</span> ' + p.name +
+        '<div class="name">' + provLogo(p.id, 16) + '<span class="badge ' + p.tier + '">' + p.tier + '</span> ' + p.name +
         ' <span class="status-badge ' + statusClass + '">\\u25cf ' + statusText + '</span></div>' +
         '<div class="quota-bar"><div class="quota-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
         '<div class="quota-info"><span>' + reqs.toLocaleString() + ' requests</span><span>' + tokens.toLocaleString() + ' tokens</span><span>' + pct + '%</span></div>' +
@@ -1976,7 +2009,7 @@ async function loadConns() {
       }
 
       return '<tr><td style="font-size:11px">'+x.id.slice(0,12)+'\u2026</td>' +
-      '<td style="font-family:Inter,sans-serif">'+x.provider+'</td><td>'+(x.name||'-')+'</td><td>'+x.authType+'</td>' +
+      '<td style="font-family:Inter,sans-serif">'+provLogo(x.provider || x.providerId || '', 16)+x.provider+'</td><td>'+(x.name||'-')+'</td><td>'+x.authType+'</td>' +
       '<td><span class="health-badge '+statusCls+'"><span class="health-dot"></span> '+statusLabel+'</span></td>' +
       '<td><span class="health-badge '+healthCls+'"><span class="health-dot"></span> '+healthLabel+'</span></td>' +
       '<td>'+backoffHtml+'</td>' +
@@ -2170,7 +2203,7 @@ async function loadLogs() {
       var latency = log.latencyMs || log.latency || log.duration || '-';
       if (typeof latency === 'number') latency = latency + 'ms';
       html += '<tr><td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+ts+'</td>' +
-        '<td style="font-family:Inter,sans-serif;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+(log.provider||log.providerId||'-')+'</td>' +
+        '<td style="font-family:Inter,sans-serif;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+provLogo(log.provider||log.providerId||'', 16)+(log.provider||log.providerId||'-')+'</td>' +
         '<td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border);color:var(--accent)">'+(log.model||'-')+'</td>' +
         '<td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+tokens+'</td>' +
         '<td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+latency+'</td>' +
@@ -2407,7 +2440,7 @@ async function pgSend() {
 }
 
 function pgUpdateMeta(meta, elapsed) {
-  document.getElementById('pg-m-provider').textContent = meta.provider || meta.providerId || '\u2014';
+  document.getElementById('pg-m-provider').innerHTML = (meta.provider || meta.providerId) ? provLogo(meta.provider || meta.providerId, 16) + (meta.provider || meta.providerId) : '\u2014';
   document.getElementById('pg-m-model').textContent = meta.model || '\u2014';
   document.getElementById('pg-m-latency').textContent = elapsed + 'ms';
   if (meta.usage) {

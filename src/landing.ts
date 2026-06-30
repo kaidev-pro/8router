@@ -214,6 +214,9 @@ section { padding:100px 0; position:relative; z-index:1 }
 .prov-list { display:flex; flex-direction:column; gap:8px }
 .prov-item { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--bg-surface); border-radius:8px }
 .prov-name { font-size:14px; font-weight:500 }
+.prov-logo-wrap { width:28px; height:28px; display:flex; align-items:center; justify-content:center; flex-shrink:0 }
+.prov-logo { width:24px; height:24px; object-fit:contain }
+.prov-logo-fb { width:24px; height:24px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700 }
 
 /* ─── BADGE STYLES ─── */
 .badge-active { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; background:rgba(0,210,148,0.15); color:var(--green); }
@@ -526,10 +529,10 @@ $ 8router
           <h3>Premium</h3>
         </div>
         <div class="prov-list">
-          <div class="prov-item"><span class="prov-name">OpenAI</span><span class="badge-active">Active</span></div>
-          <div class="prov-item"><span class="prov-name">Anthropic</span><span class="badge-active">Active</span></div>
-          <div class="prov-item"><span class="prov-name">Gemini</span><span class="badge-active">Active</span></div>
-          <div class="prov-item"><span class="prov-name">xAI</span><span class="badge-coming">Coming Soon</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/openai.svg" alt="OpenAI" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">OA</span></div><span class="prov-name">OpenAI</span><span class="badge-active">Active</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/anthropic.svg" alt="Anthropic" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">A</span></div><span class="prov-name">Anthropic</span><span class="badge-active">Active</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/gemini.svg" alt="Gemini" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">G</span></div><span class="prov-name">Gemini</span><span class="badge-active">Active</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/xai.svg" alt="xAI" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">xAI</span></div><span class="prov-name">xAI</span><span class="badge-coming">Coming Soon</span></div>
         </div>
       </div>
       <div class="prov-tier">
@@ -538,13 +541,13 @@ $ 8router
           <h3>Efficient</h3>
         </div>
         <div class="prov-list">
-          <div class="prov-item"><span class="prov-name">Groq</span><span class="badge-active">Active</span></div>
-          <div class="prov-item"><span class="prov-name">OpenRouter</span><span class="badge-active">Active</span></div>
-          <div class="prov-item"><span class="prov-name">Mistral</span><span class="badge-active">Active</span></div>
-          <div class="prov-item"><span class="prov-name">DeepSeek</span><span class="badge-beta">Beta</span></div>
-          <div class="prov-item"><span class="prov-name">Together AI</span><span class="badge-beta">Beta</span></div>
-          <div class="prov-item"><span class="prov-name">Cohere</span><span class="badge-coming">Coming Soon</span></div>
-          <div class="prov-item"><span class="prov-name">Perplexity</span><span class="badge-coming">Coming Soon</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/groq.svg" alt="Groq" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">GQ</span></div><span class="prov-name">Groq</span><span class="badge-active">Active</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/openrouter.svg" alt="OpenRouter" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">OR</span></div><span class="prov-name">OpenRouter</span><span class="badge-active">Active</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/mistral.svg" alt="Mistral" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">M</span></div><span class="prov-name">Mistral</span><span class="badge-active">Active</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/deepseek.svg" alt="DeepSeek" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">DS</span></div><span class="prov-name">DeepSeek</span><span class="badge-beta">Beta</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/together.svg" alt="Together AI" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">TG</span></div><span class="prov-name">Together AI</span><span class="badge-beta">Beta</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/cohere.svg" alt="Cohere" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">C</span></div><span class="prov-name">Cohere</span><span class="badge-coming">Coming Soon</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/perplexity.svg" alt="Perplexity" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">PX</span></div><span class="prov-name">Perplexity</span><span class="badge-coming">Coming Soon</span></div>
         </div>
       </div>
       <div class="prov-tier">
@@ -553,9 +556,9 @@ $ 8router
           <h3>Free / Local</h3>
         </div>
         <div class="prov-list">
-          <div class="prov-item"><span class="prov-name">Ollama</span><span class="badge-local">Local</span></div>
-          <div class="prov-item"><span class="prov-name">LM Studio</span><span class="badge-local">Local</span></div>
-          <div class="prov-item"><span class="prov-name">vLLM</span><span class="badge-local">Local</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/ollama.svg" alt="Ollama" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">OL</span></div><span class="prov-name">Ollama</span><span class="badge-local">Local</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/lmstudio.svg" alt="LM Studio" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">LM</span></div><span class="prov-name">LM Studio</span><span class="badge-local">Local</span></div>
+          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/vllm.svg" alt="vLLM" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">vL</span></div><span class="prov-name">vLLM</span><span class="badge-local">Local</span></div>
         </div>
       </div>
     </div>
