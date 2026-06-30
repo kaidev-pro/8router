@@ -672,7 +672,7 @@ footer {
       </h1>
       <p class="hero-sub">
         Connect every AI coding tool, agent, and app to a single local endpoint.
-        9 service kinds, 30+ models with capability-aware routing, smart model picker, and 3-tier fallback across 12 providers. Never hit a rate limit again.
+        9 service kinds, format translation, and smart 3-tier fallback across 20+ providers. Never hit a rate limit again.
       </p>
       <div class="hero-actions">
         <a href="#start" class="btn-primary">
@@ -686,7 +686,7 @@ footer {
       </div>
       <div class="hero-stats">
         <div class="stat-badge">
-          <span class="stat-num">12</span>
+          <span class="stat-num">20+</span>
           <span class="stat-label">Providers</span>
         </div>
         <div class="stat-badge">
@@ -819,7 +819,7 @@ footer {
 <section id="providers" class="prov-section">
   <div class="wrap">
     <div class="s-label">Providers</div>
-    <div class="s-title">12 Active Providers, 3 Tiers</div>
+    <div class="s-title">20+ Providers, 3 Tiers</div>
     <div class="s-desc">Subscription first, then cheap, then free/local. Automatic fallback ensures zero downtime.</div>
 
     <div class="prov-tier">
@@ -988,33 +988,6 @@ footer {
           <h3>Web Search Providers</h3>
         </div>
         <p>Ground responses with Tavily, Brave, and Exa web search. Route to the cheapest available search API.</p>
-      </div>
-      <div class="feat">
-        <div class="feat-head">
-          <div class="feat-icon" style="background:var(--cyan-dim);color:var(--cyan)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5"/></svg>
-          </div>
-          <h3>Smart Model Picker</h3>
-        </div>
-        <p>Route to the best model based on task, cost, speed, and quality. Aliases like 8router/auto, 8router/coding, 8router/fast.</p>
-      </div>
-      <div class="feat">
-        <div class="feat-head">
-          <div class="feat-icon" style="background:var(--orange-dim);color:var(--orange)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-          </div>
-          <h3>Latency Benchmark</h3>
-        </div>
-        <p>Track p50/p95/p99 latency per provider. Real-time health monitoring with automatic circuit breaker.</p>
-      </div>
-      <div class="feat">
-        <div class="feat-head">
-          <div class="feat-icon" style="background:var(--green-dim);color:var(--green)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          </div>
-          <h3>Model Capability Map</h3>
-        </div>
-        <p>30+ models tracked for vision, tools, streaming, embeddings, context length, and cost. Route by capability, not guesswork.</p>
       </div>
     </div>
   </div>
