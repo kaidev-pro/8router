@@ -1561,7 +1561,7 @@ var PROVIDER_LOGOS: Record<string, {logo: string, fallback: string, color: strin
   replicate: {logo: '/assets/providers/replicate.svg', fallback: 'RP', color: '#FFFFFF'},
   xai: {logo: '/assets/providers/xai.svg', fallback: 'xAI', color: '#FFFFFF'},
   azure: {logo: '/assets/providers/azure.svg', fallback: 'AZ', color: '#0078D4'},
-  bedrock: {logo: '/assets/providers/awsbedrock.svg', fallback: 'AWS', color: '#FF9900'},
+  bedrock: {logo: '/assets/providers/aws-bedrock.svg', fallback: 'AWS', color: '#FF9900'},
   antigravity: {logo: '/assets/providers/antigravity.svg', fallback: 'AG', color: '#9333EA'},
 };
 

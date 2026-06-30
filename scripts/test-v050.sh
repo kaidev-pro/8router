@@ -98,3 +98,46 @@ echo -e "  Results: ${GREEN}$PASS passed${NC}, ${RED}$FAIL failed${NC}"
 echo "═══════════════════════════════════════════════"
 
 if [ "$FAIL" -gt "0" ]; then exit 1; fi
+
+# 8. Provider Branding
+info "Provider Branding"
+BRANDS=$(node -e "
+const fs = require('fs');
+const src = fs.readFileSync('src/config/provider-branding.ts', 'utf8');
+// Extract all provider IDs
+const ids = [...src.matchAll(/'([a-z-]+)':\s*\{/g)].map(m => m[1]);
+const logos = [...src.matchAll(/logo:\s*'([^']+)'/g)].map(m => m[1]);
+const names = [...src.matchAll(/name:\s*'([^']+)'/g)].map(m => m[1]);
+
+let errors = 0;
+// Check all providers have name and logo
+if (ids.length !== names.length) { console.log('ID/Name mismatch: ' + ids.length + ' vs ' + names.length); errors++; }
+if (ids.length !== logos.length) { console.log('ID/Logo mismatch: ' + ids.length + ' vs ' + logos.length); errors++; }
+
+// Check for duplicates
+const dupes = ids.filter((v, i) => ids.indexOf(v) !== i);
+if (dupes.length) { console.log('Duplicate IDs: ' + dupes.join(',')); errors++; }
+
+// Check logo files exist
+for (const logo of logos) {
+  const path = 'public' + logo;
+  if (!fs.existsSync(path)) { console.log('Missing logo: ' + path); errors++; }
+}
+
+console.log(errors === 0 ? 'OK:' + ids.length : 'ERRORS:' + errors);
+" 2>/dev/null)
+
+if echo "$BRANDS" | grep -q "^OK:"; then
+  COUNT=$(echo "$BRANDS" | sed 's/OK://')
+  pass "All $COUNT providers have valid branding (name + logo + file)"
+else
+  fail "Branding issues: $BRANDS"
+fi
+
+# 9. Logo file count
+LOGO_COUNT=$(ls public/assets/providers/*.svg 2>/dev/null | wc -l)
+if [ "$LOGO_COUNT" -ge "18" ]; then
+  pass "Provider logos: $LOGO_COUNT SVG files"
+else
+  fail "Only $LOGO_COUNT logo files (expected 18+)"
+fi
