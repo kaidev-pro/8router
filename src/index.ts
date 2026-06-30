@@ -2,6 +2,8 @@
 // Format Translator + Multi-Account Key Pool + 9 Service Kinds
 
 import { loadConfig, generateDefaultConfig } from './config.js';
+import { getTunnelConfig, TunnelManager } from './tunnel/index.js';
+import { getOAuthConfig } from './oauth/config.js';
 import { RouterEngine } from './router/engine.js';
 import { createServer } from './api/server.js';
 import { createHermesProxy, generateHermesConfig } from './hermes/integration.js';
@@ -23,6 +25,8 @@ const BANNER = `
 ║   Providers: {PROVIDER_COUNT}  |  Models: {MODEL_COUNT}     ║
 ║   Key Pool:   {KEY_POOL_COUNT} keys  |  Format Bridge: ON   ║
 ║   RTK Compression: ON  |  Fallback: {TIERS}                 ║
+║   Tunnel: {TUNNEL_STATUS}                                        ║
+║   OAuth:  {OAUTH_STATUS}                                        ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 `;
@@ -35,6 +39,10 @@ function main() {
     console.log(generateDefaultConfig());
     console.log('\n# Save to ~/.8router/config.yaml');
     return;
+  }
+  if (args.includes('--tunnel')) {
+    // Enable tunnel via CLI flag
+    process.env.TUNNEL_ENABLED = 'true';
   }
   if (args.includes('--hermes-config')) {
     const port = parseInt(args[args.indexOf('--port') + 1]) || 8080;
@@ -79,13 +87,40 @@ function main() {
     }
   }
 
+  // Initialize tunnel manager
+  const tunnelConfig = getTunnelConfig({ tunnel: { enabled: process.env.TUNNEL_ENABLED === 'true', provider: process.env.TUNNEL_PROVIDER || 'cloudflare', authRequired: process.env.TUNNEL_AUTH_REQUIRED !== 'false', token: process.env.TUNNEL_TOKEN || '', publicUrl: process.env.TUNNEL_PUBLIC_URL || '', cloudflareToken: process.env.TUNNEL_CLOUDFLARE_TOKEN || process.env.CLOUDFLARE_TUNNEL_TOKEN || '', ngrokToken: process.env.NGROK_AUTHTOKEN || process.env.NGROK_TOKEN || '' } });
+  const tunnelManager = new TunnelManager(tunnelConfig);
+
+  // Initialize OAuth config
+  const oauthConfig = getOAuthConfig({ oauth: { enabled: process.env.OAUTH_ENABLED === 'true', provider: process.env.OAUTH_PROVIDER || 'none', allowedEmails: process.env.OAUTH_ALLOWED_EMAILS?.split(',').filter(Boolean) || [], allowedDomains: process.env.OAUTH_ALLOWED_DOMAINS?.split(',').filter(Boolean) || [], sessionSecret: process.env.SESSION_SECRET || '', sessionMaxAgeHours: parseInt(process.env.SESSION_MAX_AGE_HOURS || '') || 24, google: { clientId: process.env.GOOGLE_CLIENT_ID || '', clientSecret: process.env.GOOGLE_CLIENT_SECRET || '' }, github: { clientId: process.env.GITHUB_CLIENT_ID || '', clientSecret: process.env.GITHUB_CLIENT_SECRET || '' } } });
+
   // Start API server
-  const app = createServer(engine);
+  const app = createServer(engine, tunnelManager, oauthConfig);
   setupExtendedEndpoints(app);
-  app.listen(config.port, config.host, () => {
+  app.listen(config.port, config.host, async () => {
+    // Auto-start tunnel if enabled
+    if (tunnelConfig.enabled) {
+      try {
+        console.log(`[8Router] Starting tunnel (${tunnelConfig.provider}, mode: ${tunnelConfig.mode})...`);
+        const tunnelStatus = await tunnelManager.start();
+        if (tunnelStatus.state === 'active') {
+          console.log(`[8Router] Tunnel active: ${tunnelStatus.publicUrl}`);
+          if (!tunnelConfig.authRequired) {
+            console.warn('[8Router] ⚠️  WARNING: Tunnel auth is DISABLED. Set TUNNEL_AUTH_REQUIRED=true for production.');
+          }
+        } else if (tunnelStatus.state === 'error') {
+          console.error(`[8Router] Tunnel error: ${tunnelStatus.error}`);
+        }
+      } catch (err: any) {
+        console.error(`[8Router] Failed to start tunnel: ${err.message}`);
+      }
+    }
+
     const totalModels = engine.getRegistry().getAvailableModels().length;
     const totalProviders = engine.getRegistry().getAllProviders().length;
     const tiers = config.fallback.tiers.join(' → ');
+    const tunnelStatus = tunnelConfig.enabled ? `${tunnelConfig.provider} (${tunnelConfig.mode})` : 'OFF';
+    const oauthStatus = oauthConfig.enabled ? oauthConfig.provider : 'OFF';
 
     console.log(BANNER
       .replace('{PORT}', String(config.port))
@@ -94,6 +129,8 @@ function main() {
       .replace('{MODEL_COUNT}', String(totalModels))
       .replace('{KEY_POOL_COUNT}', String(totalPoolKeys))
       .replace('{TIERS}', tiers)
+      .replace('{TUNNEL_STATUS}', tunnelStatus)
+      .replace('{OAUTH_STATUS}', oauthStatus)
     );
 
     const providers = engine.getRegistry().getAllProviders();

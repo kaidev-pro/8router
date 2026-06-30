@@ -90,6 +90,83 @@ if [ "$PICKER" = "ok" ]; then ok "Smart model picker working"; else fail "Smart 
 BENCH=$(curl -s -o /dev/null -w '%{http_code}' "$API_URL/admin/benchmarks" 2>/dev/null)
 if [ "$BENCH" = "200" ]; then ok "Benchmark endpoint active"; else warn "Benchmark endpoint: HTTP $BENCH"; fi
 
+# 15. OAuth status
+OAUTH_STATUS=$(curl -s "$API_URL/admin/oauth/status" 2>/dev/null | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+enabled=d.get('enabled',False)
+provider=d.get('provider','none')
+has_secret=d.get('hasSessionSecret',False)
+validation=d.get('validation',{})
+print(f'{enabled}|{provider}|{has_secret}|{validation.get(\"valid\",False)}|{\";\".join(validation.get(\"errors\",[]))}')
+" 2>/dev/null || echo "error")
+if [ "$OAUTH_STATUS" != "error" ]; then
+  OAUTH_ENABLED=$(echo "$OAUTH_STATUS" | cut -d'|' -f1)
+  OAUTH_PROVIDER=$(echo "$OAUTH_STATUS" | cut -d'|' -f2)
+  OAUTH_SECRET=$(echo "$OAUTH_STATUS" | cut -d'|' -f3)
+  OAUTH_VALID=$(echo "$OAUTH_STATUS" | cut -d'|' -f4)
+  OAUTH_ERRORS=$(echo "$OAUTH_STATUS" | cut -d'|' -f5)
+  if [ "$OAUTH_ENABLED" = "True" ]; then
+    ok "OAuth enabled (provider: $OAUTH_PROVIDER)"
+    if [ "$OAUTH_SECRET" = "True" ]; then ok "Session secret configured"; else fail "Session secret missing"; fi
+    if [ "$OAUTH_VALID" = "True" ]; then ok "OAuth config valid"; else fail "OAuth config invalid: $OAUTH_ERRORS"; fi
+  else
+    ok "OAuth disabled (default)"
+  fi
+else
+  warn "OAuth status endpoint unavailable"
+fi
+
+# 16. OAuth secrets masked
+OAUTH_LEAKED=$(curl -s "$API_URL/admin/oauth/config" 2>/dev/null | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+leaked=0
+for k,v in d.items():
+    if isinstance(v,str) and len(v)>15 and '...' not in v and k not in ['enabled','provider']:
+        leaked+=1
+print(leaked)" 2>/dev/null || echo "error")
+if [ "$OAUTH_LEAKED" = "0" ]; then ok "OAuth secrets masked"; elif [ "$OAUTH_LEAKED" != "error" ]; then fail "OAuth secrets NOT masked ($OAUTH_LEAKED leaked)"; else warn "OAuth config check skipped"; fi
+
+# 17. i18n translation files
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+I18N_EN=$(python3 -c "import json; print(len(json.load(open('$PROJECT_DIR/src/i18n/en.json'))))" 2>/dev/null || echo "0")
+I18N_ID=$(python3 -c "import json; print(len(json.load(open('$PROJECT_DIR/src/i18n/id.json'))))" 2>/dev/null || echo "0")
+I18N_JA=$(python3 -c "import json; print(len(json.load(open('$PROJECT_DIR/src/i18n/ja.json'))))" 2>/dev/null || echo "0")
+if [ "$I18N_EN" -gt "100" ] && [ "$I18N_ID" -gt "100" ] && [ "$I18N_JA" -gt "100" ]; then
+  ok "i18n translations loaded (en:$I18N_EN id:$I18N_ID ja:$I18N_JA keys)"
+else
+  fail "i18n translation files incomplete (en:$I18N_EN id:$I18N_ID ja:$I18N_JA)"
+fi
+
+# 18. i18n missing keys
+MISSING_ID=$(python3 -c "
+import json
+en=set(json.load(open('$PROJECT_DIR/src/i18n/en.json')).keys())
+id=set(json.load(open('$PROJECT_DIR/src/i18n/id.json')).keys())
+print(len(en-id))" 2>/dev/null || echo "error")
+MISSING_JA=$(python3 -c "
+import json
+en=set(json.load(open('$PROJECT_DIR/src/i18n/en.json')).keys())
+ja=set(json.load(open('$PROJECT_DIR/src/i18n/ja.json')).keys())
+print(len(en-ja))" 2>/dev/null || echo "error")
+if [ "$MISSING_ID" = "0" ] && [ "$MISSING_JA" = "0" ]; then
+  ok "i18n no missing translation keys"
+elif [ "$MISSING_ID" != "error" ] && [ "$MISSING_JA" != "error" ]; then
+  warn "i18n missing keys — id:$MISSING_ID ja:$MISSING_JA"
+else
+  warn "i18n key check skipped"
+fi
+
+# 19. i18n locale detection
+I18N_DETECTED=$(curl -s -o /dev/null -w '%{http_code}' "$API_URL/8router/?lang=id" 2>/dev/null)
+if [ "$I18N_DETECTED" = "200" ]; then
+  ok "i18n locale detection working"
+else
+  fail "i18n locale detection failed (HTTP $I18N_DETECTED)"
+fi
+
 echo ""
 echo "═══════════════════════════════════════════════"
 echo ""

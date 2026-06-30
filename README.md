@@ -139,6 +139,122 @@ routing:
 - **Circuit breaker** — failing providers automatically removed from rotation
 - **Admin endpoints** — local-only, never exposed externally
 - **Error sanitization** — internal errors stripped before client response
+- **OAuth support** — Google/GitHub login for shared/public dashboard access
+- **Session cookies** — httpOnly, SameSite=Lax, HMAC-signed
+
+## OAuth
+
+OAuth protects dashboard/admin routes when 8Router is exposed via tunnel or public access. Disabled by default.
+
+### Quick Setup
+
+```bash
+# .env
+OAUTH_ENABLED=***
+OAUTH_PROVIDER=***
+GOOGLE_CLIENT_ID=your-***-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+SESSION_SECRET=your-random-secret   # auto-generated if empty
+```
+
+### Google OAuth Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Create OAuth 2.0 Client ID (Web application)
+3. Add redirect URI: `http://localhost:8080/auth/google/callback`
+4. For tunnel: `https://YOUR-TUNNEL-URL/auth/google/callback`
+5. Copy Client ID and Secret to `.env`
+
+### GitHub OAuth Setup
+
+1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
+2. Create new OAuth App
+3. Set callback URL: `http://localhost:8080/auth/github/callback`
+4. For tunnel: `https://YOUR-TUNNEL-URL/auth/github/callback`
+5. Copy Client ID and Client Secret to `.env`
+
+### Access Control
+
+```bash
+# Allow specific emails only
+OAUTH_ALLOWED_EMAILS=user1@gmail.com,user2@company.com
+
+# Allow entire domains
+OAUTH_ALLOWED_DOMAINS=company.com,team.org
+```
+
+If both are empty, any authenticated user can access (dev mode).
+
+### Auth Routes
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/auth/login` | GET | Login page with OAuth buttons |
+| `/auth/logout` | GET | Clear session, redirect to landing |
+| `/auth/me` | GET | Current user info (JSON) |
+| `/auth/google` | GET | Start Google OAuth flow |
+| `/auth/google/callback` | GET | Google callback |
+| `/auth/github` | GET | Start GitHub OAuth flow |
+| `/auth/github/callback` | GET | GitHub callback |
+
+### Security Notes
+
+- OAuth protects dashboard/admin only — NOT `/v1/*` (API key auth)
+- `/v1/*` always requires API key, even with OAuth enabled
+- Session cookies: httpOnly, SameSite=Lax, signed with HMAC-SHA256
+- CSRF protection via signed state parameter
+- All OAuth secrets masked in config/dashboard/logs
+- `/admin/*` always local-only regardless of OAuth
+
+## i18n (Multi-Language)
+
+8Router supports English, Indonesian, and Japanese for the landing page.
+
+### Supported Languages
+
+| Code | Language | Status |
+|------|----------|--------|
+| `en` | English | Default |
+| `id` | Indonesia | ✅ Complete |
+| `ja` | 日本語 | ✅ Complete |
+
+### How to Use
+
+```bash
+# Query parameter
+http://localhost:8080/8router/?lang=id
+http://localhost:8080/8router/?lang=ja
+
+# Cookie (set automatically when you choose a language)
+8router_locale=id
+
+# Accept-Language header (automatic)
+curl -H "Accept-Language: ja" http://localhost:8080/8router/
+```
+
+### Locale Detection Priority
+
+1. Query param: `?lang=id`
+2. Cookie: `8router_locale`
+3. `Accept-Language` header
+4. Default: `en`
+
+### What's Translated
+
+- Landing page: hero, sections, buttons, labels, footer
+- Language switcher in footer
+- Meta tags (title, description, OG tags)
+
+### What's NOT Translated
+
+- Code snippets (`npm install -g 8router`)
+- Model aliases (`8router/auto`, `8router/cheap`, etc.)
+- Provider names (OpenAI, Groq, etc.)
+- API endpoints (`/v1/chat/completions`)
+- Dashboard (Phase 3 landing only)
+- CSRF protection via signed state parameter
+- All OAuth secrets masked in config/dashboard/logs
+- `/admin/*` always local-only regardless of OAuth
 
 ## Backup
 

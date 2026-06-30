@@ -27,6 +27,11 @@ import {
   } from '../database.js';
   import { applyGuardrails, getGuardrailsConfig, setGuardrailsConfig } from '../guardrails.js';
 import { getLandingHTML } from '../landing.js';
+import { getLocale, setLocaleCookie, type Locale } from '../i18n/index.js';
+import type { TunnelConfig } from '../tunnel/config.js';
+import { TunnelManager, getTunnelConfig, tunnelAccessGuard, tunnelTokenAuth, adminLocalOnly, getTunnelWarnings, maskSecret } from '../tunnel/index.js';
+import type { OAuthConfig } from '../oauth/config.js';
+import { getOAuthConfig, getOAuthConfigForDisplay, validateOAuthConfig, SessionManager, requireAuth, createAuthRoutes } from '../oauth/index.js';
 import { getSetupGuideHTML } from '../setup-guide.js';
 import { getDashboardHTML } from '../dashboard/dashboard.js';
 import { getAllPoolStatuses } from '../providers/key-pool.js';
@@ -200,13 +205,44 @@ function detectRequestFormat(req: Request, body: any): FormatDetectionResult {
   return { format: 'openai', source: 'default' };
 }
 
-export function createServer(engine: RouterEngine): express.Express {
+export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager, oauthConfig?: OAuthConfig): express.Express {
+  const tunnelConfig = tunnelManager?.getConfig() ?? { enabled: false, provider: 'manual' as const, mode: 'dashboard-only' as const, authRequired: true, token: '', publicUrl: '', cloudflareToken: '', ngrokToken: '' };
+  const oauth = oauthConfig ?? { enabled: false, provider: 'none' as const, allowedEmails: [], allowedDomains: [], sessionSecret: '', sessionMaxAgeHours: 24, google: { clientId: '', clientSecret: '' }, github: { clientId: '', clientSecret: '' } };
+  const sessionManager = new SessionManager(oauth);
+
   const app = express();
 
   app.use(cors());
   app.use(express.json({ limit: '10mb' }));
   app.use('/8router/public', express.static(path.join(__dirname, '../../public')));
   app.use('/assets', express.static(path.join(__dirname, '../../public/assets')));
+
+  // ═══════════════════════════════════════════════
+  // TUNNEL MIDDLEWARE
+  // ═══════════════════════════════════════════════
+
+  // Tunnel access mode guard — blocks routes not allowed in current mode
+  if (tunnelConfig.enabled) {
+    app.use(tunnelAccessGuard(tunnelConfig));
+    app.use(tunnelTokenAuth(tunnelConfig));
+  }
+
+  // Admin endpoints — always local-only
+  app.use('/admin', adminLocalOnly());
+
+  // ═══════════════════════════════════════════════
+  // OAUTH ROUTES
+  // ═══════════════════════════════════════════════
+
+  // Mount auth routes (login, logout, callbacks)
+  app.use(createAuthRoutes(oauth, sessionManager));
+
+  // OAuth protection for protected routes
+  if (oauth.enabled) {
+    app.use('/8router/dashboard', requireAuth(oauth, sessionManager));
+    app.use('/8router/setup', requireAuth(oauth, sessionManager));
+    app.use('/admin', requireAuth(oauth, sessionManager));
+  }
 
   // Setup guide page
   app.get('/8router/setup', (_req, res) => {
@@ -223,7 +259,76 @@ export function createServer(engine: RouterEngine): express.Express {
   // ═══════════════════════════════════════════════
 
   app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', uptime: process.uptime() });
+    res.json({ status: 'ok', uptime: process.uptime(), tunnel: tunnelManager?.getStatus().state ?? 'disabled' });
+  });
+
+  // ═══════════════════════════════════════════════
+  // TUNNEL ADMIN ENDPOINTS (local-only)
+  // ═══════════════════════════════════════════════
+
+  app.get('/admin/tunnel/status', (_req, res) => {
+    const status = tunnelManager?.getStatus() ?? { state: 'disabled' };
+    res.json(status);
+  });
+
+  app.post('/admin/tunnel/start', async (_req, res) => {
+    if (!tunnelManager) return res.json({ error: 'Tunnel not configured' });
+    try {
+      const status = await tunnelManager.start();
+      res.json(status);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/admin/tunnel/stop', async (_req, res) => {
+    if (!tunnelManager) return res.json({ error: 'Tunnel not configured' });
+    const status = await tunnelManager.stop();
+    res.json(status);
+  });
+
+  app.get('/admin/tunnel/config', (_req, res) => {
+    // Return config with masked secrets
+    const cfg = tunnelManager?.getConfig();
+    if (!cfg) return res.json({ enabled: false });
+    res.json({
+      enabled: cfg.enabled,
+      provider: cfg.provider,
+      mode: cfg.mode,
+      authRequired: cfg.authRequired,
+      token: maskSecret(cfg.token),
+      publicUrl: cfg.publicUrl,
+      hasCloudflareToken: !!cfg.cloudflareToken,
+      hasNgrokToken: !!cfg.ngrokToken,
+    });
+  });
+
+  app.get('/admin/tunnel/warnings', (_req, res) => {
+    const cfg = tunnelManager?.getConfig();
+    if (!cfg) return res.json({ warnings: [] });
+    res.json({ warnings: getTunnelWarnings(cfg) });
+  });
+
+  // ═══════════════════════════════════════════════
+  // OAUTH ADMIN ENDPOINTS (local-only)
+  // ═══════════════════════════════════════════════
+
+  app.get('/admin/oauth/status', (_req, res) => {
+    const validation = validateOAuthConfig(oauth);
+    res.json({
+      enabled: oauth.enabled,
+      provider: oauth.provider,
+      hasSessionSecret: !!oauth.sessionSecret,
+      google: { configured: !!(oauth.google.clientId && oauth.google.clientSecret) },
+      github: { configured: !!(oauth.github.clientId && oauth.github.clientSecret) },
+      allowedEmails: oauth.allowedEmails.length,
+      allowedDomains: oauth.allowedDomains.length,
+      validation,
+    });
+  });
+
+  app.get('/admin/oauth/config', (_req, res) => {
+    res.json(getOAuthConfigForDisplay(oauth));
   });
 
   // ═══════════════════════════════════════════════
@@ -1710,8 +1815,10 @@ export function createServer(engine: RouterEngine): express.Express {
   });
 
   // Landing page at /8router/
-  app.get('/8router/', (_req, res) => {
-    res.type('html').send(getLandingHTML());
+  app.get('/8router/', (req, res) => {
+    const locale = getLocale(req);
+    setLocaleCookie(res, locale);
+    res.type('html').send(getLandingHTML(locale));
   });
 
   // Benchmark endpoint

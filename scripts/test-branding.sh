@@ -1,80 +1,113 @@
 #!/bin/bash
-# 8Router Provider Branding Test
+# 8Router — Logo & Branding Verification Test
+# Checks: all provider + integration logos exist, valid SVGs, no broken images
+
 set +e
-PASS=0; FAIL=0
-GREEN='\033[0;32m'; RED='\033[0;31m'; NC='\033[0m'
-pass() { echo -e "  ${GREEN}✓${NC} $1"; ((PASS++)); }
-fail() { echo -e "  ${RED}✗${NC} $1"; ((FAIL++)); }
-info() { echo -e "▸ $1"; }
+PASS=0; FAIL=0; WARN=0
+
+check() {
+  local desc="$1" result="$2"
+  if [ "$result" = "pass" ]; then
+    echo "  ✅ $desc"; ((PASS++))
+  elif [ "$result" = "warn" ]; then
+    echo "  ⚠️  $desc"; ((WARN++))
+  else
+    echo "  ❌ $desc"; ((FAIL++))
+  fi
+}
+
+echo "═══ Provider Logo Check ═══"
+
+PROVIDERS=(openai anthropic gemini xai mistral groq openrouter deepseek together cohere perplexity replicate ollama lmstudio vllm mimo antigravity cerebras sambanova fireworks azure aws-bedrock vertex-ai)
+
+for p in "${PROVIDERS[@]}"; do
+  FILE="/root/8router/public/assets/providers/${p}.svg"
+  if [ ! -f "$FILE" ]; then
+    check "$p.svg — MISSING" "fail"
+    continue
+  fi
+  SIZE=$(wc -c < "$FILE")
+  if [ "$SIZE" -lt 100 ]; then
+    check "$p.svg — too small (${SIZE}B)" "fail"
+    continue
+  fi
+  # Check if it's a text fallback (just has <text> with no <path>/<circle>/<rect>)
+  if grep -q '<text' "$FILE" && ! grep -q '<path\|<circle\|<rect' "$FILE"; then
+    check "$p.svg — text monogram (${SIZE}B)" "warn"
+  else
+    check "$p.svg — valid (${SIZE}B)" "pass"
+  fi
+done
 
 echo ""
-echo "═══════════════════════════════════════════════"
-echo "  Provider Branding Tests"
-echo "═══════════════════════════════════════════════"
-echo ""
+echo "═══ Integration Logo Check ═══"
 
-# 1. Branding registry
-info "Branding Registry"
-BRANDS=$(node -e "
-const fs = require('fs');
-const src = fs.readFileSync('src/config/provider-branding.ts', 'utf8');
-const ids = [...src.matchAll(/^\s{2}(?:\x27)?([a-z][a-z0-9-]+)(?:\x27)?:\s*\{/gm)].map(m => m[1]).filter(id => id !== 'capabilities');
-const names = [...src.matchAll(/name:\s*\x27([^\x27]+)\x27/g)].map(m => m[1]);
-const logos = [...src.matchAll(/logo:\s*\x27([^\x27]+)\x27/g)].map(m => m[1]);
-let errors = 0;
-if (ids.length !== names.length) errors++;
-if (ids.length !== logos.length) errors++;
-const dupes = ids.filter((v, i) => ids.indexOf(v) !== i);
-if (dupes.length) errors++;
-let missing = 0;
-for (const logo of logos) { if (!fs.existsSync('public' + logo)) missing++; }
-if (missing) errors++;
-console.log(errors === 0 ? 'OK:' + ids.length : 'ERRORS:' + errors);
-" 2>/dev/null)
+INTEGRATIONS=(cursor cline continue roo-code open-webui claude-code codex-cli hermes-agent)
 
-if echo "$BRANDS" | grep -q "^OK:"; then
-  COUNT=$(echo "$BRANDS" | sed 's/OK://')
-  pass "All $COUNT providers have valid branding"
-else
-  fail "Branding issues: $BRANDS"
-fi
-
-# 2. Logo files
-info "Logo Files"
-LOGO_COUNT=$(ls public/assets/providers/*.svg 2>/dev/null | wc -l)
-if [ "$LOGO_COUNT" -ge "20" ]; then
-  pass "Provider logos: $LOGO_COUNT SVG files"
-else
-  fail "Only $LOGO_COUNT logo files (expected 20+)"
-fi
-
-# 3. Source types
-info "Source Types"
-SI=$(grep -c "simple-icons" src/config/provider-branding.ts)
-CF=$(grep -c "custom-fallback" src/config/provider-branding.ts)
-pass "Source: $SI simple-icons, $CF custom-fallback"
-
-# 4. Landing page logos
-info "Landing Page Logos"
-LANDING_LOGOS=$(curl -s http://localhost:8080/8router/ | grep -c "prov-logo")
-if [ "$LANDING_LOGOS" -gt "10" ]; then
-  pass "Landing page: $LANDING_LOGOS logo instances"
-else
-  fail "Landing page only $LANDING_LOGOS logo instances"
-fi
-
-# 5. Dashboard logos
-info "Dashboard Logos"
-DASH_LOGOS=$(curl -s http://localhost:8080/8router/dashboard | grep -c "provLogo\|prov-logo")
-if [ "$DASH_LOGOS" -gt "5" ]; then
-  pass "Dashboard: $DASH_LOGOS logo instances"
-else
-  fail "Dashboard only $DASH_LOGOS logo instances"
-fi
+for i in "${INTEGRATIONS[@]}"; do
+  FILE="/root/8router/public/assets/integrations/${i}.svg"
+  if [ ! -f "$FILE" ]; then
+    check "$i.svg — MISSING" "fail"
+    continue
+  fi
+  SIZE=$(wc -c < "$FILE")
+  if [ "$SIZE" -lt 100 ]; then
+    check "$i.svg — too small (${SIZE}B)" "fail"
+  else
+    check "$i.svg — exists (${SIZE}B)" "pass"
+  fi
+done
 
 echo ""
-echo "═══════════════════════════════════════════════"
-echo -e "  Results: ${GREEN}$PASS passed${NC}, ${RED}$FAIL failed${NC}"
-echo "═══════════════════════════════════════════════"
+echo "═══ Landing Page Logo References ═══"
 
-if [ "$FAIL" -gt "0" ]; then exit 1; fi
+LANDING="/root/8router/src/landing.ts"
+
+# Check provider logos referenced in landing
+for p in openai anthropic gemini xai groq openrouter mistral deepseek together cohere perplexity ollama lmstudio vllm; do
+  if grep -q "providers/${p}.svg" "$LANDING"; then
+    check "Landing references $p.svg" "pass"
+  else
+    check "Landing references $p.svg" "fail"
+  fi
+done
+
+# Check integration logos referenced in landing
+for i in cursor cline continue roo-code open-webui claude-code codex-cli hermes-agent; do
+  if grep -q "integrations/${i}.svg" "$LANDING"; then
+    check "Landing references $i.svg" "pass"
+  else
+    check "Landing references $i.svg" "fail"
+  fi
+done
+
+echo ""
+echo "═══ Live Server Check ═══"
+
+# Check if server is running
+if curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/8router/ | grep -q 200; then
+  check "Landing page serves 200" "pass"
+else
+  check "Landing page serves 200" "fail"
+fi
+
+# Spot-check a few logo URLs
+for asset in "assets/providers/openai.svg" "assets/providers/groq.svg" "assets/integrations/cursor.svg" "assets/integrations/hermes-agent.svg"; do
+  STATUS=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080/${asset}")
+  if [ "$STATUS" = "200" ]; then
+    check "GET /${asset} → 200" "pass"
+  else
+    check "GET /${asset} → ${STATUS}" "fail"
+  fi
+done
+
+echo ""
+echo "═══ Summary ═══"
+echo "  ✅ Passed: $PASS"
+echo "  ⚠️  Warn:   $WARN"
+echo "  ❌ Failed: $FAIL"
+echo "  Total:     $((PASS + WARN + FAIL))"
+
+if [ "$FAIL" -gt 0 ]; then
+  exit 1
+fi

@@ -961,6 +961,8 @@ tr:hover td { background:var(--bg-card-hover) }
     <span>port ${apiPort}</span><span class="sep">\u00b7</span>
     <span>gateway</span><span class="sep">\u00b7</span>
     <span class="val green" id="conn-badge-text">connected</span>
+    <span class="sep">\u00b7</span>
+    <span class="val" id="oauth-badge">OAuth: disabled</span>
     <span class="spacer"></span>
     <span class="val accent">OpenAI-compatible</span>
   </div>
@@ -1651,6 +1653,19 @@ async function refresh() {
     document.getElementById('conn-badge').innerHTML = '<span class="dot"></span> Connected';
     document.getElementById('conn-badge-text').textContent = 'connected';
     document.getElementById('conn-badge-text').className = 'val green';
+
+    // Fetch OAuth status
+    try {
+      var oauthStatus = await apiFetch(API+'/admin/oauth/status');
+      var ob = document.getElementById('oauth-badge');
+      if (oauthStatus && oauthStatus.enabled) {
+        ob.textContent = 'OAuth: ' + oauthStatus.provider;
+        ob.style.color = 'var(--green)';
+      } else {
+        ob.textContent = 'OAuth: disabled';
+        ob.style.color = 'var(--text-muted)';
+      }
+    } catch(e) { /* ignore */ }
   } catch(e) {
     document.getElementById('conn-badge').className = 'badge off';
     document.getElementById('conn-badge').innerHTML = '<span class="dot"></span> Disconnected';
