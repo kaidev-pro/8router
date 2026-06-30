@@ -18,15 +18,15 @@ export function pickBestModel(options: PickerOptions): { model: string; provider
   let candidates = [...getAllCapableModels()];
 
   // Filter by requirements
-  if (options.requireVision) candidates = candidates.filter(m => m.supportsVision);
-  if (options.requireTools) candidates = candidates.filter(m => m.supportsTools);
+  if (options.requireVision) candidates = candidates.filter(m => m.vision);
+  if (options.requireTools) candidates = candidates.filter(m => m.tools);
   if (options.excludeProviders) candidates = candidates.filter(m => !options.excludeProviders!.includes(m.provider));
-  if (options.maxCostPer1m) candidates = candidates.filter(m => (m.costPer1mInput + m.costPer1mOutput) <= options.maxCostPer1m!);
+  if (options.maxCostPer1m) candidates = candidates.filter(m => ((m.costPer1mInput ?? 0) + (m.costPer1mOutput ?? 0)) <= options.maxCostPer1m!);
 
   // Task-specific filtering
-  if (options.task === 'coding') candidates = candidates.filter(m => m.supportsTools && m.quality !== 'low');
-  if (options.task === 'vision') candidates = candidates.filter(m => m.supportsVision);
-  if (options.task === 'fast') candidates = candidates.filter(m => m.speed === 'fast');
+  if (options.task === 'coding') candidates = candidates.filter(m => m.tools && m.qualityTier !== 'low');
+  if (options.task === 'vision') candidates = candidates.filter(m => m.vision);
+  if (options.task === 'fast') candidates = candidates.filter(m => m.speedTier === 'fast');
 
   if (candidates.length === 0) return null;
 
@@ -35,16 +35,16 @@ export function pickBestModel(options: PickerOptions): { model: string; provider
     let score = 0;
     
     // Cost score (lower is better)
-    const maxCost = Math.max(...candidates.map(c => c.costPer1mInput + c.costPer1mOutput));
-    const costNorm = maxCost > 0 ? (m.costPer1mInput + m.costPer1mOutput) / maxCost : 0;
+    const maxCost = Math.max(...candidates.map(c => (c.costPer1mInput ?? 0) + (c.costPer1mOutput ?? 0)));
+    const costNorm = maxCost > 0 ? ((m.costPer1mInput ?? 0) + (m.costPer1mOutput ?? 0)) / maxCost : 0;
     score += (1 - costNorm) * 30;
 
     // Speed score
-    const speedScore = m.speed === 'fast' ? 30 : m.speed === 'medium' ? 20 : 10;
+    const speedScore = m.speedTier === 'fast' ? 30 : m.speedTier === 'medium' ? 20 : 10;
     score += speedScore * (options.preferSpeed ? 1.5 : 1);
 
     // Quality score
-    const qualityScore = m.quality === 'premium' ? 30 : m.quality === 'high' ? 20 : m.quality === 'medium' ? 10 : 0;
+    const qualityScore = m.qualityTier === 'premium' ? 30 : m.qualityTier === 'high' ? 20 : m.qualityTier === 'medium' ? 10 : 0;
     score += qualityScore * (options.preferQuality ? 1.5 : 1);
 
     // Latency bonus (if we have data)
@@ -60,10 +60,10 @@ export function pickBestModel(options: PickerOptions): { model: string; provider
   return {
     model: best.model.id,
     provider: best.model.provider,
-    reason: `Selected ${best.model.displayName} (score: ${best.score.toFixed(1)}, cost: $${best.model.costPer1mInput + best.model.costPer1mOutput}/1M, speed: ${best.model.speed})`,
+    reason: `Selected ${best.model.displayName} (score: ${best.score.toFixed(1)}, cost: $${(best.model.costPer1mInput ?? 0) + (best.model.costPer1mOutput ?? 0)}/1M, speed: ${best.model.speedTier})`,
   };
 }
 
 function getAllCapableModels(): ModelCapability[] {
-  return MODEL_CAPABILITIES.filter(m => !m.supportsEmbeddings);
+  return MODEL_CAPABILITIES.filter(m => !m.embeddings);
 }

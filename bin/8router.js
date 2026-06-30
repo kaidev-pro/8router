@@ -323,6 +323,31 @@ async function main() {
     cleanupRaw();
     return;
   }
+  if (args.includes('--benchmark')) {
+    console.log(`\n  ${C.accent}⚡ Running latency benchmark...${C.reset}\n`);
+    try {
+      const res = execSync(`curl -s http://localhost:${API_PORT}/admin/benchmarks --connect-timeout 10 2>/dev/null`, { encoding: 'utf8' });
+      const data = JSON.parse(res);
+      if (data.benchmarks) {
+        for (const b of data.benchmarks) {
+          const icon = b.error ? `${C.red}✗${C.reset}` : `${C.green}✓${C.reset}`;
+          const latency = b.error ? b.error : `${b.latencyMs}ms`;
+          console.log(`  ${icon} ${b.provider.padEnd(15)} ${latency}`);
+        }
+      }
+      if (data.stats && Object.keys(data.stats).length > 0) {
+        console.log(`\n  ${C.dim}Latency stats:${C.reset}`);
+        for (const [key, s] of Object.entries(data.stats)) {
+          console.log(`  ${C.dim}${key}: p50=${s.p50}ms p95=${s.p95}ms avg=${s.avg.toFixed(0)}ms (${s.count} samples)${C.reset}`);
+        }
+      }
+    } catch (e) {
+      console.log(`  ${C.red}Benchmark failed: ${e.message}${C.reset}`);
+      console.log(`  ${C.dim}Make sure the server is running: 8router --start${C.reset}`);
+    }
+    console.log('');
+    return;
+  }
   if (args.includes('--help') || args.includes('-h')) {
     console.log(`
   ${C.accent}8${C.orange}Router${C.reset} v${pkg.version}
@@ -338,6 +363,7 @@ async function main() {
     --export-config Export config to JSON (keys masked)
     --backup        Full backup (config + quota + settings)
     --doctor        Run system health check
+    --benchmark     Run latency benchmark against providers
 
   Interactive mode (no args):
     8router

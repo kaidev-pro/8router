@@ -1,4 +1,5 @@
-import { ChatCompletionResponse } from '../types.js';
+import { ChatCompletionRequest, ChatCompletionResponse, ProviderKey } from '../types.js';
+import { FullProviderAdapter } from './provider-adapter.js';
 
 interface StreamingFallbackOptions {
   maxRetries: number;
@@ -25,8 +26,8 @@ export class StreamingFallbackHandler {
     retryFn: () => Promise<Response>,
   ): Promise<{ shouldRetry: boolean; partialContent?: string }> {
     if (this.retryCount >= this.options.maxRetries) {
-      return { 
-        shouldRetry: false, 
+      return {
+        shouldRetry: false,
         partialContent: this.options.collectPartial ? this.partialChunks.join('') : undefined,
       };
     }
@@ -95,4 +96,110 @@ export function createSSEStream(response: Response): ReadableStream {
       }
     },
   });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Adapter-integrated streaming with provider fallback
+// ═══════════════════════════════════════════════════════════════
+
+interface FallbackStreamResult {
+  provider: ProviderKey;
+  fallbackPath: string[];
+  chunks: any[];
+}
+
+/**
+ * Stream with automatic provider fallback.
+ * - Tries first provider; if error BEFORE first token, falls back to next.
+ * - If error AFTER stream started, sends error chunk instead of corrupting.
+ * - Returns metadata with _8router info.
+ */
+export async function streamWithFallback(
+  req: ChatCompletionRequest,
+  providers: ProviderKey[],
+  adapters: FullProviderAdapter[],
+  onData: (chunk: any) => void,
+  onError?: (err: any, provider: ProviderKey) => void,
+): Promise<FallbackStreamResult> {
+  const fallbackPath: string[] = [];
+  const allChunks: any[] = [];
+
+  for (let i = 0; i < providers.length; i++) {
+    const provider = providers[i];
+    const adapter = adapters[i];
+    let streamStarted = false;
+    let chunkCount = 0;
+
+    try {
+      fallbackPath.push(provider.id);
+      console.log(`[8Router] Attempting stream via ${provider.id} (${provider.name})`);
+
+      await adapter.streamChatCompletion(req, provider, (chunk: any) => {
+        streamStarted = true;
+        chunkCount++;
+        allChunks.push(chunk);
+        onData(chunk);
+      });
+
+      // Stream completed successfully
+      console.log(`[8Router] Stream completed via ${provider.id} (${chunkCount} chunks)`);
+      return {
+        provider,
+        fallbackPath,
+        chunks: allChunks,
+      };
+    } catch (err: any) {
+      if (!streamStarted) {
+        // Error BEFORE first token — safe to fallback
+        console.warn(`[8Router] Pre-stream error on ${provider.id}: ${err.message || err}. Trying next provider.`);
+        onError?.(err, provider);
+        continue;
+      } else {
+        // Error AFTER stream started — don't corrupt, send error chunk
+        console.error(`[8Router] Mid-stream error on ${provider.id}: ${err.message || err}`);
+        const errorChunk = {
+          id: `chatcmpl-error-${Date.now()}`,
+          object: 'chat.completion.chunk',
+          choices: [{
+            index: 0,
+            delta: { content: `\n\n[8Router Error: Stream interrupted on ${provider.id} — ${err.message || 'unknown'}]` },
+            finish_reason: 'error',
+          }],
+          _8router: {
+            error: true,
+            provider: provider.id,
+            fallbackPath,
+            message: err.message || 'Stream interrupted',
+          },
+        };
+        allChunks.push(errorChunk);
+        onData(errorChunk);
+        return { provider, fallbackPath, chunks: allChunks };
+      }
+    }
+  }
+
+  // All providers exhausted before any stream started
+  const errorMsg = `[8Router] All providers exhausted. Tried: ${fallbackPath.join(', ')}`;
+  console.error(errorMsg);
+  const errorChunk = {
+    id: `chatcmpl-error-${Date.now()}`,
+    object: 'chat.completion.chunk',
+    choices: [{
+      index: 0,
+      delta: { content: `\n\n[8Router Error: ${errorMsg}]` },
+      finish_reason: 'error',
+    }],
+    _8router: {
+      error: true,
+      fallbackPath,
+      message: errorMsg,
+    },
+  };
+  onData(errorChunk);
+  return {
+    provider: providers[providers.length - 1],
+    fallbackPath,
+    chunks: [errorChunk],
+  };
 }

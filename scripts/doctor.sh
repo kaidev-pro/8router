@@ -82,6 +82,14 @@ auth=d.get('security',{}).get('authRequired',True)
 print('warn' if not auth else 'ok')" 2>/dev/null || echo "ok")
 if [ "$PUBLIC" = "warn" ]; then warn "Public access without auth — set AUTH_REQUIRED=true for production"; fi
 
+# 13. Smart model picker
+PICKER=$(curl -s "$API_URL/8router/pick-model?task=auto" 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print('ok' if d.get('model') else 'fail')" 2>/dev/null || echo "fail")
+if [ "$PICKER" = "ok" ]; then ok "Smart model picker working"; else fail "Smart model picker not working"; fi
+
+# 14. Benchmark endpoint
+BENCH=$(curl -s -o /dev/null -w '%{http_code}' "$API_URL/admin/benchmarks" 2>/dev/null)
+if [ "$BENCH" = "200" ]; then ok "Benchmark endpoint active"; else warn "Benchmark endpoint: HTTP $BENCH"; fi
+
 echo ""
 echo "═══════════════════════════════════════════════"
 echo ""

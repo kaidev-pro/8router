@@ -68,6 +68,59 @@ export function getAllLatencyStats(): Record<string, LatencyStats> {
 }
 
 /**
+ * Alias for getAllLatencyStats (used by benchmark endpoint).
+ */
+export function getAllStats(): Record<string, LatencyStats> {
+  return getAllLatencyStats();
+}
+
+/**
+ * Run a latency benchmark against enabled providers.
+ * Sends a minimal chat completion request to each provider and records latency.
+ */
+export async function runBenchmark(
+  providers: Array<{ id: string; baseUrl: string; apiKey: string }>
+): Promise<Array<{ provider: string; latencyMs: number; error?: string }>> {
+  const results: Array<{ provider: string; latencyMs: number; error?: string }> = [];
+
+  for (const p of providers) {
+    try {
+      const start = Date.now();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+
+      const res = await fetch(`${p.baseUrl}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${p.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [{ role: 'user', content: 'hi' }],
+          max_tokens: 1,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+      const latencyMs = Date.now() - start;
+
+      if (res.ok) {
+        recordLatency(p.id, 'benchmark', latencyMs);
+        results.push({ provider: p.id, latencyMs });
+      } else {
+        results.push({ provider: p.id, latencyMs, error: `HTTP ${res.status}` });
+      }
+    } catch (err: any) {
+      results.push({ provider: p.id, latencyMs: 0, error: err.message });
+    }
+  }
+
+  return results;
+}
+
+/**
  * Clear all latency data (useful for testing or reset).
  */
 export function clearLatencyData(): void {

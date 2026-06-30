@@ -1714,17 +1714,30 @@ export function createServer(engine: RouterEngine): express.Express {
     res.type('html').send(getLandingHTML());
   });
 
+  // Benchmark endpoint
+  app.get('/admin/benchmarks', async (_req, res) => {
+    try {
+      const { getAllStats, runBenchmark } = await import('../providers/latency-tracker.js');
+      const providers = engine.getRegistry().getAllProviders()
+        .filter((p: any) => p.enabled && p.apiKey)
+        .map((p: any) => ({ id: p.id, baseUrl: p.baseUrl, apiKey: p.apiKey }));
+      const benchmarkResults = await runBenchmark(providers);
+      const stats = getAllStats();
+      res.json({ benchmarks: benchmarkResults, stats });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Smart model picker endpoint
   app.get('/8router/pick-model', (req, res) => {
-    const { task, tools, vision, maxCost, speed, quality } = req.query;
+    const { task, tools, vision, maxCost } = req.query;
 
     const result = pickBestModel({
       task: task as any,
       requireTools: tools === 'true',
       requireVision: vision === 'true',
       maxCostPer1m: maxCost ? parseFloat(maxCost as string) : undefined,
-      preferSpeed: speed === 'true',
-      preferQuality: quality === 'true',
     });
 
     if (result) {
