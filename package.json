@@ -1,18 +1,48 @@
 {
-  "name": "8router",
-  "version": "0.1.0",
-  "description": "8Router — AI routing gateway for 8Agents ecosystem",
+  "name": "@kaidev18/eight-router",
+  "version": "0.4.0",
+  "description": "8Router \u2014 AI routing gateway for 8Agents ecosystem",
   "author": "8Agents",
   "license": "MIT",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
     "8router": "./bin/8router.js"
+  },
+  "files": [
+    "bin/",
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "ai",
+    "router",
+    "gateway",
+    "openai",
+    "anthropic",
+    "llm",
+    "api",
+    "proxy",
+    "8agents"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kaidev-pro/8router"
+  },
+  "homepage": "https://8router.8agents.xyz",
+  "bugs": {
+    "url": "https://github.com/kaidev-pro/8router/issues"
   },
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "tsx src/__tests__/run.ts"
+    "test": "tsx src/__tests__/run.ts",
+    "test:router": "bash scripts/test-router.sh",
+    "test:openai-compat": "bash scripts/test-openai-compat.sh",
+    "doctor": "bash scripts/doctor.sh"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",

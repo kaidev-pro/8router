@@ -1,4 +1,4 @@
-// 8Router — Configuration (Extended with Catalog)
+// 8Router — Configuration (Extended with Catalog & Key Pool)
 
 import fs from 'fs';
 import path from 'path';
@@ -33,7 +33,7 @@ const DEFAULT_CONFIG: RouterConfig = {
   logLevel: 'info',
   dashboard: {
     enabled: true,
-    port: 8081,
+    port: 8080,
   },
 };
 
@@ -67,6 +67,9 @@ function mergeConfig(base: RouterConfig, override: Partial<RouterConfig>): Route
     ? override.providers
     : detectEnvProviders();
 
+  // Normalize providers: ensure apiKeys arrays are parsed and single apiKey is set
+  const normalizedProviders = providers.map(p => normalizeProvider(p));
+
   return {
     ...base,
     ...override,
@@ -76,7 +79,25 @@ function mergeConfig(base: RouterConfig, override: Partial<RouterConfig>): Route
       caveman: { ...base.compression.caveman, ...override.compression?.caveman },
     },
     dashboard: { ...base.dashboard, ...override.dashboard },
-    providers,
+    providers: normalizedProviders,
+  };
+}
+
+function normalizeProvider(p: any): RouterConfig['providers'][number] {
+  // If apiKeys array is present, ensure the first key (or the apiKey) is the active one
+  const apiKeys: string[] | undefined = Array.isArray(p.apiKeys) ? p.apiKeys : undefined;
+  const rotation: 'round-robin' | undefined = p.rotation === 'round-robin' ? 'round-robin' : undefined;
+
+  // If apiKey not set but apiKeys array exists, use first element
+  const apiKey = p.apiKey || (apiKeys && apiKeys.length > 0 ? apiKeys[0] : '');
+
+  return {
+    ...p,
+    apiKey,
+    apiKeys,
+    rotation,
+    adapter: p.adapter || 'openai',
+    priority: p.priority ?? 99,
   };
 }
 

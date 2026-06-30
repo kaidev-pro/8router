@@ -169,6 +169,57 @@ export const PROVIDER_CATALOG: ProviderDef[] = [
     models: ['*'],
     description: 'vLLM — high-performance local serving', requiresKey: false,
   },
+
+  // ── Service Providers (TTS, STT, Images, Search) ──
+  {
+    id: 'elevenlabs', name: 'ElevenLabs', tier: 'subscription' as const,
+    baseUrl: 'https://api.elevenlabs.io/v1', adapter: 'openai' as const,
+    envKey: 'ELEVENLABS_API_KEY',
+    models: ['eleven_multilingual_v2', 'eleven_turbo_v2', 'eleven_monolingual_v1'],
+    description: 'ElevenLabs — high-quality TTS', requiresKey: true,
+  },
+  {
+    id: 'deepgram', name: 'Deepgram', tier: 'cheap' as const,
+    baseUrl: 'https://api.deepgram.com/v1', adapter: 'openai' as const,
+    envKey: 'DEEPGRAM_API_KEY',
+    models: ['nova-2', 'nova-2-medical', 'whisper-large'],
+    description: 'Deepgram — fast STT', requiresKey: true,
+  },
+  {
+    id: 'stability', name: 'Stability AI', tier: 'subscription' as const,
+    baseUrl: 'https://api.stability.ai/v2beta', adapter: 'openai' as const,
+    envKey: 'STABILITY_API_KEY',
+    models: ['stable-diffusion-xl-1024-v1-0', 'stable-diffusion-v3'],
+    description: 'Stability AI — image generation', requiresKey: true,
+  },
+  {
+    id: 'fal', name: 'Fal.ai', tier: 'cheap' as const,
+    baseUrl: 'https://fal.run/api', adapter: 'openai' as const,
+    envKey: 'FAL_KEY',
+    models: ['fal-ai/flux/dev', 'fal-ai/flux/schnell', 'fal-ai/flux-pro'],
+    description: 'Fal.ai — fast image generation', requiresKey: true,
+  },
+  {
+    id: 'tavily', name: 'Tavily', tier: 'subscription' as const,
+    baseUrl: 'https://api.tavily.com', adapter: 'openai' as const,
+    envKey: 'TAVILY_API_KEY',
+    models: ['search', 'search-basic'],
+    description: 'Tavily — AI-optimized web search', requiresKey: true,
+  },
+  {
+    id: 'brave-search', name: 'Brave Search', tier: 'subscription' as const,
+    baseUrl: 'https://api.search.brave.com/res/v1', adapter: 'openai' as const,
+    envKey: 'BRAVE_API_KEY',
+    models: ['web', 'news'],
+    description: 'Brave Search API', requiresKey: true,
+  },
+  {
+    id: 'exa', name: 'Exa', tier: 'subscription' as const,
+    baseUrl: 'https://api.exa.ai', adapter: 'openai' as const,
+    envKey: 'EXA_API_KEY',
+    models: ['search', 'find-similar'],
+    description: 'Exa — neural web search', requiresKey: true,
+  },
 ];
 
 // Model aliases — map friendly names to provider-specific IDs

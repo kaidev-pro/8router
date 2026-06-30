@@ -379,6 +379,38 @@ export class VLLMAdapter extends OpenAIAdapter {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// Perplexity (search-augmented OpenAI-compatible)
+// ═══════════════════════════════════════════════════════════════
+export class PerplexityAdapter extends OpenAIAdapter {
+  name = 'perplexity';
+  constructor() {
+    super({
+      'Accept': 'application/json',
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Cerebras (fast inference, OpenAI-compatible)
+// ═══════════════════════════════════════════════════════════════
+export class CerebrasAdapter extends OpenAIAdapter {
+  name = 'cerebras';
+  constructor() {
+    super();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SambaNova (fast inference, OpenAI-compatible)
+// ═══════════════════════════════════════════════════════════════
+export class SambaNovaAdapter extends OpenAIAdapter {
+  name = 'sambanova';
+  constructor() {
+    super();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Adapter Factory
 // ═══════════════════════════════════════════════════════════════
 const ADAPTER_MAP: Record<string, () => ProviderAdapter> = {
@@ -396,6 +428,9 @@ const ADAPTER_MAP: Record<string, () => ProviderAdapter> = {
   'ollama': () => new OllamaAdapter(),
   'lmstudio': () => new LMStudioAdapter(),
   'vllm': () => new VLLMAdapter(),
+  'perplexity': () => new PerplexityAdapter(),
+  'cerebras': () => new CerebrasAdapter(),
+  'sambanova': () => new SambaNovaAdapter(),
 };
 
 export function getAdapter(provider: ProviderKey): ProviderAdapter {
@@ -417,6 +452,9 @@ export function getAdapter(provider: ProviderKey): ProviderAdapter {
   if (url.includes('fireworks')) return new FireworksAdapter();
   if (url.includes('replicate')) return new ReplicateAdapter();
   if (url.includes('openrouter')) return new OpenRouterAdapter();
+  if (url.includes('perplexity')) return new PerplexityAdapter();
+  if (url.includes('cerebras')) return new CerebrasAdapter();
+  if (url.includes('sambanova')) return new SambaNovaAdapter();
   if (url.includes('localhost') || url.includes('127.0.0.1')) return new OllamaAdapter();
 
   return new OpenAIAdapter(); // Default

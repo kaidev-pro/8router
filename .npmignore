@@ -1,0 +1,36 @@
+# Source files
+src/
+*.ts
+!dist/**/*.d.ts
+
+# Config files
+.env
+.env.*
+*.yaml
+!8router.example.yaml
+
+# Development
+node_modules/
+.npm
+.eslintrc*
+.prettierrc*
+tsconfig.json
+.git
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+
+# Database
+*.db
+*.sqlite
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+__tests__/
+*.test.ts
+*.spec.ts
