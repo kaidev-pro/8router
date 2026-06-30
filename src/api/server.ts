@@ -1529,7 +1529,7 @@ export function createServer(engine: RouterEngine): express.Express {
   app.get('/8router/info', (_req, res) => {
     res.json({
       name: '8Router',
-      version: '0.4.0',
+      version: '0.5.0',
       description: 'AI Routing Gateway for 8Agents',
       uptime: process.uptime(),
       features: [

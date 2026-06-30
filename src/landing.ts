@@ -663,7 +663,7 @@ footer {
     <div class="hero-inner">
       <div class="hero-badge">
         <span class="dot"></span>
-        Open Source &middot; v0.4.0 &middot; 8Agents Ecosystem
+        Open Source &middot; v0.5.0 &middot; 8Agents Ecosystem
       </div>
       <h1>
         One Router.<br>
@@ -1351,7 +1351,7 @@ footer {
       </div>
     </div>
     <div class="footer-bottom">
-      <span>8Router v0.4.0 &mdash; Built for the 8Agents Ecosystem</span>
+      <span>8Router v0.5.0 &mdash; Built for the 8Agents Ecosystem</span>
     </div>
   </div>
 </footer>
