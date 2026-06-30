@@ -144,13 +144,14 @@ export class GeminiAdapter implements ProviderAdapter {
     return { 'Content-Type': 'application/json' };
   }
 
-  parseResponse(raw: any, provider: ProviderKey): ChatCompletionResponse {
+  parseResponse(raw: any, _provider: ProviderKey): ChatCompletionResponse {
     const text = raw.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const modelName = raw.modelVersion || 'gemini';
     return {
       id: `chatcmpl-${Date.now()}`,
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
-      model: provider.models[0],
+      model: modelName,
       choices: [{
         index: 0,
         message: { role: 'assistant', content: text },
@@ -327,13 +328,13 @@ export class ReplicateAdapter implements ProviderAdapter {
     };
   }
 
-  parseResponse(raw: any, provider: ProviderKey): ChatCompletionResponse {
+  parseResponse(raw: any, _provider: ProviderKey): ChatCompletionResponse {
     const text = Array.isArray(raw.output) ? raw.output.join('') : (raw.output || '');
     return {
       id: `chatcmpl-${Date.now()}`,
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
-      model: provider.models[0],
+      model: raw.model || 'replicate',
       choices: [{
         index: 0,
         message: { role: 'assistant', content: text },
