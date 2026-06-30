@@ -1,5 +1,5 @@
 // 8Router — Extended Provider Registry
-// 20+ providers with auto-detection from environment variables
+// 12 active providers with auto-detection from environment variables
 
 export interface ProviderDef {
   id: string;

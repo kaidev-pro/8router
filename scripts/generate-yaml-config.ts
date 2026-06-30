@@ -143,7 +143,7 @@ try {
   const config = {
     version: '1.0',
     port: 8080,
-    dashboardPort: 8081,
+    dashboardPort: 8080,
     hermesPort: 8083,
     defaultTimeout: 30000,
     maxRetries: 3,

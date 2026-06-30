@@ -100,7 +100,7 @@ pkill -f "tsx src/index.ts"
 npx tsx src/index.ts &
 
 # Test:
-curl http://localhost:8081/ | head -5
+curl http://localhost:8080/ | head -5
 ```
 
 ## Current CSS Variables (can change)

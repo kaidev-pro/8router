@@ -213,7 +213,7 @@ export function createServer(engine: RouterEngine): express.Express {
     res.type('html').send(getSetupGuideHTML());
   });
 
-  // Serve dashboard HTML directly (consolidated from separate port 8081 server)
+  // Serve dashboard HTML directly (consolidated on port 8080)
   app.get('/8router/dashboard', (_req, res) => {
     res.send(getDashboardHTML());
   });

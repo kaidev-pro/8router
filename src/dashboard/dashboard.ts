@@ -2090,7 +2090,7 @@ async function loadSettings() {
 var cliTools = [
   {id:'claude-code', name:'Claude Code', desc:'Anthropic Claude Code CLI', color:'#e87040', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" fill="none"/></svg>'},
   {id:'codex', name:'OpenAI Codex', desc:'OpenAI Codex CLI', color:'#10a37f', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">C</text></svg>'},
-  {id:'hermes', name:'Hermes Agent', desc:'Nous Research AI agent', color:'#eab308', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15 9 22 9 16 14 18 22 12 17 6 22 8 14 2 9 9 9"/></svg>'},
+  {id:'hermes', name:'Hermes Agent', desc:'AI agent framework', color:'#eab308', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15 9 22 9 16 14 18 22 12 17 6 22 8 14 2 9 9 9"/></svg>'},
   {id:'opencode', name:'OpenCode', desc:'Open-source AI terminal assistant', color:'#84abff', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>'},
   {id:'cline', name:'Cline', desc:'AI coding assistant for VS Code', color:'#8b5cf6', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="11" font-weight="bold" fill="#fff">C</text></svg>'},
   {id:'cursor', name:'Cursor', desc:'AI-first code editor', color:'#f2f2f2', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="4 4 12 20 14 14 20 12 4 4"/></svg>'},

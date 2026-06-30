@@ -97,7 +97,7 @@ index abc..def 100644
   // Test 7: Dashboard
   console.log('7. Dashboard');
   const { createDashboard } = await import('../dashboard/dashboard.js');
-  const dashApp = createDashboard(engine, 8081);
+  const dashApp = createDashboard(engine, 8080);
   console.log(`   Dashboard created: ${typeof dashApp === 'function'}`);
   console.log(`   ✅ Dashboard ready\n`);
   passed++;
