@@ -19,9 +19,8 @@ const BANNER = `
 ║   AI Routing Gateway — 8Agents Ecosystem                     ║
 ║                                                              ║
 ║   API:          http://localhost:{PORT}/v1                   ║
-║   Anthropic:    http://localhost:{PORT}/v1/messages          ║
-║   Hermes Proxy: http://localhost:{HERMES_PORT}/v1            ║
 ║   Dashboard:    http://localhost:{PORT}/8router/dashboard    ║
+║   Setup Guide:  http://localhost:{PORT}/8router/setup        ║
 ║                                                              ║
 ║   Providers: {PROVIDER_COUNT}  |  Models: {MODEL_COUNT}     ║
 ║   Key Pool:   {KEY_POOL_COUNT} keys  |  Format Bridge: ON   ║
@@ -125,7 +124,6 @@ function main() {
 
     console.log(BANNER
       .replace('{PORT}', String(config.port))
-      .replace('{HERMES_PORT}', String(hermesPort))
       .replace('{PROVIDER_COUNT}', String(totalProviders))
       .replace('{MODEL_COUNT}', String(totalModels))
       .replace('{KEY_POOL_COUNT}', String(totalPoolKeys))
