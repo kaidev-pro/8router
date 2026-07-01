@@ -6,6 +6,7 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import { VERSION } from '../version.js';
 import { RouterEngine, RouterError } from '../router/engine.js';
 import { ChatCompletionRequest, RequestFormat, FormatDetectionResult, AnthropicMessagesRequest } from '../types.js';
 import {
@@ -1634,7 +1635,7 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
   app.get('/8router/info', (_req, res) => {
     res.json({
       name: '8Router',
-      version: '0.5.0',
+      version: VERSION,
       description: 'AI Routing Gateway for 8Agents',
       uptime: process.uptime(),
       features: [

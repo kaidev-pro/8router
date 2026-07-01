@@ -1,4 +1,5 @@
 // 8Router — Landing Page (i18n)
+import { VERSION_STRING } from './version.js';
 import { t, getLocale, type Locale, SUPPORTED_LOCALES } from './i18n/index.js';
 
 export function getLandingHTML(locale: Locale = 'en'): string {
@@ -958,7 +959,7 @@ Model:    8router/auto</code></pre>
     <div class="footer-grid">
       <div class="footer-brand">
         <img src="/assets/8router-logo-dark.png" alt="8Router" class="footer-logo">
-        <p>8Router v0.5.0 &mdash; ${_('footer.builtFor')}</p>
+        <p>8Router ${VERSION_STRING} &mdash; ${_('footer.builtFor')}</p>
       </div>
       <div class="footer-col">
         <h4>${_('footer.product')}</h4>
@@ -981,7 +982,7 @@ Model:    8router/auto</code></pre>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>8Router v0.5.0 &mdash; ${_('footer.ecosystem')}</span>
+      <span>8Router ${VERSION_STRING} &mdash; ${_('footer.ecosystem')}</span>
       <span class="lang-switcher">
         ${(['en', 'id', 'ja'] as string[]).map((l: string) => l === locale
           ? `<span class="lang-active">${t('lang.'+l, locale)}</span>`

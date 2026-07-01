@@ -1,6 +1,7 @@
-// 8Router — Main Entry Point (v0.5.0)
+// 8Router — Main Entry Point
 // Format Translator + Multi-Account Key Pool + 9 Service Kinds
 
+import { VERSION_STRING } from './version.js';
 import { loadConfig, generateDefaultConfig } from './config.js';
 import { getTunnelConfig, TunnelManager } from './tunnel/index.js';
 import { getOAuthConfig } from './oauth/config.js';
@@ -14,7 +15,7 @@ import { formatResponse } from './providers/format-bridge.js';
 const BANNER = `
 ╔══════════════════════════════════════════════════════════════╗
 ║                                                              ║
-║   ⚡ 8Router v0.5.0                                          ║
+║   ⚡ 8Router ${VERSION_STRING.padEnd(47)}║
 ║   AI Routing Gateway — 8Agents Ecosystem                     ║
 ║                                                              ║
 ║   API:          http://localhost:{PORT}/v1                   ║

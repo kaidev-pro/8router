@@ -1,5 +1,5 @@
 #!/bin/bash
-# 8Router v0.5.0 Feature Tests
+# 8Router v0.6.0 Feature Tests
 set +e
 
 API_URL="${API_URL:-http://localhost:8080}"
@@ -11,7 +11,7 @@ info() { echo -e "▸ $1"; }
 
 echo ""
 echo "═══════════════════════════════════════════════"
-echo "  8Router v0.5.0 Feature Tests"
+echo "  8Router v0.6.0 Feature Tests"
 echo "═══════════════════════════════════════════════"
 echo ""
 
