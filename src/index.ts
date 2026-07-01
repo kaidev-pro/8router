@@ -123,7 +123,7 @@ function main() {
     const oauthStatus = oauthConfig.enabled ? oauthConfig.provider : 'OFF';
 
     console.log(BANNER
-      .replace('{PORT}', String(config.port))
+      .replaceAll('{PORT}', String(config.port))
       .replace('{PROVIDER_COUNT}', String(totalProviders))
       .replace('{MODEL_COUNT}', String(totalModels))
       .replace('{KEY_POOL_COUNT}', String(totalPoolKeys))
