@@ -9,6 +9,7 @@ import { GoogleOAuthProvider } from './providers/google.js';
 import { GitHubOAuthProvider } from './providers/github.js';
 import { generateState, signState, verifyState } from './session.js';
 import { getLoginPageHTML } from './login-page.js';
+import { getLocale } from '../i18n/locale.js';
 
 // Temporary state storage (in-memory, short-lived)
 const pendingStates = new Map<string, { provider: string; createdAt: number }>();
@@ -47,7 +48,8 @@ export function createAuthRoutes(config: OAuthConfig, sessionManager: SessionMan
     }
 
     const providers = getProviders();
-    const html = getLoginPageHTML(providers, config);
+    const locale = getLocale(_req);
+    const html = getLoginPageHTML(providers, config, locale);
     res.type('html').send(html);
   });
 

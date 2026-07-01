@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# 8Router — i18n Test Suite (11 tests)
+# 8Router — i18n Test Suite (20 tests)
 set -euo pipefail
 
 BASE="http://localhost:8080"
 PASS=0
 FAIL=0
-TOTAL=11
+TOTAL=20
 
-echo "═══ Phase 3: i18n Tests ═══"
+echo "═══ v0.6.1: i18n Tests ═══"
 
 # ─── 1. Default locale is en ───
 DEFAULT=$(curl -sf "$BASE/8router/" | grep -o '<html lang="en">' | head -1)
@@ -69,13 +69,13 @@ else
   ((FAIL++)) || true
 fi
 
-# ─── 7. All en keys exist ───
+# ─── 7. Translation key count is 384 ───
 EN_KEYS=$(python3 -c "import json; print(len(json.load(open('$PWD/src/i18n/en.json'))))")
-if [ "$EN_KEYS" -gt "100" ]; then
-  echo "  ✅ en.json has $EN_KEYS keys"
+if [ "$EN_KEYS" -ge "380" ]; then
+  echo "  ✅ en.json has $EN_KEYS keys (≥380)"
   ((PASS++)) || true
 else
-  echo "  ❌ Expected 100+ keys, got: $EN_KEYS"
+  echo "  ❌ Expected 380+ keys, got: $EN_KEYS"
   ((FAIL++)) || true
 fi
 
@@ -109,7 +109,7 @@ else
   ((FAIL++)) || true
 fi
 
-# ─── 10. Code snippets/model aliases/provider names not translated ───
+# ─── 10. Model aliases not translated ───
 ALIAS_EN=$(curl -sf "$BASE/8router/" | grep -c '8router/auto' || echo "0")
 ALIAS_ID=$(curl -sf "$BASE/8router/?lang=id" | grep -c '8router/auto' || echo "0")
 ALIAS_JA=$(curl -sf "$BASE/8router/?lang=ja" | grep -c '8router/auto' || echo "0")
@@ -121,14 +121,109 @@ else
   ((FAIL++)) || true
 fi
 
-# ─── 11. Missing key fallback returns English ───
-# Test by checking if the page renders without errors
+# ─── 11. Landing page renders without errors ───
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/8router/?lang=id")
 if [ "$STATUS" = "200" ]; then
-  echo "  ✅ Translated page renders without errors"
+  echo "  ✅ Translated landing page renders (HTTP 200)"
   ((PASS++)) || true
 else
-  echo "  ❌ Page returned HTTP $STATUS"
+  echo "  ❌ Landing page returned HTTP $STATUS"
+  ((FAIL++)) || true
+fi
+
+# ─── 12. Dashboard has translated sidebar for en ───
+DASH_EN=$(curl -sf "$BASE/8router/dashboard" | grep -c 'Endpoint' || echo "0")
+if [ "$DASH_EN" -gt "0" ]; then
+  echo "  ✅ Dashboard sidebar translated (en)"
+  ((PASS++)) || true
+else
+  echo "  ❌ Dashboard sidebar missing 'Endpoint' in en"
+  ((FAIL++)) || true
+fi
+
+# ─── 13. Dashboard has translated sidebar for id ───
+DASH_ID=$(curl -sf "$BASE/8router/dashboard?lang=id" | grep -c 'Penggunaan' || echo "0")
+if [ "$DASH_ID" -gt "0" ]; then
+  echo "  ✅ Dashboard sidebar translated (id)"
+  ((PASS++)) || true
+else
+  echo "  ❌ Dashboard sidebar missing 'Penggunaan' in id"
+  ((FAIL++)) || true
+fi
+
+# ─── 14. Dashboard has translated sidebar for ja ───
+DASH_JA=$(curl -sf "$BASE/8router/dashboard?lang=ja" | grep -c '使用状況' || echo "0")
+if [ "$DASH_JA" -gt "0" ]; then
+  echo "  ✅ Dashboard sidebar translated (ja)"
+  ((PASS++)) || true
+else
+  echo "  ❌ Dashboard sidebar missing '使用状況' in ja"
+  ((FAIL++)) || true
+fi
+
+# ─── 15. Setup guide translated (en) ───
+SETUP_EN=$(curl -sf "$BASE/8router/setup" | grep -c 'Setup Guide\|Setup' || echo "0")
+if [ "$SETUP_EN" -gt "0" ]; then
+  echo "  ✅ Setup guide translated (en)"
+  ((PASS++)) || true
+else
+  echo "  ❌ Setup guide missing English text"
+  ((FAIL++)) || true
+fi
+
+# ─── 16. Setup guide translated (id) ───
+SETUP_ID=$(curl -sf "$BASE/8router/setup?lang=id" | grep -c 'Panduan\|Konfigurasi' || echo "0")
+if [ "$SETUP_ID" -gt "0" ]; then
+  echo "  ✅ Setup guide translated (id)"
+  ((PASS++)) || true
+else
+  echo "  ❌ Setup guide missing Indonesian text"
+  ((FAIL++)) || true
+fi
+
+# ─── 17. Dashboard has language switcher ───
+LANG_SWITCH=$(curl -sf "$BASE/8router/dashboard" | grep -c 'lang-switch' || echo "0")
+if [ "$LANG_SWITCH" -gt "0" ]; then
+  echo "  ✅ Dashboard has language switcher"
+  ((PASS++)) || true
+else
+  echo "  ❌ Dashboard missing language switcher"
+  ((FAIL++)) || true
+fi
+
+# ─── 18. Dashboard html lang attribute changes ───
+DASH_LANG=$(curl -sf "$BASE/8router/dashboard?lang=ja" | grep -o '<html lang="[^"]*"' | head -1)
+if echo "$DASH_LANG" | grep -q 'ja'; then
+  echo "  ✅ Dashboard html lang attribute correct (ja)"
+  ((PASS++)) || true
+else
+  echo "  ❌ Dashboard lang attribute: $DASH_LANG"
+  ((FAIL++)) || true
+fi
+
+# ─── 19. Provider names unchanged in dashboard ───
+PROV_EN=$(curl -sf "$BASE/8router/dashboard" | grep -c 'Groq\|OpenRouter\|DeepSeek' || echo "0")
+PROV_ID=$(curl -sf "$BASE/8router/dashboard?lang=id" | grep -c 'Groq\|OpenRouter\|DeepSeek' || echo "0")
+if [ "$PROV_EN" -gt "0" ] && [ "$PROV_ID" -gt "0" ]; then
+  echo "  ✅ Provider names not translated in dashboard"
+  ((PASS++)) || true
+else
+  echo "  ❌ Provider names missing (en:$PROV_EN id:$PROV_ID)"
+  ((FAIL++)) || true
+fi
+
+# ─── 20. All 3 translation files have db.* keys ───
+DB_KEYS=$(python3 -c "
+import json
+en = json.load(open('$PWD/src/i18n/en.json'))
+db = [k for k in en if k.startswith('db.')]
+print(len(db))
+")
+if [ "$DB_KEYS" -ge "200" ]; then
+  echo "  ✅ Dashboard translation keys: $DB_KEYS (≥200)"
+  ((PASS++)) || true
+else
+  echo "  ❌ Expected 200+ db.* keys, got: $DB_KEYS"
   ((FAIL++)) || true
 fi
 

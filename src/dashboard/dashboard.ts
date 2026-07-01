@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import { getLandingHTML } from '../landing.js';
+import { t, getKeys, getLocale, type Locale } from '../i18n/index.js';
 
 export function createDashboard(engineOrPort: any, portOrUndef?: number): express.Express {
   const app = express();
@@ -29,13 +30,21 @@ export function createDashboard(engineOrPort: any, portOrUndef?: number): expres
   });
 
   app.get('/', (_req, res) => { res.send(getLandingHTML()); });
-  app.get('/dashboard', (_req, res) => { res.send(getDashboardHTML(port)); });
+  app.get('/dashboard', (req, res) => { const locale = getLocale(req); res.send(getDashboardHTML(port, locale)); });
   return app;
 }
-export function getDashboardHTML(port: number = 8080): string {
+function buildClientI18n(locale: Locale): Record<string, string> {
+  const keys = getKeys('en').filter(k => k.startsWith('db.'));
+  const map: Record<string, string> = {};
+  for (const key of keys) {
+    map[key] = t(key, locale);
+  }
+  return map;
+}
+export function getDashboardHTML(port: number = 8080, locale: Locale = 'en'): string {
   const apiPort = port;
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${locale}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -898,56 +907,56 @@ tr:hover td { background:var(--bg-card-hover) }
   <div class="sb-nav">
     <div class="sb-item active" onclick="go('endpoint',this)">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a6 6 0 0 1-6 6 6 6 0 0 1-6-6V8z"/></svg></span>
-      <span class="lbl">Endpoint</span>
+      <span class="lbl">${t('db.sidebar.endpoint', locale)}</span>
     </div>
     <div class="sb-item" onclick="go('usage',this)">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span>
-      <span class="lbl">Usage</span>
+      <span class="lbl">${t('db.sidebar.usage', locale)}</span>
     </div>
     <div class="sb-item" onclick="go('quota',this)">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg></span>
-      <span class="lbl">Quota</span>
+      <span class="lbl">${t('db.sidebar.quota', locale)}</span>
     </div>
     <div class="sb-item" onclick="go('providers',this)">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg></span>
-      <span class="lbl">Providers</span>
+      <span class="lbl">${t('db.sidebar.providers', locale)}</span>
       <span class="cnt" id="prov-cnt">0</span>
     </div>
     <div class="sb-item" onclick="go('combos',this)">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
-      <span class="lbl">Combos</span>
+      <span class="lbl">${t('db.sidebar.combos', locale)}</span>
     </div>
     <div class="sb-item" onclick="go('clitools',this)">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg></span>
-      <span class="lbl">CLI Tools</span>
+      <span class="lbl">${t('db.sidebar.cli', locale)}</span>
     </div>
     <div class="sb-item" onclick="go('apikeys',this)">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></span>
-      <span class="lbl">API Keys</span>
+      <span class="lbl">${t('db.sidebar.keys', locale)}</span>
     </div>
-    <div class="sb-section">System</div>
+    <div class="sb-section">${t('db.sidebar.system', locale)}</div>
     <div class="sb-item" onclick="go('settings',this)">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span>
-      <span class="lbl">Settings</span>
+      <span class="lbl">${t('db.sidebar.settings', locale)}</span>
     </div>
     <div class="sb-item" onclick="go('connections',this)">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span>
-      <span class="lbl">Connections</span>
+      <span class="lbl">${t('db.sidebar.connections', locale)}</span>
     </div>
     <div class="sb-item" onclick="go('logs',this)">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>
-      <span class="lbl">Logs</span>
+      <span class="lbl">${t('db.sidebar.logs', locale)}</span>
     </div>
     <div class="sb-item" onclick="go('playground',this)">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg></span>
-      <span class="lbl">Playground</span>
+      <span class="lbl">${t('db.sidebar.playground', locale)}</span>
     </div>
   </div>
 
   <div class="sb-footer">
     <div class="sb-shutdown" onclick="if(confirm('Shutdown 8Router?')){fetch('/8router/shutdown',{method:'POST'}).then(function(r){if(!r.ok)throw new Error();alert('Shutdown signal sent.');}).catch(function(){alert('Shutdown command sent (endpoint may not be implemented yet).');})}">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" x2="12" y1="2" y2="12"/></svg></span>
-      <span class="lbl">Shutdown</span>
+      <span class="lbl">${t('db.sidebar.shutdown', locale)}</span>
     </div>
   </div>
 </div>
@@ -958,13 +967,19 @@ tr:hover td { background:var(--bg-card-hover) }
   <!-- Status Bar -->
   <div class="statusbar">
     <span>8Router</span><span class="sep">\u00b7</span>
-    <span>port ${apiPort}</span><span class="sep">\u00b7</span>
-    <span>gateway</span><span class="sep">\u00b7</span>
-    <span class="val green" id="conn-badge-text">connected</span>
+    <span>${t('db.status.port', locale)} ${apiPort}</span><span class="sep">\u00b7</span>
+    <span>${t('db.status.gateway', locale)}</span><span class="sep">\u00b7</span>
+    <span class="val green" id="conn-badge-text">${t('db.status.connected', locale)}</span>
     <span class="sep">\u00b7</span>
     <span class="val" id="oauth-badge">OAuth: disabled</span>
+    <span class="sep">\u00b7</span>
+    <select id="lang-switch" onchange="document.cookie='8router_locale='+this.value+';path=/;max-age=31536000';location.reload()" style="background:var(--bg-card);color:var(--text-secondary);border:1px solid var(--border);border-radius:4px;padding:1px 4px;font-size:11px;cursor:pointer;font-family:inherit">
+      <option value="en"${locale==='en'?' selected':''}>EN</option>
+      <option value="id"${locale==='id'?' selected':''}>ID</option>
+      <option value="ja"${locale==='ja'?' selected':''}>JA</option>
+    </select>
     <span class="spacer"></span>
-    <span class="val accent">OpenAI-compatible</span>
+    <span class="val accent">${t('db.status.openai', locale)}</span>
   </div>
 
   <!-- Topbar -->
@@ -976,8 +991,8 @@ tr:hover td { background:var(--bg-card-hover) }
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a6 6 0 0 1-6 6 6 6 0 0 1-6-6V8z"/></svg>
     </div>
     <div class="title-area">
-      <div class="title" id="tb-title">Endpoint</div>
-      <div class="subtitle" id="tb-sub">API endpoint configuration</div>
+      <div class="title" id="tb-title">${t('db.page.endpoint', locale)}</div>
+      <div class="subtitle" id="tb-sub">${t('db.page.endpointDesc', locale)}</div>
     </div>
     <div class="spacer"></div>
     <div class="actions">
@@ -985,7 +1000,7 @@ tr:hover td { background:var(--bg-card-hover) }
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
         localhost:${apiPort}/v1
       </div>
-      <div class="badge on" id="conn-badge"><span class="dot"></span> Connected</div>
+      <div class="badge on" id="conn-badge"><span class="dot"></span> ${t('db.status.connected', locale)}</div>
     </div>
   </div>
 
@@ -996,43 +1011,43 @@ tr:hover td { background:var(--bg-card-hover) }
       <div class="card endpoint-card">
         <div class="card-header">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-          <h3>API Endpoint</h3>
+          <h3>${t('db.endpoint.apiEndpoint', locale)}</h3>
         </div>
         <div class="ep-row">
-          <span class="label">Local</span>
+          <span class="label">${t('db.endpoint.local', locale)}</span>
           <span class="url" onclick="navigator.clipboard.writeText('http://localhost:${apiPort}/v1')">http://localhost:${apiPort}/v1</span>
           <span class="copy-btn" onclick="navigator.clipboard.writeText('http://localhost:${apiPort}/v1')" title="Copy">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
           </span>
         </div>
         <div class="ep-row">
-          <span class="label">Public</span>
+          <span class="label">${t('db.endpoint.public', locale)}</span>
           <span class="url" onclick="navigator.clipboard.writeText('http://5.223.60.79/v1')">http://5.223.60.79/v1</span>
           <span class="copy-btn" onclick="navigator.clipboard.writeText('http://5.223.60.79/v1')" title="Copy">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
           </span>
-          <span class="ep-status"><span class="dot"></span> Active</span>
+          <span class="ep-status"><span class="dot"></span> ${t('db.endpoint.active', locale)}</span>
         </div>
       </div>
 
       <div class="warning-box">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-        <span>Require API key is disabled — your endpoint is publicly accessible without authentication.</span>
-        <span class="action" onclick="go('settings',this)">Enable \u2192</span>
+        <span>${t('db.endpoint.noAuth', locale)}</span>
+        <span class="action" onclick="go('settings',this)">${t('db.btn.enable', locale)}</span>
       </div>
 
       <div class="toggle-row">
         <div>
-          <div class="info">Enable API key authentication</div>
-          <div class="desc">Require API key for requests to your endpoint</div>
+          <div class="info">${t('db.endpoint.enableAuth', locale)}</div>
+          <div class="desc">${t('db.endpoint.requireKey', locale)}</div>
         </div>
         <div class="toggle" id="toggle-auth" onclick="this.classList.toggle('on')"></div>
       </div>
 
       <div class="toggle-row">
         <div>
-          <div class="info">Allow dashboard access via public IP</div>
-          <div class="desc">Dashboard is accessible at http://5.223.60.79/8router</div>
+          <div class="info">${t('db.endpoint.allowPublic', locale)}</div>
+          <div class="desc">${t('db.endpoint.dashAt', locale)} http://5.223.60.79/8router</div>
         </div>
         <div class="toggle on" id="toggle-dashboard"></div>
       </div>
@@ -1041,45 +1056,45 @@ tr:hover td { background:var(--bg-card-hover) }
       <div class="caveman-card">
         <div class="card-header" style="margin-bottom:4px">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          <h3>Token Saver</h3>
+          <h3>${t('db.toksv.title', locale)}</h3>
         </div>
-        <div class="sub">Make LLM responses terse to save output tokens. Stackable with RTK compression.</div>
+        <div class="sub">${t('db.toksv.desc', locale)}</div>
         <div class="caveman-row">
           <input type="range" min="0" max="5" value="0" class="caveman-slider" id="caveman" oninput="setCaveman(this.value)">
           <div class="caveman-val" id="caveman-val">0</div>
         </div>
-        <div id="caveman-desc" style="font-size:12px;color:var(--text-secondary);margin-top:8px">Disabled — Normal responses</div>
+        <div id="caveman-desc" style="font-size:12px;color:var(--text-secondary);margin-top:8px">${t('db.toksv.off', locale)}</div>
         <div class="caveman-levels">
           <span>0:Off</span><span>1:Mild</span><span>2:Med</span><span>3:Aggro</span><span>4:Xtreme</span><span>5:Max</span>
         </div>
         <!-- Token Saver Stats -->
         <div id="ts-stats-container" style="margin-top:16px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Compression Stats</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px">${t('db.compress.title', locale)}</div>
           <div class="ts-stats">
             <div class="ts-stat">
-              <div class="ts-label">Tokens Saved Today</div>
+              <div class="ts-label">${t('db.compress.saved', locale)}</div>
               <div class="ts-val green" id="ts-saved-today">0</div>
             </div>
             <div class="ts-stat">
-              <div class="ts-label">% Saved</div>
+              <div class="ts-label">${t('db.compress.pct', locale)}</div>
               <div class="ts-val accent" id="ts-pct-saved">0%</div>
             </div>
             <div class="ts-stat">
-              <div class="ts-label">Cost Saved Est.</div>
+              <div class="ts-label">${t('db.compress.cost', locale)}</div>
               <div class="ts-val purple" id="ts-cost-saved">$0.00</div>
             </div>
             <div class="ts-stat">
-              <div class="ts-label">Total Compressed</div>
+              <div class="ts-label">${t('db.compress.total', locale)}</div>
               <div class="ts-val cyan" id="ts-total-compressed">0</div>
             </div>
           </div>
           <div class="ts-before-after">
             <div class="ts-ba-box">
-              <div class="ts-ba-label">Before Compression</div>
+              <div class="ts-ba-label">${t('db.compress.before', locale)}</div>
               <div class="ts-ba-val" id="ts-before" style="color:var(--red)">0</div>
             </div>
             <div class="ts-ba-box">
-              <div class="ts-ba-label">After Compression</div>
+              <div class="ts-ba-label">${t('db.compress.after', locale)}</div>
               <div class="ts-ba-val" id="ts-after" style="color:var(--green)">0</div>
             </div>
           </div>
@@ -1093,28 +1108,28 @@ tr:hover td { background:var(--bg-card-hover) }
         <div class="stat-card">
           <div class="label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-            Total Requests
+            ${t('db.usage.totalReqs', locale)}
           </div>
           <div class="value" style="color:var(--accent)" id="u-req">0</div>
         </div>
         <div class="stat-card">
           <div class="label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-            Input Tokens
+            ${t('db.usage.inputTok', locale)}
           </div>
           <div class="value" style="color:var(--green)" id="u-input-tokens">0</div>
         </div>
         <div class="stat-card">
           <div class="label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            Output Tokens
+            ${t('db.usage.outputTok', locale)}
           </div>
           <div class="value" style="color:var(--cyan)" id="u-output-tokens">0</div>
         </div>
         <div class="stat-card">
           <div class="label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"/><path d="M12 18V6"/></svg>
-            Total Tokens
+            ${t('db.usage.totalTok', locale)}
           </div>
           <div class="value" style="color:var(--accent)" id="u-tokens">0</div>
         </div>
@@ -1123,28 +1138,28 @@ tr:hover td { background:var(--bg-card-hover) }
         <div class="stat-card">
           <div class="label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            Est. Cost
+            ${t('db.usage.estCost', locale)}
           </div>
           <div class="value" style="color:var(--green)" id="u-cost">$0.00</div>
         </div>
         <div class="stat-card">
           <div class="label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Avg Latency
+            ${t('db.usage.avgLatency', locale)}
           </div>
           <div class="value" style="color:var(--yellow)" id="u-latency">0ms</div>
         </div>
         <div class="stat-card">
           <div class="label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-            Error Rate
+            ${t('db.usage.errorRate', locale)}
           </div>
           <div class="value" style="color:var(--red)" id="u-error-rate">0%</div>
         </div>
         <div class="stat-card">
           <div class="label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
-            Fallbacks
+            ${t('db.usage.fallbacks', locale)}
           </div>
           <div class="value" style="color:var(--orange)" id="u-fb">0</div>
         </div>
@@ -1153,17 +1168,17 @@ tr:hover td { background:var(--bg-card-hover) }
       <div class="card" style="margin-bottom:16px">
         <div class="card-header">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-          <h3>Daily Requests (Last 7 Days)</h3>
+          <h3>${t('db.usage.dailyReqs', locale)}</h3>
         </div>
         <div class="bar-chart" id="daily-chart"></div>
       </div>
       <div class="top-items">
         <div class="top-item">
-          <div class="ti-label">Top Provider</div>
+          <div class="ti-label">${t('db.usage.topProvider', locale)}</div>
           <div class="ti-val" id="u-top-provider">-</div>
         </div>
         <div class="top-item">
-          <div class="ti-label">Top Model</div>
+          <div class="ti-label">${t('db.usage.topModel', locale)}</div>
           <div class="ti-val" id="u-top-model">-</div>
         </div>
       </div>
@@ -1171,12 +1186,12 @@ tr:hover td { background:var(--bg-card-hover) }
       <div class="card" style="margin-top:16px">
         <div class="card-header">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-          <h3>Recent Requests</h3>
+          <h3>${t('db.usage.recentReqs', locale)}</h3>
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Time</th><th>Provider</th><th>Model</th><th>Tokens</th><th>Latency</th><th>Status</th></tr></thead>
-            <tbody id="recent-list"><tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">No requests yet</td></tr></tbody>
+            <thead><tr><th>${t('db.col.time', locale)}</th><th>${t('db.col.provider', locale)}</th><th>${t('db.col.model', locale)}</th><th>${t('db.col.tokens', locale)}</th><th>${t('db.col.latency', locale)}</th><th>${t('db.col.status', locale)}</th></tr></thead>
+            <tbody id="recent-list"><tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">${t('db.usage.noReqs', locale)}</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1187,8 +1202,8 @@ tr:hover td { background:var(--bg-card-hover) }
       <div class="card-header" style="margin-bottom:20px">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
         <div>
-          <div class="page-title" style="font-size:22px">Quota Tracker</div>
-          <div class="page-subtitle" style="margin-bottom:0">Monitor provider quotas and usage limits</div>
+          <div class="page-title" style="font-size:22px">${t('db.page.quota', locale)}</div>
+          <div class="page-subtitle" style="margin-bottom:0">${t('db.page.quotaDesc', locale)}</div>
         </div>
       </div>
       <div class="quota-grid" id="quota-grid"></div>
@@ -1196,33 +1211,33 @@ tr:hover td { background:var(--bg-card-hover) }
       <div class="budget-controls">
         <div class="card-header" style="margin-bottom:12px">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          <h3>Budget Controls</h3>
+          <h3>${t('db.budget.title', locale)}</h3>
         </div>
         <div class="budget-row">
           <div class="budget-field">
-            <label>Daily Request Limit</label>
+            <label>${t('db.budget.dailyReqs', locale)}</label>
             <input type="number" id="budget-daily-req" placeholder="e.g. 1000" min="0">
           </div>
           <div class="budget-field">
-            <label>Monthly Request Limit</label>
+            <label>${t('db.budget.monthlyReqs', locale)}</label>
             <input type="number" id="budget-monthly-req" placeholder="e.g. 30000" min="0">
           </div>
           <div class="budget-field">
-            <label>Daily Token Limit</label>
+            <label>${t('db.budget.dailyTokens', locale)}</label>
             <input type="number" id="budget-daily-tokens" placeholder="e.g. 1000000" min="0">
           </div>
         </div>
         <div class="budget-row">
           <div class="budget-field">
-            <label>Daily Cost Limit ($)</label>
+            <label>${t('db.budget.dailyCost', locale)}</label>
             <input type="number" id="budget-daily-cost" placeholder="e.g. 10.00" min="0" step="0.01">
           </div>
           <div class="budget-field">
-            <label>Monthly Cost Limit ($)</label>
+            <label>${t('db.budget.monthlyCost', locale)}</label>
             <input type="number" id="budget-monthly-cost" placeholder="e.g. 100.00" min="0" step="0.01">
           </div>
           <div class="budget-field" style="display:flex;flex-direction:column;justify-content:flex-end">
-            <button class="budget-save-btn" onclick="saveBudget()">Save Budget Limits</button>
+            <button class="budget-save-btn" onclick="saveBudget()">${t('db.btn.save', locale)}</button>
           </div>
         </div>
       </div>
@@ -1234,18 +1249,18 @@ tr:hover td { background:var(--bg-card-hover) }
         <div class="card-header" style="margin-bottom:0">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
           <div>
-            <div class="page-title" style="font-size:22px">Providers</div>
-            <div class="page-subtitle" style="margin-bottom:0">All connected AI providers and their status</div>
+            <div class="page-title" style="font-size:22px">${t('db.page.providers', locale)}</div>
+            <div class="page-subtitle" style="margin-bottom:0">${t('db.page.providersDesc', locale)}</div>
           </div>
         </div>
         <button style="padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s;flex-shrink:0" onclick="loadProv()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
-          Refresh
+          ${t('db.btn.refresh', locale)}
         </button>
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Provider</th><th>Tier</th><th>Health</th><th>Latency</th><th>API Keys</th><th>Requests</th><th>Tokens</th><th>Errors</th><th>Last Error</th><th></th></tr></thead>
+          <thead><tr><th>${t('db.col.provider', locale)}</th><th>${t('db.col.tier', locale)}</th><th>${t('db.col.health', locale)}</th><th>${t('db.col.latency', locale)}</th><th>${t('db.col.apiKeys', locale)}</th><th>${t('db.col.requests', locale)}</th><th>${t('db.col.tokens', locale)}</th><th>${t('db.col.errors', locale)}</th><th>${t('db.col.lastError', locale)}</th><th></th></tr></thead>
           <tbody id="prov-tbody"></tbody>
         </table>
       </div>
@@ -1256,8 +1271,8 @@ tr:hover td { background:var(--bg-card-hover) }
       <div class="card-header" style="margin-bottom:20px">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         <div>
-          <div class="page-title" style="font-size:22px">Model Combos</div>
-          <div class="page-subtitle" style="margin-bottom:0">Fallback chains — use a single model name that auto-routes through provider tiers</div>
+          <div class="page-title" style="font-size:22px">${t('db.page.combos', locale)}</div>
+          <div class="page-subtitle" style="margin-bottom:0">${t('db.page.combosDesc', locale)}</div>
         </div>
       </div>
       <div class="combo-grid" id="combo-cards"></div>
@@ -1268,29 +1283,29 @@ tr:hover td { background:var(--bg-card-hover) }
       <div class="card-header" style="margin-bottom:20px">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
         <div>
-          <div class="page-title" style="font-size:22px">Settings</div>
-          <div class="page-subtitle" style="margin-bottom:0">Configure 8Router behavior</div>
+          <div class="page-title" style="font-size:22px">${t('db.page.settings', locale)}</div>
+          <div class="page-subtitle" style="margin-bottom:0">${t('db.page.settingsDesc', locale)}</div>
         </div>
       </div>
 
       <div class="toggle-row">
-        <div><div class="info">RTK Token Compression</div><div class="desc">Compress tool output (git diff, grep, tree) to save tokens</div></div>
+        <div><div class="info">${t('db.settings.rtk', locale)}</div><div class="desc">${t('db.settings.rtkDesc', locale)}</div></div>
         <div class="toggle on" id="t-rtk"></div>
       </div>
       <div class="toggle-row">
-        <div><div class="info">Circuit Breaker</div><div class="desc">Auto-disable failing providers after consecutive errors</div></div>
+        <div><div class="info">${t('db.settings.circuit', locale)}</div><div class="desc">${t('db.settings.circuitDesc', locale)}</div></div>
         <div class="toggle on" id="t-circuit"></div>
       </div>
       <div class="toggle-row">
-        <div><div class="info">SSE Streaming</div><div class="desc">Enable streaming responses for chat completions</div></div>
+        <div><div class="info">${t('db.settings.sse', locale)}</div><div class="desc">${t('db.settings.sseDesc', locale)}</div></div>
         <div class="toggle on" id="t-stream"></div>
       </div>
       <div class="toggle-row">
-        <div><div class="info">Multi-Key Rotation</div><div class="desc">Round-robin across multiple API keys per provider</div></div>
+        <div><div class="info">${t('db.settings.rotation', locale)}</div><div class="desc">${t('db.settings.rotationDesc', locale)}</div></div>
         <div class="toggle on" id="t-rotation"></div>
       </div>
       <div class="toggle-row">
-        <div><div class="info">Auto-Fallback</div><div class="desc">Automatically try next provider on failure</div></div>
+        <div><div class="info">${t('db.settings.fallback', locale)}</div><div class="desc">${t('db.settings.fallbackDesc', locale)}</div></div>
         <div class="toggle on" id="t-fallback"></div>
       </div>
 
@@ -1298,16 +1313,16 @@ tr:hover td { background:var(--bg-card-hover) }
       <div class="settings-section">
         <div class="section-title">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          Token Compression
+          ${t('db.settings.compressMode', locale)}
         </div>
         <div class="budget-row">
           <div class="budget-field">
-            <label>Compression Mode</label>
+            <label>${t('db.settings.compressMode', locale)}</label>
             <select id="s-compression-mode" onchange="saveSetting('compressionMode', this.value)">
-              <option value="off">Off</option>
-              <option value="safe">Safe</option>
-              <option value="balanced" selected>Balanced</option>
-              <option value="aggressive">Aggressive</option>
+              <option value="off">${t('db.settings.off', locale)}</option>
+              <option value="safe">${t('db.settings.safe', locale)}</option>
+              <option value="balanced" selected>${t('db.settings.balanced', locale)}</option>
+              <option value="aggressive">${t('db.settings.aggressive', locale)}</option>
             </select>
           </div>
         </div>
@@ -1316,14 +1331,14 @@ tr:hover td { background:var(--bg-card-hover) }
       <div class="settings-section">
         <div class="section-title">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
-          Model &amp; Routing
+          ${t('db.settings.modelRouting', locale)}
         </div>
         <div class="budget-row">
           <div class="budget-field">
-            <label>Default Model Alias</label>
+            <label>${t('db.settings.defaultAlias', locale)}</label>
             <select id="s-default-model" onchange="saveSetting('defaultModel', this.value)">
-              <option value="">System Default</option>
-              <option value="auto">Auto (best available)</option>
+              <option value="">${t('db.settings.sysDefault', locale)}</option>
+              <option value="auto">${t('db.settings.autoBest', locale)}</option>
               <option value="gpt-4o">GPT-4o</option>
               <option value="gpt-4o-mini">GPT-4o Mini</option>
               <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
@@ -1333,7 +1348,7 @@ tr:hover td { background:var(--bg-card-hover) }
             </select>
           </div>
           <div class="budget-field">
-            <label>Fallback Timeout (ms)</label>
+            <label>${t('db.settings.fallbackTimeout', locale)}</label>
             <input type="number" id="s-fallback-timeout" placeholder="e.g. 30000" min="1000" max="120000" onchange="saveSetting('fallbackTimeout', parseInt(this.value))">
           </div>
         </div>
@@ -1342,17 +1357,17 @@ tr:hover td { background:var(--bg-card-hover) }
       <div class="settings-section">
         <div class="section-title">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-          Logging
+          ${t('db.settings.logging', locale)}
         </div>
         <div class="budget-row">
           <div class="budget-field">
-            <label>Logging Level</label>
+            <label>${t('db.settings.logLevel', locale)}</label>
             <select id="s-log-level" onchange="saveSetting('logLevel', this.value)">
-              <option value="error">Error</option>
-              <option value="warn">Warning</option>
-              <option value="info" selected>Info</option>
-              <option value="debug">Debug</option>
-              <option value="verbose">Verbose</option>
+              <option value="error">${t('db.settings.error', locale)}</option>
+              <option value="warn">${t('db.settings.warning', locale)}</option>
+              <option value="info" selected>${t('db.settings.info', locale)}</option>
+              <option value="debug">${t('db.settings.debug', locale)}</option>
+              <option value="verbose">${t('db.settings.verbose', locale)}</option>
             </select>
           </div>
         </div>
@@ -1361,7 +1376,7 @@ tr:hover td { background:var(--bg-card-hover) }
       <div style="margin-top:24px">
         <div class="card-header">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
-          <h3>System Info</h3>
+          <h3>${t('db.settings.sysInfo', locale)}</h3>
         </div>
         <div class="tbl-wrap">
           <table><tbody id="sysinfo-tbody"></tbody></table>
@@ -1375,18 +1390,18 @@ tr:hover td { background:var(--bg-card-hover) }
         <div class="card-header" style="margin-bottom:0">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
           <div>
-            <div class="page-title" style="font-size:22px">Connections</div>
-            <div class="page-subtitle" style="margin-bottom:0">SQLite-backed connection tracking with backoff and cost</div>
+            <div class="page-title" style="font-size:22px">${t('db.page.connections', locale)}</div>
+            <div class="page-subtitle" style="margin-bottom:0">${t('db.page.connectionsDesc', locale)}</div>
           </div>
         </div>
         <button style="padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s;flex-shrink:0" onclick="testAllConns()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          Test All
+          ${t('db.btn.testAll', locale)}
         </button>
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>ID</th><th>Provider</th><th>Name</th><th>Auth</th><th>Status</th><th>Health</th><th>Backoff</th><th>Retry</th><th>Next Retry</th><th>Requests</th><th>Tokens</th><th>Cost</th><th></th></tr></thead>
+          <thead><tr><th>${t('db.col.id', locale)}</th><th>${t('db.col.provider', locale)}</th><th>${t('db.col.name', locale)}</th><th>${t('db.col.auth', locale)}</th><th>${t('db.col.status', locale)}</th><th>${t('db.col.health', locale)}</th><th>${t('db.col.backoff', locale)}</th><th>${t('db.col.retry', locale)}</th><th>${t('db.col.nextRetry', locale)}</th><th>${t('db.col.requests', locale)}</th><th>${t('db.col.tokens', locale)}</th><th>${t('db.col.cost', locale)}</th><th></th></tr></thead>
           <tbody id="conn-tbody"></tbody>
         </table>
       </div>
@@ -1397,8 +1412,8 @@ tr:hover td { background:var(--bg-card-hover) }
       <div class="card-header" style="margin-bottom:20px">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>
         <div>
-          <div class="page-title" style="font-size:22px">CLI Tools</div>
-          <div class="page-subtitle" style="margin-bottom:0">Configure and monitor AI CLI assistants connected to 8Router</div>
+          <div class="page-title" style="font-size:22px">${t('db.page.cli', locale)}</div>
+          <div class="page-subtitle" style="margin-bottom:0">${t('db.page.cliDesc', locale)}</div>
         </div>
       </div>
       <div class="cli-grid" id="cli-grid"></div>
@@ -1410,18 +1425,18 @@ tr:hover td { background:var(--bg-card-hover) }
         <div class="card-header" style="margin-bottom:0">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
           <div>
-            <div class="page-title" style="font-size:22px">API Keys</div>
-            <div class="page-subtitle" style="margin-bottom:0">Manage virtual API keys for endpoint authentication</div>
+            <div class="page-title" style="font-size:22px">${t('db.page.keys', locale)}</div>
+            <div class="page-subtitle" style="margin-bottom:0">${t('db.page.keysDesc', locale)}</div>
           </div>
         </div>
         <button style="padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s;flex-shrink:0" onclick="createApiKey()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
-          Create Key
+          ${t('db.btn.createKey', locale)}
         </button>
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Key</th><th>Name</th><th>Created</th><th>Last Used</th><th>Requests</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>${t('db.col.key', locale)}</th><th>${t('db.col.name', locale)}</th><th>${t('db.col.created', locale)}</th><th>${t('db.col.lastUsed', locale)}</th><th>${t('db.col.requests', locale)}</th><th>${t('db.col.status', locale)}</th><th></th></tr></thead>
           <tbody id="apikey-tbody"></tbody>
         </table>
       </div>
@@ -1432,13 +1447,13 @@ tr:hover td { background:var(--bg-card-hover) }
       <div class="card-header" style="margin-bottom:20px">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
         <div>
-          <div class="page-title" style="font-size:22px">Request Logs</div>
-          <div class="page-subtitle" style="margin-bottom:0">Live request log with method, path, status, and latency</div>
+          <div class="page-title" style="font-size:22px">${t('db.page.logs', locale)}</div>
+          <div class="page-subtitle" style="margin-bottom:0">${t('db.page.logsDesc', locale)}</div>
         </div>
-        <button style="margin-left:auto;padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer" onclick="loadLogs()">Refresh</button>
+        <button style="margin-left:auto;padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer" onclick="loadLogs()">${t('db.btn.refresh', locale)}</button>
       </div>
       <div class="logs-panel" id="logs-panel">
-        <div style="padding:40px;text-align:center;color:var(--text-muted);font-size:12px">No logs yet. Send a request to see activity here.</div>
+        <div style="padding:40px;text-align:center;color:var(--text-muted);font-size:12px">${t('db.logs.noLogs', locale)}</div>
       </div>
     </div>
 
@@ -1448,14 +1463,14 @@ tr:hover td { background:var(--bg-card-hover) }
         <div class="card-header" style="margin-bottom:0">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
           <div>
-            <div class="page-title" style="font-size:22px">Playground</div>
-            <div class="page-subtitle" style="margin-bottom:0">Test prompts and explore provider responses in real time</div>
+            <div class="page-title" style="font-size:22px">${t('db.page.playground', locale)}</div>
+            <div class="page-subtitle" style="margin-bottom:0">${t('db.page.playgroundDesc', locale)}</div>
           </div>
         </div>
       </div>
       <div class="pg-playground">
         <div class="pg-left">
-          <textarea class="pg-textarea" id="pg-prompt" placeholder="Type a prompt to test..."></textarea>
+          <textarea class="pg-textarea" id="pg-prompt" placeholder="${t('db.play.placeholder', locale)}"></textarea>
           <div class="pg-controls">
             <select class="pg-select" id="pg-model">
               <option value="auto">auto</option>
@@ -1468,37 +1483,37 @@ tr:hover td { background:var(--bg-card-hover) }
               <option value="privacy">privacy</option>
             </select>
             <div class="pg-slider-wrap">
-              <span style="font-size:11px;color:var(--text-muted);white-space:nowrap">Temp</span>
+              <span style="font-size:11px;color:var(--text-muted);white-space:nowrap">${t('db.play.temp', locale)}</span>
               <input type="range" class="pg-slider" id="pg-temp" min="0" max="2" step="0.1" value="0.7" oninput="document.getElementById('pg-temp-val').textContent=this.value">
               <span id="pg-temp-val" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);min-width:24px">0.7</span>
             </div>
             <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-size:11px;color:var(--text-muted);white-space:nowrap">Max tokens</span>
+              <span style="font-size:11px;color:var(--text-muted);white-space:nowrap">${t('db.play.maxTokens', locale)}</span>
               <input type="number" class="pg-input" id="pg-maxtokens" value="1024" min="1" max="128000" style="width:80px">
             </div>
           </div>
           <div class="pg-controls">
             <button class="pg-btn" id="pg-send-btn" onclick="pgSend()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              Send
+              ${t('db.btn.send', locale)}
             </button>
             <div class="pg-toggle-wrap">
               <div class="toggle" id="pg-stream-toggle" onclick="this.classList.toggle('on')"></div>
-              <span>Stream</span>
+              <span>${t('db.play.stream', locale)}</span>
             </div>
             <span style="flex:1"></span>
             <button class="pg-btn secondary" onclick="pgCopy()" title="Copy response">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-              Copy
+              ${t('db.btn.copy', locale)}
             </button>
           </div>
           <div class="pg-meta" id="pg-meta">
-            <div class="pg-meta-item"><span class="pg-meta-label">Provider</span><span class="pg-meta-val" id="pg-m-provider">\u2014</span></div>
-            <div class="pg-meta-item"><span class="pg-meta-label">Tokens</span><span class="pg-meta-val" id="pg-m-tokens">\u2014</span></div>
-            <div class="pg-meta-item"><span class="pg-meta-label">Latency</span><span class="pg-meta-val" id="pg-m-latency">\u2014</span></div>
-            <div class="pg-meta-item"><span class="pg-meta-label">Cost</span><span class="pg-meta-val" id="pg-m-cost">\u2014</span></div>
-            <div class="pg-meta-item"><span class="pg-meta-label">Fallback</span><span class="pg-meta-val" id="pg-m-fallback">\u2014</span></div>
-            <div class="pg-meta-item"><span class="pg-meta-label">Model</span><span class="pg-meta-val" id="pg-m-model">\u2014</span></div>
+            <div class="pg-meta-item"><span class="pg-meta-label">${t('db.col.provider', locale)}</span><span class="pg-meta-val" id="pg-m-provider">\u2014</span></div>
+            <div class="pg-meta-item"><span class="pg-meta-label">${t('db.col.tokens', locale)}</span><span class="pg-meta-val" id="pg-m-tokens">\u2014</span></div>
+            <div class="pg-meta-item"><span class="pg-meta-label">${t('db.col.latency', locale)}</span><span class="pg-meta-val" id="pg-m-latency">\u2014</span></div>
+            <div class="pg-meta-item"><span class="pg-meta-label">${t('db.col.cost', locale)}</span><span class="pg-meta-val" id="pg-m-cost">\u2014</span></div>
+            <div class="pg-meta-item"><span class="pg-meta-label">${t('db.health.healthy', locale)}</span><span class="pg-meta-val" id="pg-m-fallback">\u2014</span></div>
+            <div class="pg-meta-item"><span class="pg-meta-label">${t('db.col.model', locale)}</span><span class="pg-meta-val" id="pg-m-model">\u2014</span></div>
           </div>
         </div>
         <div class="pg-right">
@@ -1506,12 +1521,12 @@ tr:hover td { background:var(--bg-card-hover) }
             <div class="hdr">
               <span style="display:flex;align-items:center;gap:8px">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                Response
+                ${t('db.play.response', locale)}
               </span>
               <span id="pg-status" style="font-size:11px;color:var(--text-muted)"></span>
             </div>
             <div class="pg-response-body" id="pg-response">
-              <span style="color:var(--text-muted)">Response will appear here...</span>
+              <span style="color:var(--text-muted)">${t('db.play.responsePlaceholder', locale)}</span>
             </div>
           </div>
         </div>
@@ -1521,6 +1536,8 @@ tr:hover td { background:var(--bg-card-hover) }
   </div><!-- /content -->
 </div><!-- /main -->
 
+<script>window.__i18n = ${JSON.stringify(buildClientI18n(locale))};</script>
+<script>function ct(key) { return (window.__i18n && window.__i18n[key]) || key; }</script>
 <script>
 const API = '';
 let curPage = 'endpoint';
@@ -1602,21 +1619,21 @@ function go(name, el) {
     document.getElementById("sidebar-overlay").classList.remove("show");
   }
   var titles = {
-    endpoint: ['Endpoint','API endpoint configuration'],
-    usage: ['Usage & Analytics','Monitor your API usage, token consumption, and request logs'],
-    quota: ['Quota Tracker','Monitor provider quotas and usage limits'],
-    providers: ['Providers','Connected AI providers'],
-    combos: ['Model Combos','Model fallback chains'],
-    settings: ['Settings','Configure 8Router behavior'],
-    connections: ['Connections','Database connection tracking'],
-    clitools: ['CLI Tools','Configure and monitor AI CLI assistants'],
-    apikeys: ['API Keys','Manage virtual API keys for authentication'],
-    logs: ['Request Logs','Live request activity'],
-    playground: ['Playground','Test prompts and explore provider responses']
+    endpoint: [ct('db.page.endpoint'),ct('db.page.endpointDesc')],
+    usage: [ct('db.page.usage'),ct('db.page.usageDesc')],
+    quota: [ct('db.page.quota'),ct('db.page.quotaDesc')],
+    providers: [ct('db.page.providers'),ct('db.page.providersDesc')],
+    combos: [ct('db.page.combos'),ct('db.page.combosDesc')],
+    settings: [ct('db.page.settings'),ct('db.page.settingsDesc')],
+    connections: [ct('db.page.connections'),ct('db.page.connectionsDesc')],
+    clitools: [ct('db.page.cli'),ct('db.page.cliDesc')],
+    apikeys: [ct('db.page.keys'),ct('db.page.keysDesc')],
+    logs: [ct('db.page.logs'),ct('db.page.logsDesc')],
+    playground: [ct('db.page.playground'),ct('db.page.playgroundDesc')]
   };
-  var t = titles[name] || [name, ''];
-  document.getElementById('tb-title').textContent = t[0];
-  document.getElementById('tb-sub').textContent = t[1];
+  var ttl = titles[name] || [name, ''];
+  document.getElementById('tb-title').textContent = ttl[0];
+  document.getElementById('tb-sub').textContent = ttl[1];
   if (pageIcons[name]) document.getElementById('tb-page-icon').innerHTML = pageIcons[name];
   if (name === 'usage') loadUsage();
   if (name === 'providers') loadProv();
@@ -1650,8 +1667,8 @@ async function refresh() {
     drawTopology(provs, health||[]);
     loadTokenSaverStats();
     document.getElementById('conn-badge').className = 'badge on';
-    document.getElementById('conn-badge').innerHTML = '<span class="dot"></span> Connected';
-    document.getElementById('conn-badge-text').textContent = 'connected';
+    document.getElementById('conn-badge').innerHTML = '<span class="dot"></span> ' + ct('db.status.connected');
+    document.getElementById('conn-badge-text').textContent = ct('db.status.connected');
     document.getElementById('conn-badge-text').className = 'val green';
 
     // Fetch OAuth status
@@ -1668,8 +1685,8 @@ async function refresh() {
     } catch(e) { /* ignore */ }
   } catch(e) {
     document.getElementById('conn-badge').className = 'badge off';
-    document.getElementById('conn-badge').innerHTML = '<span class="dot"></span> Disconnected';
-    document.getElementById('conn-badge-text').textContent = 'disconnected';
+    document.getElementById('conn-badge').innerHTML = '<span class="dot"></span> ' + ct('db.status.disconnected');
+    document.getElementById('conn-badge-text').textContent = ct('db.status.disconnected');
     document.getElementById('conn-badge-text').className = 'val';
     document.getElementById('conn-badge-text').style.color = 'var(--red)';
   }
@@ -1829,11 +1846,11 @@ async function loadProv() {
     document.getElementById('prov-tbody').innerHTML = provs.map(function(p) {
       var h = hMap[p.id] || hMap[p.name] || null;
       var status = 'healthy';
-      var statusLabel = 'Healthy';
+      var statusLabel = ct('db.health.healthy');
       if (h) {
-        if (h.healthy === false) { status = 'down'; statusLabel = 'Down'; }
-        else if (h.degraded === true) { status = 'degraded'; statusLabel = 'Degraded'; }
-        else if (h.disabled === true) { status = 'disabled'; statusLabel = 'Disabled'; }
+        if (h.healthy === false) { status = 'down'; statusLabel = ct('db.health.down'); }
+        else if (h.degraded === true) { status = 'degraded'; statusLabel = ct('db.health.degraded'); }
+        else if (h.disabled === true) { status = 'disabled'; statusLabel = ct('db.health.disabled'); }
       }
       var latency = (h && (h.latencyMs || h.latency || h.avgLatency)) || '-';
       if (typeof latency === 'number') latency = latency + 'ms';
@@ -1856,26 +1873,26 @@ async function loadProv() {
 async function testProvider(btn, providerId) {
   btn.disabled = true;
   btn.className = 'test-btn testing';
-  btn.textContent = 'Testing...';
+  btn.textContent = ct('db.btn.testing');
   try {
     var resp = await fetch(API+'/8router/connections/' + encodeURIComponent(providerId) + '/test', { method: 'POST' });
     var result = await resp.json();
     if (result.ok || result.success || result.healthy) {
-      btn.textContent = '\u2713 OK';
+      btn.textContent = ct('db.btn.ok');
       btn.style.color = 'var(--green)';
       btn.style.borderColor = 'var(--green)';
     } else {
-      btn.textContent = '\u2717 Fail';
+      btn.textContent = ct('db.btn.fail');
       btn.style.color = 'var(--red)';
       btn.style.borderColor = 'var(--red)';
     }
   } catch(e) {
-    btn.textContent = '\u2717 Error';
+    btn.textContent = ct('db.btn.error');
     btn.style.color = 'var(--red)';
     btn.style.borderColor = 'var(--red)';
   }
   btn.disabled = false;
-  setTimeout(function(){ btn.className = 'test-btn'; btn.textContent = 'Test'; btn.style.color = ''; btn.style.borderColor = ''; }, 3000);
+  setTimeout(function(){ btn.className = 'test-btn'; btn.textContent = ct('db.btn.test'); btn.style.color = ''; btn.style.borderColor = ''; }, 3000);
 }
 
 // ═══ COMBOS ═══
@@ -1937,19 +1954,19 @@ async function loadQuota() {
       var pct = Math.min(100, Math.round(reqs / max * 100));
       var color = pct > 80 ? 'var(--red)' : pct > 50 ? 'var(--yellow)' : 'var(--green)';
       var statusClass = pct > 80 ? 'danger' : pct > 50 ? 'warn' : 'ok';
-      var statusText = pct > 80 ? 'Critical' : pct > 50 ? 'Warning' : 'Healthy';
+      var statusText = pct > 80 ? ct('db.health.critical') : pct > 50 ? ct('db.health.warning') : ct('db.health.healthy');
       var cardClass = pct > 80 ? 'danger' : pct > 50 ? 'warn' : '';
       
       return '<div class="quota-card ' + cardClass + '">' +
         '<div class="name">' + provLogo(p.id, 16) + '<span class="badge ' + p.tier + '">' + p.tier + '</span> ' + p.name +
         ' <span class="status-badge ' + statusClass + '">\\u25cf ' + statusText + '</span></div>' +
         '<div class="quota-bar"><div class="quota-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
-        '<div class="quota-info"><span>' + reqs.toLocaleString() + ' requests</span><span>' + tokens.toLocaleString() + ' tokens</span><span>' + pct + '%</span></div>' +
+        '<div class="quota-info"><span>' + reqs.toLocaleString() + ' ' + ct('db.quota.requests') + '</span><span>' + tokens.toLocaleString() + ' ' + ct('db.quota.tokens') + '</span><span>' + pct + '%</span></div>' +
         '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;font-family:JetBrains Mono,monospace;color:var(--text-muted)">' +
-          '<span>Errors: <span style="color:' + (errors > 0 ? 'var(--red)' : 'var(--text-muted)') + '">' + errors + '</span></span>' +
-          '<span>Est. remaining: ' + Math.max(0, max - reqs).toLocaleString() + '</span>' +
+          '<span>' + ct('db.quota.errors') + ' <span style="color:' + (errors > 0 ? 'var(--red)' : 'var(--text-muted)') + '">' + errors + '</span></span>' +
+          '<span>' + ct('db.quota.remaining') + ' ' + Math.max(0, max - reqs).toLocaleString() + '</span>' +
         '</div>' +
-        '<div class="quota-reset">\\u21bb Resets daily</div></div>';
+        '<div class="quota-reset">\\u21bb ' + ct('db.quota.resets') + '</div></div>';
     }).join('');
   } catch(e) {}
 }
@@ -1970,9 +1987,9 @@ async function saveBudget() {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload)
     });
-    alert('Budget limits saved successfully');
+    alert(ct('db.budget.saved'));
   } catch(e) {
-    alert('Failed to save budget limits');
+    alert(ct('db.budget.failed'));
   }
 }
 
@@ -1981,12 +1998,12 @@ async function loadConns() {
   try {
     var resp = await fetch(API+'/8router/connections');
     if (!resp.ok) {
-      document.getElementById('conn-tbody').innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">No connections yet. Connections appear after API requests are made.</td></tr>';
+      document.getElementById('conn-tbody').innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">' + ct('db.conn.noConns') + '</td></tr>';
       return;
     }
     var c = await resp.json();
     if (!c || !c.length) {
-      document.getElementById('conn-tbody').innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">No connections yet. Connections appear after API requests are made.</td></tr>';
+      document.getElementById('conn-tbody').innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">' + ct('db.conn.noConns') + '</td></tr>';
       return;
     }
     var health = [];
@@ -2005,9 +2022,9 @@ async function loadConns() {
       var healthLabel = 'Healthy';
       var healthCls = 'healthy';
       if (h) {
-        if (h.healthy === false) { healthLabel = 'Down'; healthCls = 'down'; }
-        else if (h.degraded === true) { healthLabel = 'Degraded'; healthCls = 'degraded'; }
-        else if (h.disabled === true) { healthLabel = 'Disabled'; healthCls = 'disabled'; }
+        if (h.healthy === false) { healthLabel = ct('db.health.down'); healthCls = 'down'; }
+        else if (h.degraded === true) { healthLabel = ct('db.health.degraded'); healthCls = 'degraded'; }
+        else if (h.disabled === true) { healthLabel = ct('db.health.disabled'); healthCls = 'disabled'; }
       }
 
       var backoffLevel = x.backoffLevel || 0;
@@ -2018,7 +2035,7 @@ async function loadConns() {
         var nr = new Date(x.nextRetryAt);
         nextRetry = nr.toLocaleTimeString();
       } else if (backoffLevel > 0) {
-        nextRetry = 'now';
+        nextRetry = ct('db.conn.now');
       } else {
         nextRetry = '\u2014';
       }
@@ -2035,33 +2052,33 @@ async function loadConns() {
       '<td><button class="test-btn" onclick="testConnection(this,\\''+x.id+'\\')">Test</button></td></tr>';
     }).join('');
   } catch(e) {
-    document.getElementById('conn-tbody').innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">Could not load connections. API may be unreachable.</td></tr>';
+    document.getElementById('conn-tbody').innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">' + ct('db.conn.loadFailed') + '</td></tr>';
   }
 }
 
 async function testConnection(btn, connId) {
   btn.disabled = true;
   btn.className = 'test-btn testing';
-  btn.textContent = 'Testing...';
+  btn.textContent = ct('db.btn.testing');
   try {
     var resp = await fetch(API+'/8router/connections/' + encodeURIComponent(connId) + '/test', { method: 'POST' });
     var result = await resp.json();
     if (result.ok || result.success || result.healthy) {
-      btn.textContent = '\u2713 OK';
+      btn.textContent = ct('db.btn.ok');
       btn.style.color = 'var(--green)';
       btn.style.borderColor = 'var(--green)';
     } else {
-      btn.textContent = '\u2717 Fail';
+      btn.textContent = ct('db.btn.fail');
       btn.style.color = 'var(--red)';
       btn.style.borderColor = 'var(--red)';
     }
   } catch(e) {
-    btn.textContent = '\u2717 Error';
+    btn.textContent = ct('db.btn.error');
     btn.style.color = 'var(--red)';
     btn.style.borderColor = 'var(--red)';
   }
   btn.disabled = false;
-  setTimeout(function(){ btn.className = 'test-btn'; btn.textContent = 'Test'; btn.style.color = ''; btn.style.borderColor = ''; }, 3000);
+  setTimeout(function(){ btn.className = 'test-btn'; btn.textContent = ct('db.btn.test'); btn.style.color = ''; btn.style.borderColor = ''; }, 3000);
 }
 
 async function testAllConns() {
@@ -2126,11 +2143,11 @@ async function loadSettings() {
 
     var info = await apiFetch(API+'/8router/info');
     var infoHtml =
-      '<tr><td style="color:var(--text-muted);width:140px;font-family:Inter,sans-serif">Name</td><td>'+info.name+'</td></tr>' +
+      '<tr><td style="color:var(--text-muted);width:140px;font-family:Inter,sans-serif">'+ct('db.col.name')+'</td><td>'+info.name+'</td></tr>' +
       '<tr><td style="color:var(--text-muted);font-family:Inter,sans-serif">Version</td><td>'+info.version+'</td></tr>' +
-      '<tr><td style="color:var(--text-muted);font-family:Inter,sans-serif">Description</td><td>'+info.description+'</td></tr>' +
-      '<tr><td style="color:var(--text-muted);font-family:Inter,sans-serif">Features</td><td>'+info.features.join(', ')+'</td></tr>' +
-      (settings ? '' : '<tr><td style="color:var(--yellow);font-family:Inter,sans-serif">Settings API</td><td style="color:var(--yellow)">Backend pending</td></tr>');
+      '<tr><td style="color:var(--text-muted);font-family:Inter,sans-serif">'+ct('db.settings.description')+'</td><td>'+info.description+'</td></tr>' +
+      '<tr><td style="color:var(--text-muted);font-family:Inter,sans-serif">'+ct('db.settings.features')+'</td><td>'+info.features.join(', ')+'</td></tr>' +
+      (settings ? '' : '<tr><td style="color:var(--yellow);font-family:Inter,sans-serif">'+ct('db.settings.settingsApi')+'</td><td style="color:var(--yellow)">'+ct('db.settings.backendPending')+'</td></tr>');
     document.getElementById('sysinfo-tbody').innerHTML = infoHtml;
   } catch(e) {}
 }
@@ -2156,13 +2173,13 @@ async function loadCliTools() {
 
   document.getElementById('cli-grid').innerHTML = cliTools.map(function(tool) {
     var status = 'unknown';
-    var statusText = 'Unknown';
+    var statusText = ct('db.cli.unknown');
     if (tool.id === 'hermes') {
       status = 'connected';
-      statusText = 'Connected';
+      statusText = ct('db.status.connected');
     } else if (statusMap[tool.id]) {
       status = statusMap[tool.id].healthy ? 'connected' : 'not-installed';
-      statusText = statusMap[tool.id].healthy ? 'Connected' : 'Error';
+      statusText = statusMap[tool.id].healthy ? ct('db.status.connected') : ct('db.btn.error');
     }
 
     return '<div class="cli-card" onclick="handleCliClick(\\'' + tool.id + '\\')">' +
@@ -2205,11 +2222,11 @@ async function loadLogs() {
     }
 
     if (!logs || !logs.length) {
-      panel.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:12px">No logs yet. Send a request to see activity here.</div>';
+      panel.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:12px">' + ct('db.logs.noLogs') + '</div>';
       return;
     }
     // Build table: timestamp, provider, model, tokens, latency, status
-    var html = '<table style="width:100%"><thead><tr><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">Timestamp</th><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">Provider</th><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">Model</th><th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">Tokens</th><th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">Latency</th><th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">Status</th></tr></thead><tbody>';
+    var html = '<table style="width:100%"><thead><tr><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">' + ct('db.col.timestamp') + '</th><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">' + ct('db.col.provider') + '</th><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">' + ct('db.col.model') + '</th><th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">' + ct('db.col.tokens') + '</th><th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">' + ct('db.col.latency') + '</th><th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">' + ct('db.col.status') + '</th></tr></thead><tbody>';
     logs.forEach(function(log) {
       var sc = (log.statusCode || log.status) >= 200 && (log.statusCode || log.status) < 400 ? 'color:var(--green)' : 'color:var(--red)';
       var ts = log.timestamp ? new Date(log.timestamp).toLocaleString() : (log.time || '--');
@@ -2227,7 +2244,7 @@ async function loadLogs() {
     html += '</tbody></table>';
     panel.innerHTML = html;
   } catch(e) {
-    panel.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:12px">Failed to load logs. API endpoint may not be available.</div>';
+    panel.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:12px">' + ct('db.logs.loadFailed') + '</div>';
   }
 }
 
@@ -2236,35 +2253,35 @@ async function loadApiKeys() {
   try {
     var resp = await fetch(API+'/8router/api-keys');
     if (!resp.ok) {
-      document.getElementById('apikey-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">No API keys yet. Create one to get started.</td></tr>';
+      document.getElementById('apikey-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">' + ct('db.keys.createFailed') + '</td></tr>';
       return;
     }
     var keys = await resp.json();
     if (!keys || !keys.length) {
-      document.getElementById('apikey-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">No API keys yet. Create one to get started.</td></tr>';
+      document.getElementById('apikey-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">' + ct('db.keys.createFailed') + '</td></tr>';
       return;
     }
     document.getElementById('apikey-tbody').innerHTML = keys.map(function(k) {
       var displayKey = k.key || k.apiKey || k.id;
       if (displayKey && displayKey.length > 16) displayKey = displayKey.slice(0,12) + '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022';
       var created = k.createdAt ? new Date(k.createdAt).toLocaleDateString() : '-';
-      var lastUsed = k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleDateString() : 'Never';
+      var lastUsed = k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleDateString() : ct('db.keys.never');
       var active = k.active !== false;
       return '<tr><td style="font-family:JetBrains Mono,monospace;font-size:12px">'+displayKey+'</td>' +
-        '<td style="font-family:Inter,sans-serif">'+(k.name||'Unnamed')+'</td>' +
+        '<td style="font-family:Inter,sans-serif">'+(k.name||ct('db.keys.unnamed'))+'</td>' +
         '<td>'+created+'</td>' +
         '<td>'+lastUsed+'</td>' +
         '<td>'+(k.requests||0)+'</td>' +
-        '<td><span class="badge '+(active?'healthy':'unhealthy')+'">'+(active?'Active':'Revoked')+'</span></td>' +
-        '<td>'+(active?'<button style="padding:4px 10px;border-radius:6px;border:1px solid var(--red);background:transparent;color:var(--red);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s" onclick="revokeApiKey(\\''+(k.id||k.key)+'\\')">Revoke</button>':'')+'</td></tr>';
+        '<td><span class="badge '+(active?'healthy':'unhealthy')+'">'+(active?ct('db.keys.active'):ct('db.keys.revoked'))+'</span></td>' +
+        '<td>'+(active?'<button style="padding:4px 10px;border-radius:6px;border:1px solid var(--red);background:transparent;color:var(--red);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s" onclick="revokeApiKey(\\\''+(k.id||k.key)+'\\\')">'+ct('db.btn.revoke')+'</button>':'')+'</td></tr>';
     }).join('');
   } catch(e) {
-    document.getElementById('apikey-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">Could not load API keys. API may be unreachable.</td></tr>';
+    document.getElementById('apikey-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">' + ct('db.warn.apiUnreachable') + '</td></tr>';
   }
 }
 
 async function createApiKey() {
-  var name = prompt('Name for this API key (optional):');
+  var name = prompt(ct('db.keys.namePrompt'));
   if (name === null) return;
   try {
     var resp = await fetch(API+'/8router/api-keys', {
@@ -2275,27 +2292,27 @@ async function createApiKey() {
     if (resp.ok) {
       loadApiKeys();
     } else {
-      alert('Failed to create API key. The endpoint may not be available yet.');
+      alert(ct('db.keys.createFailed'));
     }
   } catch(e) {
-    alert('Failed to create API key. The endpoint may not be available yet.');
+    alert(ct('db.keys.createFailed'));
   }
 }
 
 async function revokeApiKey(id) {
-  if (!confirm('Revoke this API key? This cannot be undone.')) return;
+  if (!confirm(ct('db.keys.revokeConfirm'))) return;
   try {
     await fetch(API+'/8router/api-keys/' + encodeURIComponent(id), {method: 'DELETE'});
     loadApiKeys();
   } catch(e) {
-    alert('Failed to revoke key. The endpoint may not be available yet.');
+    alert(ct('db.keys.revokeFailed'));
   }
 }
 
 // ═══ CAVEMAN ═══
 function setCaveman(v) {
   document.getElementById('caveman-val').textContent = v;
-  var descs = ['Disabled — Normal responses','Mild — Short sentences','Medium — One-line answers','Aggressive — Keywords only','Extreme — Caveman grunts','Maximum — Classical Chinese compression'];
+  var descs = [ct('db.toksv.off'),ct('db.toksv.mild'),ct('db.toksv.medium'),ct('db.toksv.aggro'),ct('db.toksv.extreme'),ct('db.toksv.max')];
   document.getElementById('caveman-desc').textContent = descs[v];
   fetch(API+'/8router/caveman',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({level:parseInt(v)})});
 }

@@ -246,13 +246,17 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
   }
 
   // Setup guide page
-  app.get('/8router/setup', (_req, res) => {
-    res.type('html').send(getSetupGuideHTML());
+  app.get('/8router/setup', (req, res) => {
+    const locale = getLocale(req);
+    setLocaleCookie(res, locale);
+    res.type('html').send(getSetupGuideHTML(locale));
   });
 
   // Serve dashboard HTML directly (consolidated on port 8080)
-  app.get('/8router/dashboard', (_req, res) => {
-    res.send(getDashboardHTML());
+  app.get('/8router/dashboard', (req, res) => {
+    const locale = getLocale(req);
+    setLocaleCookie(res, locale);
+    res.send(getDashboardHTML(8080, locale));
   });
 
   // ═══════════════════════════════════════════════

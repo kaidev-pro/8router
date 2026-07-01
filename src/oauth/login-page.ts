@@ -1,16 +1,17 @@
 // 8Router — OAuth Login Page
 
+import { t, type Locale } from '../i18n/index.js';
 import type { OAuthProviderImpl } from './provider.js';
 import type { OAuthConfig } from './config.js';
 
-export function getLoginPageHTML(providers: OAuthProviderImpl[], config: OAuthConfig): string {
+export function getLoginPageHTML(providers: OAuthProviderImpl[], config: OAuthConfig, locale: Locale = 'en'): string {
   const providerButtons = providers.map(p => {
     const icon = p.id === 'google' ? googleIcon() : githubIcon();
     const color = p.id === 'google' ? '#4285f4' : '#333';
     const hoverColor = p.id === 'google' ? '#3367d6' : '#222';
     return `<a href="/auth/${p.id}" class="oauth-btn" style="--btn-color:${color};--btn-hover:${hoverColor}">
       ${icon}
-      <span>Continue with ${p.name}</span>
+      <span>${t('login.continueWith', locale, { provider: p.name })}</span>
     </a>`;
   }).join('\n      ');
 
@@ -18,11 +19,11 @@ export function getLoginPageHTML(providers: OAuthProviderImpl[], config: OAuthCo
   const providerNames = providers.map(p => p.name).join(' & ');
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${locale}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>8Router — Login</title>
+  <title>${t('login.title', locale)}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -113,17 +114,17 @@ export function getLoginPageHTML(providers: OAuthProviderImpl[], config: OAuthCo
         <circle cx="32" cy="32" r="3" fill="white"/>
       </svg>
     </div>
-    <h1>Sign in to 8Router</h1>
-    <p class="subtitle">Access the dashboard and manage your AI routing gateway</p>
+    <h1>${t('login.heading', locale)}</h1>
+    <p class="subtitle">${t('login.subtitle', locale)}</p>
 
     <div class="oauth-buttons">
       ${providerButtons}
     </div>
 
-    ${providerCount === 0 ? '<p class="info">No OAuth providers configured.<br>Set <code>OAUTH_PROVIDER</code> in your config.</p>' : ''}
+    ${providerCount === 0 ? `<p class="info">${t('login.noProviders', locale)}<br>${t('login.setProvider', locale).replace('OAUTH_PROVIDER', '<code>OAUTH_PROVIDER</code>')}</p>` : ''}
     ${config.allowedEmails.length > 0 || config.allowedDomains.length > 0
-      ? `<p class="info">Access restricted to authorized accounts only.</p>`
-      : `<p class="info">Any ${providerNames} account can sign in.<br>Configure <code>allowedEmails</code> or <code>allowedDomains</code> to restrict access.</p>`
+      ? `<p class="info">${t('login.accessRestricted', locale)}</p>`
+      : `<p class="info">${t('login.anyAccount', locale, { providers: providerNames })}<br>${t('login.configureAccess', locale).replace('allowedEmails', '<code>allowedEmails</code>').replace('allowedDomains', '<code>allowedDomains</code>')}</p>`
     }
   </div>
 </body>

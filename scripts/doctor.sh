@@ -167,6 +167,52 @@ else
   fail "i18n locale detection failed (HTTP $I18N_DETECTED)"
 fi
 
+# 20. Dashboard i18n coverage
+DB_I18N=$(python3 -c "
+import json
+en = json.load(open('$PROJECT_DIR/src/i18n/en.json'))
+db = [k for k in en if k.startswith('db.')]
+print(len(db))
+" 2>/dev/null || echo "0")
+if [ "$DB_I18N" -ge "200" ]; then
+  ok "Dashboard i18n coverage ($DB_I18N keys)"
+else
+  warn "Dashboard i18n coverage low ($DB_I18N keys, expected ≥200)"
+fi
+
+# 21. Setup guide i18n coverage
+SETUP_I18N=$(python3 -c "
+import json
+en = json.load(open('$PROJECT_DIR/src/i18n/en.json'))
+setup = [k for k in en if k.startswith('setup.')]
+print(len(setup))
+" 2>/dev/null || echo "0")
+if [ "$SETUP_I18N" -ge "10" ]; then
+  ok "Setup guide i18n coverage ($SETUP_I18N keys)"
+else
+  warn "Setup guide i18n coverage low ($SETUP_I18N keys)"
+fi
+
+# 22. Login page i18n coverage
+LOGIN_I18N=$(python3 -c "
+import json
+en = json.load(open('$PROJECT_DIR/src/i18n/en.json'))
+login = [k for k in en if k.startswith('login.')]
+print(len(login))
+" 2>/dev/null || echo "0")
+if [ "$LOGIN_I18N" -ge "5" ]; then
+  ok "Login page i18n coverage ($LOGIN_I18N keys)"
+else
+  warn "Login page i18n coverage low ($LOGIN_I18N keys)"
+fi
+
+# 23. OpenAI-compat test resilience (check test script has warn function)
+if grep -q 'warn()' "$PROJECT_DIR/scripts/test-openai-compat.sh" 2>/dev/null; then
+  ok "OpenAI-compat tests have provider resilience (warn for degraded)"
+else
+  warn "OpenAI-compat tests may not handle degraded providers"
+fi
+
 echo ""
 echo "═══════════════════════════════════════════════"
 echo ""

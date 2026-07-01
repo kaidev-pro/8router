@@ -1,6 +1,6 @@
 {
   "name": "@kaidev18/eight-router",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "8Router \u2014 AI routing gateway for 8Agents ecosystem",
   "author": "8Agents",
   "license": "MIT",
@@ -42,6 +42,7 @@
     "test": "tsx src/__tests__/run.ts",
     "test:router": "bash scripts/test-router.sh",
     "test:openai-compat": "bash scripts/test-openai-compat.sh",
+    "test:providers-live": "bash scripts/test-providers-live.sh",
     "doctor": "bash scripts/doctor.sh",
     "test:v050": "bash scripts/test-v050.sh"
   },

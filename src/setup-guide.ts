@@ -1,11 +1,15 @@
-// 8Router — Setup Guide Page
-export function getSetupGuideHTML(): string {
+// 8Router — Setup Guide Page (i18n)
+import { t, type Locale } from './i18n/index.js';
+
+export function getSetupGuideHTML(locale: Locale = 'en'): string {
+  const _ = (key: string) => t(key, locale);
+
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${locale}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>8Router — Setup Guide</title>
+<title>${_('setup.title')}</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -226,14 +230,14 @@ footer a:hover { text-decoration:underline }
 <div class="wrap">
 
 <header>
-  <a href="/8router">← Back to 8Router</a>
-  <h1><span class="accent">8Router</span> Setup Guide</h1>
-  <p>Connect your favorite AI tools to 8Router in seconds. Copy the configuration below and you're ready to go.</p>
+  <a href="/8router">← 8Router</a>
+  <h1><span class="accent">8Router</span> ${_('setup.title').replace('8Router ', '')}</h1>
+  <p>${_('setup.desc')}</p>
 </header>
 
 <div class="warning-box">
-  <h3>⚠️ Security Notice</h3>
-  <p>If deploying publicly, set <code>AUTH_REQUIRED=true</code> and configure an API key. Public access without authentication exposes your provider API keys.</p>
+  <h3>⚠️ ${_('setup.securityNote')}</h3>
+  <p>${_('security.warning')}</p>
 </div>
 
 <!-- Cursor -->
@@ -244,14 +248,14 @@ footer a:hover { text-decoration:underline }
   </div>
   <div class="step-note">Settings → Models → Add OpenAI API</div>
   <div class="field-row">
-    <span class="field-label">Base URL</span>
+    <span class="field-label">${_('setup.baseURL')}</span>
     <span class="field-value">http://localhost:8080/v1</span>
-    <button class="copy-btn" onclick="copyText('http://localhost:8080/v1',this)">Copy</button>
+    <button class="copy-btn" onclick="copyText('http://localhost:8080/v1',this)">${_('setup.copy')}</button>
   </div>
   <div class="field-row">
-    <span class="field-label">API Key</span>
+    <span class="field-label">${_('setup.apiKey')}</span>
     <span class="field-value">sk-8router</span>
-    <button class="copy-btn" onclick="copyText('sk-8router',this)">Copy</button>
+    <button class="copy-btn" onclick="copyText('sk-8router',this)">${_('setup.copy')}</button>
   </div>
 </div>
 
@@ -263,19 +267,19 @@ footer a:hover { text-decoration:underline }
   </div>
   <div class="step-note">OpenAI Compatible provider</div>
   <div class="field-row">
-    <span class="field-label">Base URL</span>
+    <span class="field-label">${_('setup.baseURL')}</span>
     <span class="field-value">http://localhost:8080/v1</span>
-    <button class="copy-btn" onclick="copyText('http://localhost:8080/v1',this)">Copy</button>
+    <button class="copy-btn" onclick="copyText('http://localhost:8080/v1',this)">${_('setup.copy')}</button>
   </div>
   <div class="field-row">
-    <span class="field-label">API Key</span>
+    <span class="field-label">${_('setup.apiKey')}</span>
     <span class="field-value">sk-8router</span>
-    <button class="copy-btn" onclick="copyText('sk-8router',this)">Copy</button>
+    <button class="copy-btn" onclick="copyText('sk-8router',this)">${_('setup.copy')}</button>
   </div>
   <div class="field-row">
-    <span class="field-label">Model</span>
+    <span class="field-label">${_('setup.model')}</span>
     <span class="field-value">llama-3.3-70b-versatile</span>
-    <button class="copy-btn" onclick="copyText('llama-3.3-70b-versatile',this)">Copy</button>
+    <button class="copy-btn" onclick="copyText('llama-3.3-70b-versatile',this)">${_('setup.copy')}</button>
   </div>
 </div>
 
@@ -287,7 +291,7 @@ footer a:hover { text-decoration:underline }
   </div>
   <div class="step-note">Add to your <code>config.json</code></div>
   <div class="code-block">
-    <button class="copy-btn" onclick="copyText(document.getElementById('continue-config').textContent,this)">Copy</button>
+    <button class="copy-btn" onclick="copyText(document.getElementById('continue-config').textContent,this)">${_('setup.copy')}</button>
     <pre id="continue-config">{
   "models": [
     {
@@ -312,12 +316,12 @@ footer a:hover { text-decoration:underline }
   <div class="field-row">
     <span class="field-label">OpenAI API</span>
     <span class="field-value">http://localhost:8080/v1</span>
-    <button class="copy-btn" onclick="copyText('http://localhost:8080/v1',this)">Copy</button>
+    <button class="copy-btn" onclick="copyText('http://localhost:8080/v1',this)">${_('setup.copy')}</button>
   </div>
   <div class="field-row">
-    <span class="field-label">API Key</span>
+    <span class="field-label">${_('setup.apiKey')}</span>
     <span class="field-value">sk-8router</span>
-    <button class="copy-btn" onclick="copyText('sk-8router',this)">Copy</button>
+    <button class="copy-btn" onclick="copyText('sk-8router',this)">${_('setup.copy')}</button>
   </div>
 </div>
 
@@ -329,7 +333,7 @@ footer a:hover { text-decoration:underline }
   </div>
   <div class="step-note">Run in terminal</div>
   <div class="code-block">
-    <button class="copy-btn" onclick="copyText('ANTHROPIC_BASE_URL=http://localhost:8080 claude',this)">Copy</button>
+    <button class="copy-btn" onclick="copyText('ANTHROPIC_BASE_URL=http://localhost:8080 claude',this)">${_('setup.copy')}</button>
     <pre>ANTHROPIC_BASE_URL=http://localhost:8080 claude</pre>
   </div>
 </div>
@@ -342,7 +346,7 @@ footer a:hover { text-decoration:underline }
   </div>
   <div class="step-note">Run in terminal</div>
   <div class="code-block">
-    <button class="copy-btn" onclick="copyText('OPENAI_BASE_URL=http://localhost:8080/v1 codex',this)">Copy</button>
+    <button class="copy-btn" onclick="copyText('OPENAI_BASE_URL=http://localhost:8080/v1 codex',this)">${_('setup.copy')}</button>
     <pre>OPENAI_BASE_URL=http://localhost:8080/v1 codex</pre>
   </div>
 </div>
@@ -355,9 +359,9 @@ footer a:hover { text-decoration:underline }
   </div>
   <div class="step-note">Test with any HTTP client</div>
   <div class="code-block">
-    <button class="copy-btn" onclick="copyText(document.getElementById('curl-cmd').textContent,this)">Copy</button>
-    <pre id="curl-cmd">curl http://localhost:8080/v1/chat/completions \\
-  -H 'Content-Type: application/json' \\
+    <button class="copy-btn" onclick="copyText(document.getElementById('curl-cmd').textContent,this)">${_('setup.copy')}</button>
+    <pre id="curl-cmd">curl http://localhost:8080/v1/chat/completions \\\\
+  -H 'Content-Type: application/json' \\\\
   -d '{
     "model": "llama-3.3-70b-versatile",
     "messages": [{"role": "user", "content": "Hello"}]
@@ -372,11 +376,13 @@ footer a:hover { text-decoration:underline }
 </div>
 
 <script>
+const copiedText = ${JSON.stringify(_('setup.copied'))};
+
 async function copyText(text, btn) {
   try {
     await navigator.clipboard.writeText(text);
     const orig = btn.textContent;
-    btn.textContent = 'Copied!';
+    btn.textContent = copiedText;
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
   } catch {
@@ -387,7 +393,7 @@ async function copyText(text, btn) {
     document.execCommand('copy');
     document.body.removeChild(ta);
     const orig = btn.textContent;
-    btn.textContent = 'Copied!';
+    btn.textContent = copiedText;
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
   }
