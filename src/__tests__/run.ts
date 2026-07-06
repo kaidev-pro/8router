@@ -112,6 +112,12 @@ index abc..def 100644
   console.log(`   ✅ Hermes integration ready\n`);
   passed++;
 
+  // Test 9: Key Pool & Circuit Breaker
+  console.log('9. Key Pool & Circuit Breaker');
+  const { runKeyPoolTests } = await import('./key-pool.test.js');
+  runKeyPoolTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

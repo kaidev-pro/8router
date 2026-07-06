@@ -269,6 +269,14 @@ section { padding:80px 0; position:relative; z-index:1 }
 .badge-active { background:rgba(0,210,148,0.15); color:var(--green) }
 .badge-beta { background:rgba(225,133,40,0.15); color:var(--orange) }
 .badge-coming { background:rgba(90,96,112,0.15); color:var(--text-3) }
+.prov-coming { opacity:0.5 }
+.prov-coming:hover { opacity:0.75 }
+.prov-coming-label { display:block; text-align:center; font-size:11px; color:var(--text-3); text-transform:uppercase; letter-spacing:0.06em; padding:8px 0 4px; border-top:1px dashed var(--border); margin-top:4px }
+.dash-demo-label { display:inline-block; background:rgba(90,96,112,0.15); color:var(--text-3); font-size:10px; text-transform:uppercase; letter-spacing:0.06em; padding:2px 6px; border-radius:4px; margin-left:8px; vertical-align:middle }
+.sec-warning-box { background:rgba(255,176,0,0.08); border:1px solid rgba(255,176,0,0.25); border-radius:12px; padding:20px 24px; margin:24px 0; display:flex; gap:12px; align-items:flex-start }
+.sec-warning-icon { color:var(--yellow); flex-shrink:0; margin-top:2px }
+.sec-warning-text { font-size:14px; color:var(--text-2); line-height:1.5 }
+.sec-warning-text strong { color:var(--yellow) }
 .badge-local { background:rgba(132,171,255,0.15); color:var(--accent) }
 
 /* ─── ALIAS CARDS ─── */
@@ -559,7 +567,7 @@ $ 8router
           <div class="hero-stat-label">${_('hero.statFallback')}</div>
         </div>
         <div class="hero-stat">
-          <div class="hero-stat-val">41</div>
+          <div class="hero-stat-val">43</div>
           <div class="hero-stat-label">${_('hero.statTests')}</div>
         </div>
       </div>
@@ -645,7 +653,8 @@ $ 8router
           <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/openai.svg" alt="OpenAI" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">OA</span></div><span class="prov-name">OpenAI</span><span class="badge-sm badge-active">Active</span></div>
           <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/anthropic.svg" alt="Anthropic" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">A</span></div><span class="prov-name">Anthropic</span><span class="badge-sm badge-active">Active</span></div>
           <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/gemini.svg" alt="Gemini" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">G</span></div><span class="prov-name">Gemini</span><span class="badge-sm badge-active">Active</span></div>
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/xai.svg" alt="xAI" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">xAI</span></div><span class="prov-name">xAI</span><span class="badge-sm badge-coming">Soon</span></div>
+          <div class="prov-item prov-coming"><div class="prov-logo-wrap"><img src="/assets/providers/xai.svg" alt="xAI" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">xAI</span></div><span class="prov-name">xAI</span><span class="badge-sm badge-coming">Soon</span></div>
+          <span class="prov-coming-label">Coming Soon</span>
         </div>
       </div>
       <div class="prov-tier">
@@ -658,8 +667,9 @@ $ 8router
           <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/mistral.svg" alt="Mistral" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">M</span></div><span class="prov-name">Mistral</span><span class="badge-sm badge-active">Active</span></div>
           <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/deepseek.svg" alt="DeepSeek" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">DS</span></div><span class="prov-name">DeepSeek</span><span class="badge-sm badge-beta">Beta</span></div>
           <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/together.svg" alt="Together AI" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">TG</span></div><span class="prov-name">Together AI</span><span class="badge-sm badge-beta">Beta</span></div>
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/cohere.svg" alt="Cohere" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">C</span></div><span class="prov-name">Cohere</span><span class="badge-sm badge-coming">Soon</span></div>
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/perplexity.svg" alt="Perplexity" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">PX</span></div><span class="prov-name">Perplexity</span><span class="badge-sm badge-coming">Soon</span></div>
+          <div class="prov-item prov-coming"><div class="prov-logo-wrap"><img src="/assets/providers/cohere.svg" alt="Cohere" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">C</span></div><span class="prov-name">Cohere</span><span class="badge-sm badge-coming">Soon</span></div>
+          <div class="prov-item prov-coming"><div class="prov-logo-wrap"><img src="/assets/providers/perplexity.svg" alt="Perplexity" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">PX</span></div><span class="prov-name">Perplexity</span><span class="badge-sm badge-coming">Soon</span></div>
+          <span class="prov-coming-label">Coming Soon</span>
         </div>
       </div>
       <div class="prov-tier">
@@ -824,7 +834,7 @@ $ 8router
     <div class="s-desc">${_('dashboard.desc')}</div>
     <div class="dash-preview">
       <div class="dash-topbar">
-        <span>8Router Dashboard</span>
+        <span>8Router Dashboard</span><span class="dash-demo-label">Demo Data</span>
         <span class="dash-url">localhost:8080/8router/dashboard</span>
       </div>
       <div class="dash-body">
@@ -886,6 +896,10 @@ Model:    8router/auto</code></pre>
 <section style="background:var(--bg-surface)">
   <div class="wrap">
     <h2 class="s-title">${_('security.title')}</h2>
+    <div class="sec-warning-box">
+      <span class="sec-warning-icon">${icons.alertTriangle}</span>
+      <div class="sec-warning-text"><strong>${_('security.warningTitle')}:</strong> ${_('security.warning')}</div>
+    </div>
     <div class="sec-checklist">
       <div class="sec-check"><span class="check-icon">${icons.check}</span>${_('security.masking')}</div>
       <div class="sec-check"><span class="check-icon">${icons.check}</span>${_('security.sanitization')}</div>
@@ -973,6 +987,9 @@ Model:    8router/auto</code></pre>
         <a href="#aliases">${_('footer.modelAliases')}</a>
         <a href="#providers">${_('nav.providers')}</a>
         <a href="#start">${_('footer.getStarted')}</a>
+        <a href="/CHANGELOG.md">${_('footer.changelog')}</a>
+        <a href="/health">${_('footer.health')}</a>
+        <a href="#" onclick="alert('MIT License — Copyright (c) 2025 kaidev18')">${_('footer.license')}</a>
       </div>
       <div class="footer-col">
         <h4>${_('footer.8agents')}</h4>

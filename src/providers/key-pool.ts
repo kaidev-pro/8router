@@ -1,6 +1,8 @@
 // 8Router — Multi-Account Key Pool v2
 // Round-robin rotation with health tracking, circuit breaker, and automatic failover
 
+export type ErrorCategory = 'key_invalid' | 'rate_limit' | 'server_error' | 'timeout';
+
 export interface PoolKey {
   apiKey: string;
   index: number;
@@ -30,12 +32,14 @@ export interface ProviderPool {
   circuitOpenUntil: number | null;
   circuitThreshold: number;
   circuitOpenMs: number;
+  circuitHalfOpenTestInFlight: boolean; // Fix #2: only 1 test request in half-open
 }
 
 const HEALTHY_COOLDOWN = 60_000;
 const MAX_ERRORS_BEFORE_DISABLE = 3;
 const CIRCUIT_THRESHOLD = 5;
 const CIRCUIT_OPEN_MS = 3 * 60_000; // 3 minutes
+const DEFAULT_429_COOLDOWN = 30_000; // 30 seconds default for 429
 
 const pools = new Map<string, ProviderPool>();
 
@@ -70,6 +74,7 @@ export function initKeyPool(providerId: string, apiKeys: string[], rotation = 'r
     circuitOpenUntil: null,
     circuitThreshold: CIRCUIT_THRESHOLD,
     circuitOpenMs: CIRCUIT_OPEN_MS,
+    circuitHalfOpenTestInFlight: false,
   };
   pools.set(providerId, pool);
   return pool;
@@ -88,16 +93,23 @@ function isCircuitOpen(pool: ProviderPool): boolean {
   
   if (pool.circuitState === 'open') {
     if (pool.circuitOpenUntil && now > pool.circuitOpenUntil) {
-      // Transition to half-open
+      // Transition to half-open — allow exactly 1 test request
       pool.circuitState = 'half-open';
       pool.circuitOpenUntil = null;
+      pool.circuitHalfOpenTestInFlight = true; // Fix #2: gate on first request
       console.log(`[8Router] Circuit breaker half-open for ${pool.providerId}`);
-      return false;
+      return false; // Let this ONE request through
     }
     return true;
   }
   
-  // half-open: allow one request
+  // half-open: allow only 1 in-flight test request
+  // Fix #2: if test already in flight, block all other requests
+  if (pool.circuitHalfOpenTestInFlight) {
+    return true; // Another request is already testing — block this one
+  }
+  // No test in flight — this request becomes the test
+  pool.circuitHalfOpenTestInFlight = true;
   return false;
 }
 
@@ -106,6 +118,7 @@ function recordCircuitSuccess(pool: ProviderPool): void {
     pool.circuitState = 'closed';
     pool.circuitFailures = 0;
     pool.circuitOpenUntil = null;
+    pool.circuitHalfOpenTestInFlight = false; // Fix #2: reset gate
     console.log(`[8Router] Circuit breaker closed for ${pool.providerId}`);
   }
 }
@@ -116,8 +129,11 @@ function recordCircuitFailure(pool: ProviderPool): void {
   
   if (pool.circuitFailures >= pool.circuitThreshold) {
     pool.circuitState = 'open';
-    pool.circuitOpenUntil = Date.now() + pool.circuitOpenMs;
-    console.log(`[8Router] Circuit breaker OPEN for ${pool.providerId} (failures: ${pool.circuitFailures}, until: ${new Date(pool.circuitOpenUntil).toISOString()})`);
+    // Exponential backoff: base * 2^(failures - threshold), capped at 30 minutes
+    const backoffMs = Math.min(pool.circuitOpenMs * Math.pow(2, pool.circuitFailures - pool.circuitThreshold), 30 * 60_000);
+    pool.circuitOpenUntil = Date.now() + backoffMs;
+    pool.circuitHalfOpenTestInFlight = false; // Fix #2: reset gate when opening
+    console.log(`[8Router] Circuit breaker OPEN for ${pool.providerId} (failures: ${pool.circuitFailures}, backoff: ${Math.round(backoffMs/1000)}s, until: ${new Date(pool.circuitOpenUntil).toISOString()})`);
   }
 }
 
@@ -250,7 +266,16 @@ export function recordKeySuccess(providerId: string, apiKey: string): void {
   recordCircuitSuccess(pool);
 }
 
-export function recordKeyFailure(providerId: string, apiKey: string, statusCode?: number, _errText?: string): void {
+// Fix #1: errorCategory parameter makes failure classification explicit
+// Fix #3: retryAfterMs from Retry-After header for 429
+export function recordKeyFailure(
+  providerId: string,
+  apiKey: string,
+  statusCode?: number,
+  _errText?: string,
+  errorCategory?: ErrorCategory,
+  retryAfterMs?: number,
+): void {
   const pool = pools.get(providerId);
   if (!pool) return;
   const key = pool.keys.find(k => k.apiKey === apiKey);
@@ -260,28 +285,46 @@ export function recordKeyFailure(providerId: string, apiKey: string, statusCode?
   key.totalErrors++;
   key.lastError = Date.now();
 
-  // Determine status based on error
-  if (statusCode === 401 || statusCode === 403) {
+  // Determine category from statusCode if not explicitly passed
+  const category: ErrorCategory = errorCategory || categorizeError(statusCode);
+
+  // Determine status based on error category
+  if (category === 'key_invalid') {
+    // Fix #1: 401/403 = key-specific problem, NOT provider-level failure
     key.healthy = false;
     key.status = 'invalid';
     key.cooldownMs = 300_000; // 5 minutes
     key.cooldownUntil = Date.now() + key.cooldownMs;
-  } else if (statusCode === 429) {
+    // Do NOT call recordCircuitFailure — one bad key doesn't mean provider is down
+  } else if (category === 'rate_limit') {
+    // Fix #1: 429 = rate limited, NOT provider-level failure
+    // Fix #3: use Retry-After header if available, else default 30s
     key.healthy = false;
     key.status = 'rate_limited';
-    key.cooldownMs = 30_000; // 30 seconds
+    key.cooldownMs = retryAfterMs && retryAfterMs > 0 ? retryAfterMs : DEFAULT_429_COOLDOWN;
     key.cooldownUntil = Date.now() + key.cooldownMs;
+    // Do NOT call recordCircuitFailure — rate limit ≠ provider down
   } else if (key.errorCount >= MAX_ERRORS_BEFORE_DISABLE) {
+    // Fix #1: Only server_error/timeout increment circuit breaker
     key.healthy = false;
     key.status = 'cooldown';
     key.cooldownMs = HEALTHY_COOLDOWN;
     key.cooldownUntil = Date.now() + key.cooldownMs;
+    recordCircuitFailure(pool); // 5xx/timeout = real provider issue
   } else {
+    // Fix #4: key.healthy must be false when status is not 'healthy'
+    key.healthy = false;
     key.status = 'cooldown';
     key.cooldownUntil = Date.now() + key.cooldownMs;
+    recordCircuitFailure(pool); // 5xx/timeout = real provider issue
   }
+}
 
-  recordCircuitFailure(pool);
+// Helper: classify error from status code
+function categorizeError(statusCode?: number): ErrorCategory {
+  if (statusCode === 401 || statusCode === 403) return 'key_invalid';
+  if (statusCode === 429) return 'rate_limit';
+  return 'server_error'; // 5xx, timeout, network error
 }
 
 export function isRetryableError(statusCode: number): boolean {

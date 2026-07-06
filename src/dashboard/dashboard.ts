@@ -1560,7 +1560,7 @@ async function apiFetch(url, retries) {
 }
 
 // Provider logo helper
-var PROVIDER_LOGOS: Record<string, {logo: string, fallback: string, color: string}> = {
+var PROVIDER_LOGOS = {
   openai: {logo: '/assets/providers/openai.svg', fallback: 'OA', color: '#10A37F'},
   anthropic: {logo: '/assets/providers/anthropic.svg', fallback: 'A', color: '#D4A27F'},
   google: {logo: '/assets/providers/gemini.svg', fallback: 'G', color: '#8AB4F8'},
@@ -1584,9 +1584,9 @@ var PROVIDER_LOGOS: Record<string, {logo: string, fallback: string, color: strin
   antigravity: {logo: '/assets/providers/antigravity.svg', fallback: 'AG', color: '#9333EA'},
 };
 
-function provLogo(id: string, size: number = 20): string {
+function provLogo(id, size) {
   var p = PROVIDER_LOGOS[id] || {logo: '', fallback: id.slice(0,2).toUpperCase(), color: '#94A3B8'};
-  return '<span class="prov-logo-box" style="width:'+(size+4)+'px;height:'+(size+4)+'px"><img src="'+p.logo+'" width="'+size+'" height="'+size+'" style="object-fit:contain" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><span class="prov-logo-fb" style="display:none;background:'+p.color+'20;color:'+p.color+';font-size:'+Math.round(size*0.4)+'px">'+p.fallback+'</span></span>';
+  return '<span class="prov-logo-box" style="width:'+(size+4)+'px;height:'+(size+4)+'px"><img src="'+p.logo+'" width="'+size+'" height="'+size+'" style="object-fit:contain" onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'flex\\'"><span class="prov-logo-fb" style="display:none;background:'+p.color+'20;color:'+p.color+';font-size:'+Math.round(size*0.4)+'px">'+p.fallback+'</span></span>';
 }
 
 const pageIcons = {

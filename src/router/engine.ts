@@ -10,7 +10,7 @@ import { isCombo, resolveCombo, ensureDefaultCombos } from './combos.js';
 import { logRequest, getRequestStats, getDB, estimateCost, getPrivacyMode, LOCAL_PROVIDER_IDS, getCostOptimizerEnabled, logCostSavings, seedDefaultPresets } from '../database.js';
 import {
   initKeyPool, getNextKey, getRetryKey, recordKeySuccess, recordKeyFailure,
-  isRetryableError, hasPool, getAllPoolStatuses,
+  isRetryableError, hasPool, getAllPoolStatuses, ErrorCategory,
 } from '../providers/key-pool.js';
 
 export class RouterEngine {
@@ -105,94 +105,84 @@ export class RouterEngine {
     let attemptedFallback = false;
     const fallbackPath: string[] = [];
     const startTime = Date.now();
-    const maxRetries = this.config.fallback?.maxRetries || 3;
 
     for (const route of modelRoutes) {
       const provider = this.registry.getProvider(route.provider);
       if (!provider) continue;
       
-      // Try key-level retry within same provider
-      for (let keyAttempt = 0; keyAttempt < maxRetries; keyAttempt++) {
-        try {
-          const adapter = getAdapter(provider);
-          const response = await this.callProvider(adapter, provider, compressedReq);
+      // Fix #5: Loop all keys in pool before moving to next provider
+      try {
+        const adapter = getAdapter(provider);
+        const response = await this.callProvider(adapter, provider, compressedReq);
 
-          const latencyMs = Date.now() - startTime;
-          const inputTokens = response.usage?.prompt_tokens || 0;
-          const outputTokens = response.usage?.completion_tokens || 0;
-          const cachedTokens = (response.usage as any)?.prompt_tokens_details?.cached_tokens || 0;
-          
-          this.registry.recordSuccess(provider.id, latencyMs, response.usage?.total_tokens);
+        const latencyMs = Date.now() - startTime;
+        const inputTokens = response.usage?.prompt_tokens || 0;
+        const outputTokens = response.usage?.completion_tokens || 0;
+        const cachedTokens = (response.usage as any)?.prompt_tokens_details?.cached_tokens || 0;
+        
+        this.registry.recordSuccess(provider.id, latencyMs, response.usage?.total_tokens);
 
-          this.stats.successfulRequests++;
-          this.stats.totalTokens += response.usage?.total_tokens || 0;
-          this.updateProviderStats(provider.id, response.usage?.total_tokens || 0, latencyMs, false);
+        this.stats.successfulRequests++;
+        this.stats.totalTokens += response.usage?.total_tokens || 0;
+        this.updateProviderStats(provider.id, response.usage?.total_tokens || 0, latencyMs, false);
 
-          if (attemptedFallback) {
-            this.stats.fallbackCount++;
-          }
-
-          // Log to database with fallback path
-          const cost = estimateCost(provider.id, route.model, inputTokens, outputTokens);
-          logRequest({
-            provider: provider.id,
-            model: route.model,
-            comboName: isCombo(req.model) ? req.model : undefined,
-            inputTokens,
-            outputTokens,
-            cachedTokens,
-            compressedTokens: savedTokens,
-            cost,
-            latencyMs,
-            isSuccess: true,
-            isStream: false,
-            fallbackPath: fallbackPath.length > 0 ? fallbackPath : undefined,
-          });
-
-          return {
-            ...response,
-            _8router: {
-              provider: provider.id,
-              tier: provider.tier,
-              compressionSaved: savedTokens,
-              latencyMs,
-              combo: isCombo(req.model) ? req.model : undefined,
-              fallbackPath: fallbackPath.length > 0 ? fallbackPath : undefined,
-            },
-          } as any;
-
-        } catch (err: any) {
-          lastError = err;
-          this.registry.recordFailure(route.provider, err.message);
-          this.updateProviderStats(route.provider, 0, 0, true);
-
-          const keyLabel = `${route.provider}:key${keyAttempt}`;
-          fallbackPath.push(keyLabel);
-          console.warn(`[8Router] ${keyLabel} failed: ${err.message}`);
-          attemptedFallback = true;
-
-          // Log failure
-          logRequest({
-            provider: route.provider,
-            model: route.model,
-            comboName: isCombo(req.model) ? req.model : undefined,
-            inputTokens: 0,
-            outputTokens: 0,
-            latencyMs: Date.now() - startTime,
-            isSuccess: false,
-            errorMessage: err.message,
-            fallbackPath: [...fallbackPath],
-          });
-
-          // Check if error is retryable within same provider
-          if (!isRetryableError(err.statusCode || 0)) {
-            break; // Non-retryable, move to next provider
-          }
-
-          if (this.config.fallback?.retryDelayMs > 0) {
-            await sleep(this.config.fallback.retryDelayMs);
-          }
+        if (attemptedFallback) {
+          this.stats.fallbackCount++;
         }
+
+        // Log to database with fallback path
+        const cost = estimateCost(provider.id, route.model, inputTokens, outputTokens);
+        logRequest({
+          provider: provider.id,
+          model: route.model,
+          comboName: isCombo(req.model) ? req.model : undefined,
+          inputTokens,
+          outputTokens,
+          cachedTokens,
+          compressedTokens: savedTokens,
+          cost,
+          latencyMs,
+          isSuccess: true,
+          isStream: false,
+          fallbackPath: fallbackPath.length > 0 ? fallbackPath : undefined,
+        });
+
+        return {
+          ...response,
+          _8router: {
+            provider: provider.id,
+            tier: provider.tier,
+            compressionSaved: savedTokens,
+            latencyMs,
+            combo: isCombo(req.model) ? req.model : undefined,
+            fallbackPath: fallbackPath.length > 0 ? fallbackPath : undefined,
+          },
+        } as any;
+
+      } catch (err: any) {
+        lastError = err;
+        this.registry.recordFailure(route.provider, err.message);
+        this.updateProviderStats(route.provider, 0, 0, true);
+
+        const keyLabel = `${route.provider}:keys-exhausted`;
+        fallbackPath.push(keyLabel);
+        console.warn(`[8Router] ${keyLabel} failed: ${err.message}`);
+        attemptedFallback = true;
+
+        // Log failure
+        logRequest({
+          provider: route.provider,
+          model: route.model,
+          comboName: isCombo(req.model) ? req.model : undefined,
+          inputTokens: 0,
+          outputTokens: 0,
+          latencyMs: Date.now() - startTime,
+          isSuccess: false,
+          errorMessage: err.message,
+          fallbackPath: [...fallbackPath],
+        });
+
+        // All keys in this provider exhausted → move to next provider
       }
     }
 
@@ -209,7 +199,6 @@ export class RouterEngine {
 
     const { messages: compressedMessages, savedTokens } = compress(req.messages, this.config.compression);
     this.stats.compressionSaved += savedTokens;
-
     const compressedReq = { ...req, messages: compressedMessages as ChatMessage[], stream: true };
     const modelRoutes = this.resolveModelRoutes(req.model);
 
@@ -415,19 +404,37 @@ export class RouterEngine {
     if (!response.ok) {
       const errText = await response.text().catch(() => 'unknown error');
       const statusCode = response.status;
+      const category = categorizeError(statusCode);
 
-      // If retryable error (401/429) and provider has a key pool, try next key
-      if (isRetryableError(statusCode) && hasPool(provider.id)) {
-        recordKeyFailure(provider.id, activeProvider.apiKey, statusCode, errText.slice(0, 200));
+      // Fix #3: Read Retry-After header for 429
+      let retryAfterMs: number | undefined;
+      if (statusCode === 429) {
+        const retryAfterHeader = response.headers.get('retry-after');
+        if (retryAfterHeader) {
+          const seconds = parseInt(retryAfterHeader, 10);
+          if (!isNaN(seconds) && seconds > 0) {
+            retryAfterMs = seconds * 1000;
+          }
+        }
+      }
 
-        // Try next key in the pool
-        const retryKey = getRetryKey(provider.id, activeProvider.apiKey);
-        if (retryKey && retryKey.apiKey !== activeProvider.apiKey) {
+      // Record failure with category and retry-after
+      if (hasPool(provider.id)) {
+        recordKeyFailure(provider.id, activeProvider.apiKey, statusCode, errText.slice(0, 200), category, retryAfterMs);
+
+        // Fix #5: Loop all keys in pool before giving up on this provider
+        const failedKeys = new Set<string>([activeProvider.apiKey]);
+        
+        for (let attempt = 0; attempt < (provider.apiKeys?.length || 1) - 1; attempt++) {
+          const retryKey = getRetryKey(provider.id, activeProvider.apiKey);
+          if (!retryKey || failedKeys.has(retryKey.apiKey)) break; // No more unique keys
+          
+          failedKeys.add(retryKey.apiKey);
           const retryProvider = { ...provider, apiKey: retryKey.apiKey };
           const retryEndpoint = adapter.getEndpoint(retryProvider, false);
           const retryHeaders = adapter.buildHeaders(retryProvider);
 
-          console.log(`[8Router] Retrying ${provider.id} with next key (pool rotation) after ${statusCode}`);
+          console.log(`[8Router] Retrying ${provider.id} with key ${retryKey.index} (${failedKeys.size}/${provider.apiKeys?.length || 1}) after ${statusCode}`);
 
           const retryResponse = await fetch(retryEndpoint, {
             method: 'POST',
@@ -438,14 +445,30 @@ export class RouterEngine {
 
           if (!retryResponse.ok) {
             const retryErrText = await retryResponse.text().catch(() => 'unknown error');
-            recordKeyFailure(provider.id, retryKey.apiKey, retryResponse.status, retryErrText.slice(0, 200));
-            throw new Error(`HTTP ${retryResponse.status}: ${retryErrText.slice(0, 200)}`);
+            const retryCategory = categorizeError(retryResponse.status);
+            
+            // Fix #3: Read Retry-After for retry too
+            let retryRetryAfterMs: number | undefined;
+            if (retryResponse.status === 429) {
+              const h = retryResponse.headers.get('retry-after');
+              if (h) {
+                const s = parseInt(h, 10);
+                if (!isNaN(s) && s > 0) retryRetryAfterMs = s * 1000;
+              }
+            }
+            
+            recordKeyFailure(provider.id, retryKey.apiKey, retryResponse.status, retryErrText.slice(0, 200), retryCategory, retryRetryAfterMs);
+            // Continue loop — try next key
+            continue;
           }
 
           const retryRaw = await retryResponse.json();
           recordKeySuccess(provider.id, retryKey.apiKey);
           return adapter.parseResponse(retryRaw, retryProvider);
         }
+        
+        // All keys in pool exhausted
+        throw new Error(`All ${failedKeys.size} keys for ${provider.id} exhausted. Last: HTTP ${statusCode}`);
       }
 
       throw new Error(`HTTP ${response.status}: ${errText.slice(0, 200)}`);
@@ -484,18 +507,34 @@ export class RouterEngine {
     if (!response.ok) {
       const errText = await response.text().catch(() => 'unknown error');
       const statusCode = response.status;
+      const category = categorizeError(statusCode);
 
-      // If retryable error and provider has a key pool, try next key
-      if (isRetryableError(statusCode) && hasPool(provider.id)) {
-        recordKeyFailure(provider.id, activeProvider.apiKey, statusCode, errText.slice(0, 200));
+      // Fix #3: Read Retry-After for 429
+      let retryAfterMs: number | undefined;
+      if (statusCode === 429) {
+        const retryAfterHeader = response.headers.get('retry-after');
+        if (retryAfterHeader) {
+          const seconds = parseInt(retryAfterHeader, 10);
+          if (!isNaN(seconds) && seconds > 0) retryAfterMs = seconds * 1000;
+        }
+      }
 
-        const retryKey = getRetryKey(provider.id, activeProvider.apiKey);
-        if (retryKey && retryKey.apiKey !== activeProvider.apiKey) {
+      // If retryable error and provider has a key pool, loop all keys
+      if (hasPool(provider.id)) {
+        recordKeyFailure(provider.id, activeProvider.apiKey, statusCode, errText.slice(0, 200), category, retryAfterMs);
+
+        const failedKeys = new Set<string>([activeProvider.apiKey]);
+
+        for (let attempt = 0; attempt < (provider.apiKeys?.length || 1) - 1; attempt++) {
+          const retryKey = getRetryKey(provider.id, activeProvider.apiKey);
+          if (!retryKey || failedKeys.has(retryKey.apiKey)) break;
+
+          failedKeys.add(retryKey.apiKey);
           const retryProvider = { ...provider, apiKey: retryKey.apiKey };
           const retryEndpoint = adapter.getEndpoint(retryProvider, true);
           const retryHeaders = adapter.buildHeaders(retryProvider);
 
-          console.log(`[8Router] Stream retry ${provider.id} with next key after ${statusCode}`);
+          console.log(`[8Router] Stream retry ${provider.id} with key ${retryKey.index} after ${statusCode}`);
 
           const retryResponse = await fetch(retryEndpoint, {
             method: 'POST',
@@ -506,8 +545,19 @@ export class RouterEngine {
 
           if (!retryResponse.ok) {
             const retryErrText = await retryResponse.text().catch(() => 'unknown error');
-            recordKeyFailure(provider.id, retryKey.apiKey, retryResponse.status, retryErrText.slice(0, 200));
-            throw new Error(`HTTP ${retryResponse.status}: ${retryErrText.slice(0, 200)}`);
+            const retryCategory = categorizeError(retryResponse.status);
+            
+            let retryRetryAfterMs: number | undefined;
+            if (retryResponse.status === 429) {
+              const h = retryResponse.headers.get('retry-after');
+              if (h) {
+                const s = parseInt(h, 10);
+                if (!isNaN(s) && s > 0) retryRetryAfterMs = s * 1000;
+              }
+            }
+            
+            recordKeyFailure(provider.id, retryKey.apiKey, retryResponse.status, retryErrText.slice(0, 200), retryCategory, retryRetryAfterMs);
+            continue;
           }
 
           if (!retryResponse.body) {
@@ -545,6 +595,8 @@ export class RouterEngine {
           }
           return;
         }
+
+        throw new Error(`All ${failedKeys.size} keys for ${provider.id} exhausted. Last: HTTP ${statusCode}`);
       }
 
       throw new Error(`HTTP ${response.status}: ${errText.slice(0, 200)}`);
@@ -558,12 +610,10 @@ export class RouterEngine {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
-
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
@@ -627,4 +677,11 @@ export class RouterError extends Error {
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Helper: classify error from status code (mirrors key-pool.ts)
+function categorizeError(statusCode: number): ErrorCategory {
+  if (statusCode === 401 || statusCode === 403) return 'key_invalid';
+  if (statusCode === 429) return 'rate_limit';
+  return 'server_error';
 }

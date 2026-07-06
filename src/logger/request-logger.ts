@@ -159,7 +159,7 @@ function getDb(): Database.Database {
 
     return db;
   } catch (err) {
-    console.error('Failed to init logging DB:', err);
+    console.error('Failed to init logging DB:', err instanceof Error ? err.message : String(err));
     throw err;
   }
 }
@@ -225,7 +225,7 @@ export function logRequest(log: RequestLog): void {
       log.promptTokens, log.completionTokens, log.totalTokens, log.cost
     );
   } catch (err) {
-    console.error('Failed to log request:', err);
+    console.error('Failed to log request:', err instanceof Error ? sanitizeError(err.message) : 'Unknown error');
   }
 }
 
