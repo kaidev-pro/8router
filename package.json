@@ -40,6 +40,7 @@
     "build": "tsc",
     "start": "npx tsx src/index.ts",
     "test": "tsx src/__tests__/run.ts",
+    "test:bridge-types": "tsx src/__tests__/run-bridge-types.ts",
     "test:router": "bash scripts/test-router.sh",
     "test:openai-compat": "bash scripts/test-openai-compat.sh",
     "test:providers-live": "bash scripts/test-providers-live.sh",

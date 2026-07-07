@@ -1,0 +1,83 @@
+// 8Router — Bridge Module Barrel
+// Phase 1A: Type contracts only — no runtime behavior change
+
+// Canonical types (type-only exports for ESM safety)
+export type {
+  // Roles
+  CanonicalRole,
+  CanonicalInstructionRole,
+  // Content
+  CanonicalContentPart,
+  CanonicalTextPart,
+  CanonicalImagePart,
+  CanonicalImageSource,
+  CanonicalToolUsePart,
+  CanonicalToolResultPart,
+  CanonicalThinkingPart,
+  // Instruction
+  CanonicalInstruction,
+  // Message
+  CanonicalMessage,
+  // Tools
+  CanonicalTool,
+  CanonicalToolCall,
+  CanonicalToolChoice,
+  // Request
+  CanonicalRequest,
+  CanonicalResponseFormat,
+  CanonicalBridgeMeta,
+  BridgeWarning,
+  BridgeWarningCode,
+  ShadowStatus,
+  // Response
+  CanonicalResponse,
+  CanonicalFinishReason,
+  // Usage
+  CanonicalUsage,
+  // Stream
+  CanonicalStreamEvent,
+  StreamMessageStart,
+  StreamContentDelta,
+  StreamThinkingDelta,
+  StreamToolCallStart,
+  StreamToolCallDelta,
+  StreamToolCallEnd,
+  StreamUsageUpdate,
+  StreamMessageEnd,
+  StreamErrorEvent,
+  // Errors
+  CanonicalError,
+  // Extensions
+  CanonicalExtensions,
+  OpenAIExtensions,
+  AnthropicExtensions,
+  GeminiExtensions,
+  ResponsesExtensions,
+  // Capabilities
+  CanonicalCapability,
+  CapabilityValidationResult,
+} from './canonical/index.js';
+
+// Runtime value exports
+export {
+  // Constants
+  VALID_CANONICAL_ROLES,
+  VALID_CANONICAL_INSTRUCTION_ROLES,
+  VALID_CONTENT_PART_TYPES,
+  VALID_STREAM_EVENT_TYPES,
+  // Functions
+  validateCapabilities,
+  // Guards
+  isCanonicalContentPart,
+  isCanonicalMessage,
+  isCanonicalInstruction,
+  isCanonicalTool,
+  isCanonicalRequest,
+  isCanonicalResponse,
+  isCanonicalStreamEvent,
+  isCanonicalError,
+} from './canonical/index.js';
+
+// Config
+export type { CanonicalConfig } from './config.js';
+export { DEFAULT_CANONICAL_CONFIG, loadCanonicalConfigFromEnv, mergeCanonicalConfig } from './config.js';

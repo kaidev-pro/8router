@@ -112,8 +112,14 @@ index abc..def 100644
   console.log(`   ✅ Hermes integration ready\n`);
   passed++;
 
-  // Test 9: Key Pool & Circuit Breaker
-  console.log('9. Key Pool & Circuit Breaker');
+  // Test 9: Canonical Bridge Types (Phase 1A)
+  console.log('9. Canonical Bridge Types');
+  const { runCanonicalBridgeTests } = await import('./canonical-bridge.test.js');
+  runCanonicalBridgeTests();
+  console.log('');
+
+  // Test 10: Key Pool & Circuit Breaker
+  console.log('10. Key Pool & Circuit Breaker');
   const { runKeyPoolTests } = await import('./key-pool.test.js');
   runKeyPoolTests();
   console.log('');

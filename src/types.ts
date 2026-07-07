@@ -53,6 +53,13 @@ export interface RouterConfig {
     enabled: boolean;
     port: number;
   };
+  /** Canonical format bridge config — Phase 1A feature flag, defaults to OFF */
+  canonical?: {
+    enabled?: boolean;
+    shadowMode?: boolean;
+    shadowMaxPayloadBytes?: number;
+    logWarnings?: boolean;
+  };
 }
 
 export interface ChatMessage {

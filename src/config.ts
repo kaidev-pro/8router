@@ -35,6 +35,12 @@ const DEFAULT_CONFIG: RouterConfig = {
     enabled: true,
     port: 8080,
   },
+  canonical: {
+    enabled: false,
+    shadowMode: false,
+    shadowMaxPayloadBytes: 102400,
+    logWarnings: true,
+  },
 };
 
 export function loadConfig(configPath?: string): RouterConfig {
@@ -80,6 +86,10 @@ function mergeConfig(base: RouterConfig, override: Partial<RouterConfig>): Route
     },
     dashboard: { ...base.dashboard, ...override.dashboard },
     providers: normalizedProviders,
+    canonical: {
+      ...base.canonical,
+      ...override.canonical,
+    },
   };
 }
 
