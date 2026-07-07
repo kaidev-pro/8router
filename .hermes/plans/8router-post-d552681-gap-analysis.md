@@ -592,6 +592,22 @@ handled by `resolveCombo()` in Phase 3, NOT a pool concern.
 5. Add `resetQuota()` function (called when `quotaResetAt` is reached)
 6. Keep ALL existing behavior (circuit breaker, cooldown, health tracking)
 
+**Serialization constraint:** `oauthRefreshFn` is a function reference stored in `PoolKey`.
+`getPoolStatus()` (L337-366) serializes `pool.keys[]` to JSON for dashboard/admin API.
+Must EXCLUDE `oauthRefreshFn` from the serialized output — `JSON.stringify()` will
+either drop it silently or produce `null`, which is confusing. Update `getPoolStatus()`
+to explicitly omit function fields:
+```ts
+// In getPoolStatus(), map keys without function references
+keys: pool.keys.map(({ oauthRefreshFn, ...rest }) => ({
+  index: rest.index,
+  masked: maskKey(rest.apiKey),
+  // ... existing fields ...
+  connectionType: rest.connectionType, // safe to serialize
+}))
+```
+Same applies to any future function fields added to `PoolKey`.
+
 **Files modified:** `src/providers/key-pool.ts`
 **Files created:** None
 **Regression risk:** Low (additive fields, existing logic unchanged)
