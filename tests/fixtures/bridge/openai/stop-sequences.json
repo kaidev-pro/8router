@@ -1,0 +1,7 @@
+{
+  "model": "gpt-4o",
+  "messages": [
+    { "role": "user", "content": "Count to 10." }
+  ],
+  "stop": ["\n", "5"]
+}

@@ -118,8 +118,14 @@ index abc..def 100644
   runCanonicalBridgeTests();
   console.log('');
 
-  // Test 10: Key Pool & Circuit Breaker
-  console.log('10. Key Pool & Circuit Breaker');
+  // Test 10: OpenAI Bridge Round-Trip (Phase 1B)
+  console.log('10. OpenAI Bridge Round-Trip');
+  const { runOpenAIBridgeTests } = await import('./openai-bridge.test.js');
+  runOpenAIBridgeTests();
+  console.log('');
+
+  // Test 11: Key Pool & Circuit Breaker
+  console.log('11. Key Pool & Circuit Breaker');
   const { runKeyPoolTests } = await import('./key-pool.test.js');
   runKeyPoolTests();
   console.log('');

@@ -14,6 +14,10 @@ import type { CanonicalCapability, CapabilityValidationResult } from './capabili
 export interface CanonicalResponseFormat {
   /** Response format type */
   type: 'text' | 'json_object' | 'json_schema';
+  /** JSON Schema name (for json_schema type) */
+  name?: string;
+  /** Whether to enforce strict schema adherence */
+  strict?: boolean;
   /** JSON Schema for structured output (only with type='json_schema') */
   schema?: Record<string, unknown>;
 }
@@ -112,6 +116,9 @@ export interface CanonicalRequest {
 
   /** Response format constraint */
   responseFormat?: CanonicalResponseFormat;
+
+  /** Request-level metadata (e.g., conversation_id, user metadata) */
+  metadata?: Record<string, unknown>;
 
   /** Provider-specific extensions — allowlisted fields only */
   extensions?: CanonicalExtensions;

@@ -1,0 +1,9 @@
+{
+  "model": "gpt-4o",
+  "messages": [
+    { "role": "system", "content": "System message 1." },
+    { "role": "user", "content": "User message." },
+    { "role": "system", "content": "System message 2." },
+    { "role": "user", "content": "Another user message." }
+  ]
+}

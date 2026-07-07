@@ -34,4 +34,10 @@ export interface CanonicalMessage {
   position?: number;
   /** Optional provider-specific extensions */
   extensions?: Record<string, unknown>;
+  /**
+   * Tool calls from assistant message.
+   * Stored separately from content for easy access.
+   * Each call has parsed arguments (object, not string).
+   */
+  toolCalls?: import('./tools.js').CanonicalToolCall[];
 }

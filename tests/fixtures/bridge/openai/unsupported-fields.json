@@ -1,0 +1,17 @@
+{
+  "model": "gpt-4o",
+  "messages": [
+    { "role": "user", "content": "Test" }
+  ],
+  "frequency_penalty": 0.5,
+  "presence_penalty": 0.3,
+  "seed": 42,
+  "user": "test-user-123",
+  "parallel_tool_calls": true,
+  "metadata": { "conversation_id": "conv_abc" },
+  "stream": true,
+  "temperature": 0.7,
+  "top_p": 0.9,
+  "max_tokens": 100,
+  "unknown_future_field": "should be preserved in extensions"
+}
