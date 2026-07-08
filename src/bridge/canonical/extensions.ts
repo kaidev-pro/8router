@@ -28,12 +28,12 @@ export interface CanonicalExtensions {
 export interface OpenAIExtensions {
   frequency_penalty?: number;
   presence_penalty?: number;
-  logit_bias?: Record<string, number>;
-  logprobs?: boolean;
-  top_logprobs?: number;
   parallel_tool_calls?: boolean;
   seed?: number;
   user?: string;
+  service_tier?: string;
+  store?: boolean;
+  maxTokenField?: 'max_tokens' | 'max_completion_tokens';
 }
 
 /** Anthropic-specific extension fields — allowlisted only */

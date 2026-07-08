@@ -106,7 +106,8 @@ export function canonicalToolChoiceToOpenai(
 
 /**
  * Parse OpenAI assistant tool_calls to CanonicalToolCall[].
- * Handles JSON parse errors gracefully.
+ * Completed tool calls MUST have valid JSON arguments.
+ * Malformed JSON is a fatal conversion error — no empty {} fallback.
  */
 export function openaiToolCallsToCanonical(
   toolCalls: OpenAIToolCall[],
@@ -115,23 +116,37 @@ export function openaiToolCallsToCanonical(
   const errors: string[] = [];
 
   for (const tc of toolCalls) {
-    let parsed: Record<string, unknown> = {};
+    let parsed: Record<string, unknown> | null = null;
     try {
       const raw = tc.function.arguments;
       if (typeof raw === 'string' && raw.length > 0) {
         parsed = JSON.parse(raw);
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+          errors.push(`tool_call '${tc.id}': arguments must be a JSON object`);
+          parsed = null;
+        }
+      }
+      if (parsed === null) {
+        // Empty string arguments are treated as empty object (valid)
+        if (typeof raw === 'string' && raw.length === 0) {
+          parsed = {};
+        } else if (raw === undefined || raw === null) {
+          parsed = {};
+        }
       }
     } catch {
       errors.push(`tool_call '${tc.id}': malformed JSON in arguments`);
-      // Still create the tool call with empty arguments
-      parsed = {};
+      parsed = null;
     }
 
-    calls.push({
-      id: tc.id,
-      name: tc.function.name,
-      arguments: parsed,
-    });
+    if (parsed !== null) {
+      calls.push({
+        id: tc.id,
+        name: tc.function.name,
+        arguments: parsed,
+      });
+    }
+    // If parsed is null, error was added — do NOT add a tool call with fabricated args
   }
 
   return { calls, errors };

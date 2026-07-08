@@ -8,10 +8,13 @@
   "seed": 42,
   "user": "test-user-123",
   "parallel_tool_calls": true,
+  "service_tier": "auto",
   "metadata": { "conversation_id": "conv_abc" },
   "stream": true,
   "temperature": 0.7,
   "top_p": 0.9,
   "max_tokens": 100,
-  "unknown_future_field": "should be preserved in extensions"
+  "unknown_future_field": "should be DROPPED, not preserved in extensions",
+  "suspicious_api_key": "secret123",
+  "authorization": "Bearer xyz"
 }

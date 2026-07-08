@@ -5,9 +5,16 @@
 import type { CanonicalRequest } from '../canonical/request.js';
 import type { CanonicalInstruction } from '../canonical/instruction.js';
 import type { CanonicalMessage } from '../canonical/message.js';
-import type { CanonicalContentPart, CanonicalToolUsePart } from '../canonical/content.js';
+import type { CanonicalContentPart, CanonicalToolUsePart, CanonicalThinkingPart } from '../canonical/content.js';
 import type { OpenAIChatRequest, OpenAIChatMessage, OpenAIContentPart } from './types.js';
 import { canonicalToolsToOpenai, canonicalToolChoiceToOpenai } from './tools.js';
+import { WarningAccumulator } from './warnings.js';
+
+/** Serialization result with request + warnings */
+export interface SerializationResult {
+  request: OpenAIChatRequest;
+  warnings: import('../canonical/request.js').BridgeWarning[];
+}
 
 /**
  * Serialize CanonicalRequest → OpenAI Chat Completions request.
@@ -24,9 +31,11 @@ import { canonicalToolsToOpenai, canonicalToolChoiceToOpenai } from './tools.js'
  * - bridgeMeta is NOT serialized
  * - Does not depend on originalRequest
  */
-export function canonicalRequestToOpenai(req: CanonicalRequest): OpenAIChatRequest {
+export function canonicalRequestToOpenai(req: CanonicalRequest): SerializationResult {
+  const warnings = new WarningAccumulator();
+
   // Merge instructions and messages by position to restore original order
-  const orderedMessages = mergeOrderedMessages(req.instructions, req.messages);
+  const orderedMessages = mergeOrderedMessages(req.instructions, req.messages, warnings);
 
   // Build the OpenAI request
   const openaiReq: OpenAIChatRequest = {
@@ -38,7 +47,18 @@ export function canonicalRequestToOpenai(req: CanonicalRequest): OpenAIChatReque
   if (req.stream !== undefined) openaiReq.stream = req.stream;
   if (req.temperature !== undefined) openaiReq.temperature = req.temperature;
   if (req.topP !== undefined) openaiReq.top_p = req.topP;
-  if (req.maxTokens !== undefined) openaiReq.max_tokens = req.maxTokens;
+
+  // Restore max_tokens vs max_completion_tokens based on source field
+  if (req.maxTokens !== undefined) {
+    const ext = req.extensions?.openai;
+    if (ext?.maxTokenField === 'max_completion_tokens') {
+      openaiReq.max_completion_tokens = req.maxTokens;
+    } else {
+      // Default to max_tokens (including when maxTokenField is 'max_tokens' or undefined)
+      openaiReq.max_tokens = req.maxTokens;
+    }
+  }
+
   if (req.stop !== undefined) openaiReq.stop = req.stop.length === 1 ? req.stop[0] : req.stop;
   if (req.responseFormat !== undefined) {
     const fmt = req.responseFormat;
@@ -71,7 +91,7 @@ export function canonicalRequestToOpenai(req: CanonicalRequest): OpenAIChatReque
     openaiReq.metadata = req.metadata;
   }
 
-  // Restore provider-specific extensions
+  // Restore provider-specific extensions — allowlisted fields only
   if (req.extensions?.openai) {
     const ext = req.extensions.openai;
     if (ext.frequency_penalty !== undefined) openaiReq.frequency_penalty = ext.frequency_penalty;
@@ -79,18 +99,15 @@ export function canonicalRequestToOpenai(req: CanonicalRequest): OpenAIChatReque
     if (ext.seed !== undefined) openaiReq.seed = ext.seed;
     if (ext.user !== undefined) openaiReq.user = ext.user;
     if (ext.parallel_tool_calls !== undefined) openaiReq.parallel_tool_calls = ext.parallel_tool_calls;
-
-    // Restore other allowlisted fields
-    const knownOpenaiKeys = new Set(['frequency_penalty', 'presence_penalty', 'seed', 'user', 'parallel_tool_calls']);
-    const extRecord = ext as Record<string, unknown>;
-    for (const key of Object.keys(ext)) {
-      if (!knownOpenaiKeys.has(key)) {
-        (openaiReq as Record<string, unknown>)[key] = extRecord[key];
-      }
-    }
+    if (ext.service_tier !== undefined) openaiReq.service_tier = ext.service_tier;
+    if (ext.store !== undefined) openaiReq.store = ext.store;
+    // maxTokenField is already handled above — do NOT serialize it as an OpenAI field
   }
 
-  return openaiReq;
+  return {
+    request: openaiReq,
+    warnings: warnings.getWarnings(),
+  };
 }
 
 /**
@@ -100,6 +117,7 @@ export function canonicalRequestToOpenai(req: CanonicalRequest): OpenAIChatReque
 function mergeOrderedMessages(
   instructions: CanonicalInstruction[],
   messages: CanonicalMessage[],
+  warnings: WarningAccumulator,
 ): OpenAIChatMessage[] {
   // Build position-indexed items
   const items: { position: number; kind: 'instruction' | 'message'; index: number }[] = [];
@@ -119,7 +137,7 @@ function mergeOrderedMessages(
     if (item.kind === 'instruction') {
       return instructionToOpenai(instructions[item.index]);
     }
-    return messageToOpenai(messages[item.index]);
+    return messageToOpenai(messages[item.index], warnings);
   });
 }
 
@@ -136,10 +154,10 @@ function instructionToOpenai(inst: CanonicalInstruction): OpenAIChatMessage {
 /**
  * Convert CanonicalMessage → OpenAI message.
  */
-function messageToOpenai(msg: CanonicalMessage): OpenAIChatMessage {
+function messageToOpenai(msg: CanonicalMessage, warnings: WarningAccumulator): OpenAIChatMessage {
   const result: OpenAIChatMessage = {
     role: msg.role as 'user' | 'assistant' | 'tool',
-    content: serializeContent(msg.content, msg.role),
+    content: serializeContent(msg.content, msg.role, msg.position, warnings),
   };
 
   if (msg.name) result.name = msg.name;
@@ -174,10 +192,14 @@ function messageToOpenai(msg: CanonicalMessage): OpenAIChatMessage {
 /**
  * Serialize canonical content parts to OpenAI format.
  * Single text → string, array → OpenAIContentPart[].
+ *
+ * Thinking parts are dropped with a warning — OpenAI does not support them natively.
  */
 function serializeContent(
   parts: CanonicalContentPart[],
   role?: string,
+  messageIndex?: number,
+  warnings?: WarningAccumulator,
 ): string | OpenAIContentPart[] | null {
   if (parts.length === 0) return null;
 
@@ -186,6 +208,18 @@ function serializeContent(
     const toolResult = parts.find(p => p.type === 'tool_result');
     if (toolResult && toolResult.type === 'tool_result') {
       return toolResult.content;
+    }
+  }
+
+  // Detect thinking parts and emit warning BEFORE filtering
+  for (const part of parts) {
+    if (part.type === 'thinking') {
+      const path = messageIndex !== undefined
+        ? `messages[${messageIndex}].content[thinking]`
+        : 'content[thinking]';
+      warnings?.capabilityWarning(
+        `Thinking part at ${path} dropped — OpenAI does not support thinking parts natively`
+      );
     }
   }
 

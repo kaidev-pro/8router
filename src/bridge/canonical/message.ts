@@ -3,6 +3,7 @@
 
 import type { CanonicalRole } from './roles.js';
 import type { CanonicalContentPart } from './content.js';
+import type { CanonicalToolCall } from './tools.js';
 
 /**
  * Canonical conversation message.
@@ -39,5 +40,5 @@ export interface CanonicalMessage {
    * Stored separately from content for easy access.
    * Each call has parsed arguments (object, not string).
    */
-  toolCalls?: import('./tools.js').CanonicalToolCall[];
+  toolCalls?: CanonicalToolCall[];
 }

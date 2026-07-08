@@ -74,5 +74,6 @@ export interface OpenAIChatRequest {
   seed?: number;
   user?: string;
   parallel_tool_calls?: boolean;
-  [key: string]: unknown; // Allow additional OpenAI fields
+  service_tier?: string;
+  store?: boolean;
 }
