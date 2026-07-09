@@ -1,5 +1,66 @@
 # 8Router — Changelog
 
+## Phase 1D — OpenAI Response + Streaming ↔ Canonical
+
+**Commit:** d5eff6c
+**Date:** 2026-07-09
+**Status:** ✅ Complete. canonical.enabled remains false.
+
+### What changed
+
+OpenAI Chat Completions response and streaming adapters implemented — bidirectional conversion between
+OpenAI response format and CanonicalResponse/CanonicalStreamEvent. Includes stateful streaming parser
+and event-by-event serializer. All behind `canonical.enabled=false`.
+
+### New files
+
+- `src/bridge/openai/response-to-canonical.ts` — OpenAI ChatCompletion → CanonicalResponse
+- `src/bridge/openai/canonical-to-response.ts` — CanonicalResponse → OpenAI ChatCompletion
+- `src/bridge/openai/stream-to-canonical.ts` — Stateful OpenAI SSE chunk → CanonicalStreamEvent parser
+- `src/bridge/openai/canonical-to-stream.ts` — CanonicalStreamEvent → OpenAI SSE chunks
+- `tests/fixtures/bridge/openai/simple-text-response.json`
+- `tests/fixtures/bridge/openai/tool-call-response.json`
+- `tests/fixtures/bridge/openai/with-reasoning-tokens.json`
+- `tests/fixtures/bridge/openai/content-filter-response.json`
+- `tests/fixtures/bridge/openai/length-limited-response.json`
+- `tests/fixtures/bridge/openai/stream-simple-text.json`
+- `tests/fixtures/bridge/openai/stream-tool-call.json`
+- `tests/fixtures/bridge/openai/stream-parallel-tools.json`
+- `src/__tests__/openai-response-bridge.test.ts` — 23 tests
+- `src/__tests__/run-openai-response-bridge.ts` — Test runner
+
+### Modified files
+
+- `src/bridge/openai/types.ts` — Added response + streaming types
+- `src/bridge/openai/index.ts` — Added response + streaming exports
+- `src/bridge/index.ts` — Added Phase 1D bridge exports
+- `src/__tests__/run.ts` — Added response bridge test group (Test 12)
+- `package.json` — Added `test:bridge-openai-response` script
+
+### Key conversions
+
+| OpenAI | Canonical |
+|---|---|
+| `choices[0].finish_reason: 'tool_calls'` | `finishReason: 'tool_call'` (singular) |
+| `choices[0].message.tool_calls[].function.arguments` | `toolCalls[].arguments` (parsed object) |
+| `usage.completion_tokens_details.reasoning_tokens` | `usage.reasoningTokens` |
+| `usage.prompt_tokens_details.cached_tokens` | `usage.cachedInputTokens` |
+| `tool_call_start` → `tool_call_delta` → `tool_call_end` | Streaming tool call lifecycle |
+| `thinking_delta` | No chunk (OpenAI has no thinking) |
+| Parallel tool calls | Multi-index accumulation in stream parser |
+
+### Test results
+
+- test:bridge-openai-response: 23/23 ✅
+- test:bridge-types: 30/30 ✅
+- test:bridge-openai: 35/35 ✅
+- test:bridge-anthropic: 111/111 ✅
+- npm test: 121/121 ✅
+- tsc --noEmit: clean ✅
+- npm run build: clean ✅
+
+---
+
 ## Phase 1C — Anthropic Messages Request ↔ Canonical
 
 **Commit:** 8e7725f
