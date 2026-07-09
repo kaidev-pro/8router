@@ -29,7 +29,7 @@ export function createDashboard(engineOrPort: any, portOrUndef?: number): expres
     else proxy.end();
   });
 
-  app.get('/', (_req, res) => { res.send(getLandingHTML()); });
+  app.get('/', (_req, res) => { res.send(getLandingHTML('en', process.env.DONATION_URL)); });
   app.get('/dashboard', (req, res) => { const locale = getLocale(req); res.send(getDashboardHTML(port, locale)); });
   return app;
 }

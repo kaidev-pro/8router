@@ -2,8 +2,9 @@
 import { VERSION_STRING } from './version.js';
 import { t, getLocale, type Locale, SUPPORTED_LOCALES } from './i18n/index.js';
 
-export function getLandingHTML(locale: Locale = 'en'): string {
+export function getLandingHTML(locale: Locale = 'en', donationUrl?: string): string {
   const _ = (key: string) => t(key, locale);
+  const donateHref = donationUrl || '';
   // SVG icon helper — 24x24 viewBox, stroke-based, 1.5px
   const icons: Record<string, string> = {
     messageSquare: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
@@ -517,6 +518,7 @@ footer {
       <a href="#features">${_('nav.features')}</a>
       <a href="#aliases">${_('nav.aliases')}</a>
       <a href="#start">${_('nav.getStarted')}</a>
+      <a href="#support" style="color:var(--green)">${_('support.title')}</a>
       <a href="/8router/dashboard" class="nav-cta">${_('nav.dashboard')}</a>
     </div>
   </div>
@@ -543,7 +545,6 @@ footer {
       <div class="hero-actions">
         <a href="#start" class="btn-primary">${_('hero.getStarted')}</a>
         <a href="/8router/dashboard" class="btn-secondary">${_('hero.openDashboard')}</a>
-        <a href="/8router/setup" class="btn-secondary">${_('hero.setupGuide')}</a>
       </div>
       <div class="hero-code">
         <div class="hero-code-label">${_('hero.installLabel')}</div>
@@ -571,6 +572,7 @@ $ 8router
           <div class="hero-stat-label">${_('hero.statTests')}</div>
         </div>
       </div>
+      <p style="margin-top:24px;font-size:14px;color:var(--text-2)">Free to use. Connect your own provider keys. Donations welcome.</p>
     </div>
   </div>
 </section>
@@ -964,6 +966,20 @@ Model:    8router/auto</code></pre>
       <a href="/8router/dashboard" class="btn-primary">${_('start.openDashboard')}</a>
       <a href="/8router/setup" class="btn-secondary">${_('start.setupGuide')}</a>
     </div>
+    <p style="margin-top:20px;font-size:13px;color:var(--text-2);text-align:center">Your provider keys stay inside 8Router. Your tools only use the 8Router access key.</p>
+  </div>
+</section>
+
+<!-- SUPPORT 8ROUTER -->
+<section id="support" style="background:var(--bg-surface)">
+  <div class="wrap">
+    <h2 class="s-title">${_('support.title')}</h2>
+    <div class="s-desc" style="max-width:560px;margin:0 auto 24px">${_('support.desc')}</div>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="#" class="btn-primary" id="donate-btn" style="display:none">${_('support.donate')}</a>
+      <a href="#start" class="btn-secondary">${_('support.continue')}</a>
+      <a href="/8router/dashboard" class="btn-secondary">${_('support.dashboard')}</a>
+    </div>
   </div>
 </section>
 
@@ -993,9 +1009,9 @@ Model:    8router/auto</code></pre>
       </div>
       <div class="footer-col">
         <h4>${_('footer.8agents')}</h4>
-        <a href="#">${_('footer.8agents')}</a>
-        <a href="#">8Flow</a>
-        <a href="#">8Chat</a>
+        <a href="https://8agents.xyz">8Agents</a>
+        <a href="https://8agents.xyz">8Flow</a>
+        <a href="https://8agents.xyz">8Chat</a>
       </div>
     </div>
     <div class="footer-bottom">
@@ -1049,6 +1065,16 @@ window.addEventListener('scroll',function(){
   },{threshold:0.3});
   var dp=document.querySelector('.dash-preview');
   if(dp)obs.observe(dp);
+})();
+
+// Donation button: show only if NEXT_PUBLIC_DONATION_URL is set
+(function(){
+  var url='${donateHref}';
+  var btn=document.getElementById('donate-btn');
+  if(btn && url && url.length > 0){
+    btn.href=url;
+    btn.style.display='inline-flex';
+  }
 })();
 </script>
 

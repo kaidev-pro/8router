@@ -1823,7 +1823,7 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
   app.get('/8router/', (req, res) => {
     const locale = getLocale(req);
     setLocaleCookie(res, locale);
-    res.type('html').send(getLandingHTML(locale));
+    res.type('html').send(getLandingHTML(locale, process.env.DONATION_URL));
   });
 
   // Benchmark endpoint
