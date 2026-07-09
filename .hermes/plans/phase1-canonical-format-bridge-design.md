@@ -1,10 +1,21 @@
 # Phase 1 — Canonical Format Bridge: Design Review
 
-> **Status:** DESIGN LOCKED — approved with revisions, ready for Phase 1A coding
-> **Date:** 2026-07-07
+> **Status:** Phase 1A–1C COMPLETE. Phase 1D–1F pending. canonical.enabled remains false.
+> **Date:** 2026-07-07 (updated 2026-07-08)
 > **Author:** Renji Akamine
 > **Baseline:** d552681 (v0.6.2)
-> **Revision:** v2 — incorporates 10 conditional approval items
+> **Revision:** v3 — updated Phase 1C–1F roadmap labels to match actual implementation
+
+### Phase Roadmap (corrected)
+
+| Phase | Label | Status | Commit |
+|---|---|---|---|
+| 1A | Canonical Types & Config | ✅ Complete | 8c9d809 |
+| 1B | OpenAI Chat Request ↔ Canonical | ✅ Complete | c9aa4b7, 062b0e2 |
+| 1C | Anthropic Messages Request ↔ Canonical | ✅ Complete | 8e7725f |
+| 1D | OpenAI Response + Streaming ↔ Canonical | 🔲 Pending | — |
+| 1E | Gemini Request ↔ Canonical | 🔲 Pending | — |
+| 1F | Responses API ↔ Canonical | 🔲 Pending | — |
 
 ---
 
@@ -1118,15 +1129,14 @@ export interface CanonicalConfig {
 
 | Step | What | When | Risk |
 |---|---|---|---|
-| 1 | Define canonical types + tests | Phase 1A | None |
-| 2 | Implement OpenAI adapter | Phase 1B | Low — behind flag |
-| 3 | Shadow mode on OpenAI | Phase 1C | Low — compare-only |
-| 4 | Enable canonical for OpenAI | Phase 1D | Medium |
-| 5 | Implement Anthropic adapter | Phase 1E | Low |
-| 6 | Implement Gemini adapter | Phase 1F | Low |
-| 7 | Implement Responses API adapter | Phase 1G | Low |
-| 8 | Shadow mode on all | Phase 1H | Low |
-| 9 | Enable all | Phase 1I | Medium |
+| 1 | Canonical Types & Config | Phase 1A | None — type-only, no runtime change |
+| 2 | OpenAI Chat Request ↔ Canonical | Phase 1B | Low — behind canonical.enabled=false |
+| 3 | Anthropic Messages Request ↔ Canonical | Phase 1C | Low — behind canonical.enabled=false |
+| 4 | OpenAI Response + Streaming ↔ Canonical | Phase 1D | Low — behind flag |
+| 5 | Gemini Request ↔ Canonical | Phase 1E | Low — behind flag |
+| 6 | Responses API ↔ Canonical | Phase 1F | Low — behind flag |
+| 7 | Shadow mode on all providers | Phase 1G | Low — compare-only |
+| 8 | Enable canonical runtime path | Phase 1H | Medium — requires full regression |
 | 10 | Remove direct translation | Phase 2+ | After 2 weeks production |
 
 ### 10.3 Rollback
@@ -1194,17 +1204,17 @@ function computeFingerprint(req: CanonicalRequest): string {
 | File | Purpose | Phase |
 |---|---|---|
 | `src/providers/canonical-types.ts` | All canonical type definitions | 1A |
-| `src/providers/canonical-bridge.ts` | Core `toCanonical()` and `fromCanonical()` | 1B |
-| `src/providers/canonical-adapters/openai-canonical.ts` | OpenAI Chat Completions adapter | 1B |
-| `src/providers/canonical-adapters/responses-canonical.ts` | OpenAI Responses API adapter | 1G |
-| `src/providers/canonical-adapters/anthropic-canonical.ts` | Anthropic Messages adapter | 1E |
-| `src/providers/canonical-adapters/gemini-canonical.ts` | Gemini generateContent adapter | 1F |
-| `src/providers/canonical-adapters/index.ts` | Adapter registry + validation | 1B |
-| `src/providers/canonical-streaming.ts` | Streaming event adapters | 1D |
-| `src/__tests__/canonical-types.test.ts` | Type unit tests | 1A |
-| `src/__tests__/canonical-bridge.test.ts` | Bridge round-trip tests | 1B |
-| `src/__tests__/canonical-streaming.test.ts` | Streaming event tests | 1D |
-| `src/__tests__/fixtures/canonical/` | Test fixture directory | 1B |
+| `src/bridge/openai/` | OpenAI Chat Completions ↔ Canonical | 1B |
+| `src/bridge/anthropic/` | Anthropic Messages ↔ Canonical | 1C |
+| `src/bridge/canonical/` | Canonical type definitions + validators | 1A |
+| `src/__tests__/openai-bridge.test.ts` | OpenAI bridge round-trip tests (35) | 1B |
+| `src/__tests__/anthropic-bridge.test.ts` | Anthropic bridge round-trip tests (111) | 1C |
+| `src/__tests__/canonical-bridge.test.ts` | Canonical type tests (30) | 1A |
+| `tests/fixtures/bridge/openai/` | OpenAI test fixtures | 1B |
+| `tests/fixtures/bridge/anthropic/` | Anthropic test fixtures (6) | 1C |
+| `src/bridge/openai/streaming.ts` | OpenAI streaming event adapters | 1D |
+| `src/bridge/gemini/` | Gemini generateContent ↔ Canonical | 1E |
+| `src/bridge/responses/` | Responses API ↔ Canonical | 1F |
 
 ### 12.2 Files to Modify
 
@@ -1212,7 +1222,7 @@ function computeFingerprint(req: CanonicalRequest): string {
 |---|---|---|
 | `src/types.ts` | Add `CanonicalConfig` to `RouterConfig` | 1A |
 | `src/config.ts` | Parse canonical config from YAML | 1A |
-| `src/providers/format-bridge.ts` | Add shadow mode hook (preserve existing functions) | 1C |
+| `src/bridge/index.ts` | Barrel exports for all adapters | 1A, 1B, 1C |
 | `src/api/server.ts` | Add canonical path branch | 1D |
 | `src/router/engine.ts` | Accept `CanonicalRequest` | 1D |
 | `src/__tests__/run.ts` | Add canonical test group | 1A |
