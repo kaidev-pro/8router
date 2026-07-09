@@ -1,0 +1,18 @@
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "What is in this image?"
+        },
+        {
+          "inlineData": {
+            "mimeType": "image/jpeg",
+            "data": "iVBORw0KGgo="
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -115,3 +115,10 @@ export type {
   OpenAIResponseToCanonicalResult,
   OpenAIResponseSerializationResult,
 } from './openai/index.js';
+
+// Gemini bridge (Phase 1E)
+export {
+  geminiRequestToCanonical,
+  canonicalRequestToGemini,
+} from './gemini/index.js';
+export type { GeminiConversionResult, GeminiSerializationResult } from './gemini/index.js';

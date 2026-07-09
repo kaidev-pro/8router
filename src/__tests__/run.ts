@@ -136,6 +136,12 @@ index abc..def 100644
   runOpenAIResponseBridgeTests();
   console.log('');
 
+  // Test 13: Gemini Request Bridge (Phase 1E)
+  console.log('13. Gemini Request Bridge');
+  const { runGeminiBridgeTests } = await import('./gemini-request-bridge.test.js');
+  runGeminiBridgeTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

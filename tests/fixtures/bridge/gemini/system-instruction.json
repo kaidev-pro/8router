@@ -1,0 +1,22 @@
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Summarize quantum physics"
+        }
+      ]
+    }
+  ],
+  "systemInstruction": {
+    "parts": [
+      {
+        "text": "You are a physics professor. Be concise."
+      },
+      {
+        "text": "Use simple language."
+      }
+    ]
+  }
+}

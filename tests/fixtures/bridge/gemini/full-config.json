@@ -1,0 +1,41 @@
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Generate JSON"
+        }
+      ]
+    }
+  ],
+  "generationConfig": {
+    "temperature": 0.5,
+    "topP": 0.95,
+    "topK": 40,
+    "maxOutputTokens": 1024,
+    "stopSequences": [
+      "END"
+    ],
+    "candidateCount": 1,
+    "responseMimeType": "application/json",
+    "responseSchema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "result"
+      ]
+    },
+    "seed": 42
+  },
+  "safetySettings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_NONE"
+    }
+  ]
+}
