@@ -1,0 +1,21 @@
+{
+  "id": "chatcmpl-filter000",
+  "object": "chat.completion",
+  "created": 1700000003,
+  "model": "gpt-4o-2024-08-06",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": ""
+      },
+      "finish_reason": "content_filter"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 5,
+    "completion_tokens": 0,
+    "total_tokens": 5
+  }
+}

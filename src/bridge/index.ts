@@ -101,3 +101,17 @@ export {
   canonicalUsageToAnthropic,
 } from './anthropic/index.js';
 export type { AnthropicConversionResult, AnthropicSerializationResult } from './anthropic/index.js';
+
+// OpenAI Response bridge (Phase 1D)
+export {
+  openaiResponseToCanonical,
+  canonicalResponseToOpenai,
+  OpenAIStreamToCanonical,
+  openaiChunksToCanonicalEvents,
+  canonicalEventsToOpenaiChunks,
+  canonicalEventToOpenaiChunk,
+} from './openai/index.js';
+export type {
+  OpenAIResponseToCanonicalResult,
+  OpenAIResponseSerializationResult,
+} from './openai/index.js';

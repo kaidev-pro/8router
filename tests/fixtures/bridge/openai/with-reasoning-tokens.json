@@ -1,0 +1,29 @@
+{
+  "id": "chatcmpl-reason456",
+  "object": "chat.completion",
+  "created": 1700000002,
+  "model": "o1-preview",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The answer is 42."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 100,
+    "completion_tokens": 200,
+    "total_tokens": 300,
+    "prompt_tokens_details": {
+      "cached_tokens": 50
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 150,
+      "accepted_prediction_tokens": 10,
+      "rejected_prediction_tokens": 5
+    }
+  }
+}

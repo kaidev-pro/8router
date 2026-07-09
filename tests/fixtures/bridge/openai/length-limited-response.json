@@ -1,0 +1,21 @@
+{
+  "id": "chatcmpl-len999",
+  "object": "chat.completion",
+  "created": 1700000004,
+  "model": "gpt-4o-2024-08-06",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "This is a very long response that was cut off mid-sentence because the max tokens limit was"
+      },
+      "finish_reason": "length"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 15,
+    "completion_tokens": 100,
+    "total_tokens": 115
+  }
+}

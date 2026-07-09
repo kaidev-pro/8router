@@ -1,0 +1,66 @@
+[
+  {
+    "id": "chatcmpl-stream123",
+    "object": "chat.completion.chunk",
+    "created": 1700000010,
+    "model": "gpt-4o-2024-08-06",
+    "choices": [
+      {
+        "index": 0,
+        "delta": {
+          "role": "assistant"
+        },
+        "finish_reason": null
+      }
+    ],
+    "system_fingerprint": "fp_stream"
+  },
+  {
+    "id": "chatcmpl-stream123",
+    "object": "chat.completion.chunk",
+    "created": 1700000010,
+    "model": "gpt-4o-2024-08-06",
+    "choices": [
+      {
+        "index": 0,
+        "delta": {
+          "content": "Hello"
+        },
+        "finish_reason": null
+      }
+    ]
+  },
+  {
+    "id": "chatcmpl-stream123",
+    "object": "chat.completion.chunk",
+    "created": 1700000010,
+    "model": "gpt-4o-2024-08-06",
+    "choices": [
+      {
+        "index": 0,
+        "delta": {
+          "content": " world!"
+        },
+        "finish_reason": null
+      }
+    ]
+  },
+  {
+    "id": "chatcmpl-stream123",
+    "object": "chat.completion.chunk",
+    "created": 1700000010,
+    "model": "gpt-4o-2024-08-06",
+    "choices": [
+      {
+        "index": 0,
+        "delta": {},
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 5,
+      "completion_tokens": 2,
+      "total_tokens": 7
+    }
+  }
+]

@@ -130,6 +130,12 @@ index abc..def 100644
   runKeyPoolTests();
   console.log('');
 
+  // Test 12: OpenAI Response + Streaming Bridge (Phase 1D)
+  console.log('12. OpenAI Response + Streaming Bridge');
+  const { runOpenAIResponseBridgeTests } = await import('./openai-response-bridge.test.js');
+  runOpenAIResponseBridgeTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

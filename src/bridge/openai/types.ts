@@ -1,10 +1,9 @@
 // 8Router — OpenAI Chat Completions Types
-// Phase 1B: Input/output types for OpenAI format conversion
+// Phase 1B: Input types. Phase 1D: Response types.
 
-/**
- * OpenAI Chat Completions message — the input format we parse.
- * Supports all OpenAI role types: system, developer, user, assistant, tool.
- */
+// ─── Request Types ───────────────────────────────────────────────────
+
+/** OpenAI Chat Completions message — the input format we parse. */
 export interface OpenAIChatMessage {
   role: 'system' | 'developer' | 'user' | 'assistant' | 'tool';
   content: string | OpenAIContentPart[] | null;
@@ -52,10 +51,7 @@ export interface OpenAIResponseFormat {
   json_schema?: { name?: string; strict?: boolean; schema?: Record<string, unknown> };
 }
 
-/**
- * OpenAI Chat Completions request — full input.
- * All fields besides model and messages are optional.
- */
+/** OpenAI Chat Completions request */
 export interface OpenAIChatRequest {
   model: string;
   messages: OpenAIChatMessage[];
@@ -76,4 +72,93 @@ export interface OpenAIChatRequest {
   parallel_tool_calls?: boolean;
   service_tier?: string;
   store?: boolean;
+}
+
+// ─── Response Types ──────────────────────────────────────────────────
+
+/** OpenAI Chat Completions response — non-streaming result. */
+export interface OpenAIChatCompletionResponse {
+  id: string;
+  object: 'chat.completion';
+  created: number;
+  model: string;
+  choices: OpenAIChatCompletionChoice[];
+  usage?: OpenAICompletionUsage;
+  /** OpenAI system fingerprint for deterministic output */
+  system_fingerprint?: string;
+  service_tier?: string;
+}
+
+/** A single choice in a non-streaming response. */
+export interface OpenAIChatCompletionChoice {
+  index: number;
+  message: OpenAIChatCompletionMessage;
+  finish_reason: 'stop' | 'length' | 'tool_calls' | 'content_filter' | null;
+  logprobs?: unknown;
+}
+
+/** The message content of a non-streaming choice. */
+export interface OpenAIChatCompletionMessage {
+  role: 'assistant';
+  content: string | null;
+  tool_calls?: OpenAIToolCall[];
+  refusal?: string | null;
+}
+
+/** Usage object in a non-streaming response. */
+export interface OpenAICompletionUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens?: number;
+  prompt_tokens_details?: {
+    cached_tokens?: number;
+    audio_tokens?: number;
+  };
+  completion_tokens_details?: {
+    reasoning_tokens?: number;
+    audio_tokens?: number;
+    accepted_prediction_tokens?: number;
+    rejected_prediction_tokens?: number;
+  };
+}
+
+// ─── Streaming Types ─────────────────────────────────────────────────
+
+/** OpenAI streaming chunk — a single SSE data payload. */
+export interface OpenAIChatCompletionChunk {
+  id: string;
+  object: 'chat.completion.chunk';
+  created: number;
+  model: string;
+  choices: OpenAIChatCompletionChunkChoice[];
+  usage?: OpenAICompletionUsage;
+  system_fingerprint?: string;
+  service_tier?: string;
+}
+
+/** A single choice in a streaming chunk. */
+export interface OpenAIChatCompletionChunkChoice {
+  index: number;
+  delta: OpenAIChatCompletionDelta;
+  finish_reason: 'stop' | 'length' | 'tool_calls' | 'content_filter' | null;
+  logprobs?: unknown;
+}
+
+/** The delta payload in a streaming chunk. */
+export interface OpenAIChatCompletionDelta {
+  role?: 'assistant';
+  content?: string;
+  tool_calls?: OpenAIStreamToolCall[];
+  refusal?: string | null;
+}
+
+/** Tool call delta in a streaming chunk. */
+export interface OpenAIStreamToolCall {
+  index: number;
+  id?: string;
+  type?: 'function';
+  function?: {
+    name?: string;
+    arguments?: string;
+  };
 }
