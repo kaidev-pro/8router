@@ -1,0 +1,22 @@
+{
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 1024,
+  "system": "You are a helpful assistant.",
+  "messages": [
+    { "role": "user", "content": "What is the weather in Tokyo?" }
+  ],
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get the current weather for a city",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "city": { "type": "string", "description": "City name" }
+        },
+        "required": ["city"]
+      }
+    }
+  ],
+  "tool_choice": { "type": "auto" }
+}

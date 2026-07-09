@@ -1,0 +1,7 @@
+{
+  "model": "claude-sonnet-4-20250514",
+  "max_tokens": 2048,
+  "messages": [
+    { "role": "user", "content": "Solve 2+2 step by step" }
+  ]
+}

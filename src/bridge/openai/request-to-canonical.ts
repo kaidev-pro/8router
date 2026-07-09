@@ -12,7 +12,7 @@ import type { OpenAIChatRequest, OpenAIChatMessage } from './types.js';
 import { openaiContentToCanonical } from './content.js';
 import { openaiToolsToCanonical, openaiToolChoiceToCanonical, openaiToolCallsToCanonical } from './tools.js';
 import { WarningAccumulator } from './warnings.js';
-import { OPENAI_EXTENSION_ALLOWLIST, SUSPICIOUS_FIELD_PATTERNS } from './index.js';
+import { OPENAI_EXTENSION_ALLOWLIST, SUSPICIOUS_FIELD_PATTERNS } from './constants.js';
 
 /** Conversion result with request + errors */
 export interface ConversionResult {

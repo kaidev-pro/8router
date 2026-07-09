@@ -81,3 +81,23 @@ export {
 // Config
 export type { CanonicalConfig } from './config.js';
 export { DEFAULT_CANONICAL_CONFIG, loadCanonicalConfigFromEnv, mergeCanonicalConfig } from './config.js';
+
+// OpenAI bridge (Phase 1B)
+export { openaiRequestToCanonical, canonicalRequestToOpenai } from './openai/index.js';
+export type { ConversionResult as OpenAIConversionResult, SerializationResult } from './openai/index.js';
+
+// Anthropic bridge (Phase 1C)
+export {
+  anthropicRequestToCanonical,
+  canonicalRequestToAnthropic,
+  anthropicContentToCanonical,
+  anthropicBlockToCanonical,
+  canonicalContentToAnthropic,
+  anthropicToolsToCanonical,
+  canonicalToolsToAnthropic,
+  anthropicToolChoiceToCanonical,
+  canonicalToolChoiceToAnthropic,
+  anthropicUsageToCanonical,
+  canonicalUsageToAnthropic,
+} from './anthropic/index.js';
+export type { AnthropicConversionResult, AnthropicSerializationResult } from './anthropic/index.js';
