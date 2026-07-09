@@ -1,5 +1,56 @@
 # 8Router — Changelog
 
+## Phase 1F — OpenAI Responses API ↔ Canonical
+
+**Commit:** 21f5b95
+**Date:** 2026-07-09
+**Status:** ✅ Complete. canonical.enabled remains false.
+
+### What changed
+
+OpenAI Responses API adapter implemented — bidirectional conversion between
+Responses API request/response/streaming format and CanonicalRequest/CanonicalResponse/CanonicalStreamEvent.
+Handles input items, output items (messages, function calls, reasoning),
+tools (function, web_search, file_search, computer_use), streaming events,
+and usage with reasoning/cached tokens.
+
+### New files
+
+- `src/bridge/openai-responses/types.ts` — Responses API types (460 lines)
+- `src/bridge/openai-responses/request-to-canonical.ts` — Request → Canonical
+- `src/bridge/openai-responses/canonical-to-request.ts` — Canonical → Request
+- `src/bridge/openai-responses/response-to-canonical.ts` — Response → Canonical
+- `src/bridge/openai-responses/canonical-to-response.ts` — Canonical → Response
+- `src/bridge/openai-responses/stream-to-canonical.ts` — Streaming events → Canonical
+- `src/bridge/openai-responses/canonical-to-stream.ts` — Canonical → Streaming events
+- `src/bridge/openai-responses/usage.ts` — Usage helpers
+- `src/bridge/openai-responses/index.ts` — Barrel exports
+- 12 test fixtures
+- `src/__tests__/openai-responses-bridge.test.ts` — 37 tests
+- `src/__tests__/run-openai-responses-bridge.ts` — Test runner
+
+### Modified files
+
+- `src/bridge/index.ts` — Added Responses API bridge exports
+- `src/__tests__/run.ts` — Added Responses API bridge test group (Test 14)
+- `package.json` — Added `test:bridge-openai-responses` script
+
+### Test results
+
+- test:bridge-openai-responses: 37/37 ✅
+- test:bridge-types: 30/30 ✅
+- test:bridge-openai: 35/35 ✅
+- test:bridge-openai-response: 23/23 ✅
+- test:bridge-anthropic: 111/111 ✅
+- test:bridge-gemini: 26/26 ✅
+- npm test: all passed ✅
+- tsc --noEmit: clean ✅
+- npm run build: clean ✅
+
+### Total bridge tests: 262
+
+---
+
 ## Phase 1E — Gemini Request ↔ Canonical
 
 **Commit:** cbd7d9e

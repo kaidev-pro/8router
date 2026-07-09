@@ -1,6 +1,6 @@
 # Phase 1 — Canonical Format Bridge: Design Review
 
-> **Status:** Phase 1A–1E COMPLETE. Phase 1F pending. canonical.enabled remains false.
+> **Status:** Phase 1A–1F ALL COMPLETE. Phase 1 canonical bridge ready. canonical.enabled remains false.
 > **Date:** 2026-07-07 (updated 2026-07-08)
 > **Author:** Renji Akamine
 > **Baseline:** d552681 (v0.6.2)
@@ -15,7 +15,7 @@
 | 1C | Anthropic Messages Request ↔ Canonical | ✅ Complete | 8e7725f |
 | 1D | OpenAI Response + Streaming ↔ Canonical | ✅ Complete | d5eff6c |
 | 1E | Gemini Request ↔ Canonical | ✅ Complete | cbd7d9e |
-| 1F | Responses API ↔ Canonical | 🔲 Pending | — |
+| 1F | Responses API ↔ Canonical | ✅ Complete | 21f5b95 |
 
 ---
 
