@@ -1,5 +1,68 @@
 # 8Router — Changelog
 
+## Phase 1E — Gemini Request ↔ Canonical
+
+**Commit:** cbd7d9e
+**Date:** 2026-07-09
+**Status:** ✅ Complete. canonical.enabled remains false.
+
+### What changed
+
+Gemini generateContent request adapter implemented — bidirectional conversion between
+Gemini request format and CanonicalRequest. Handles contents/parts, systemInstruction,
+tools/functionDeclarations, toolConfig, generationConfig, safetySettings, and
+functionCall/functionResponse lifecycle.
+
+### New files
+
+- `src/bridge/gemini/types.ts` — Gemini generateContent API types
+- `src/bridge/gemini/request-to-canonical.ts` — Gemini → CanonicalRequest
+- `src/bridge/gemini/canonical-to-request.ts` — CanonicalRequest → Gemini
+- `src/bridge/gemini/index.ts` — Barrel exports
+- `tests/fixtures/bridge/gemini/simple-text.json`
+- `tests/fixtures/bridge/gemini/multi-turn.json`
+- `tests/fixtures/bridge/gemini/system-instruction.json`
+- `tests/fixtures/bridge/gemini/tools.json`
+- `tests/fixtures/bridge/gemini/function-call.json`
+- `tests/fixtures/bridge/gemini/vision.json`
+- `tests/fixtures/bridge/gemini/full-config.json`
+- `src/__tests__/gemini-request-bridge.test.ts` — 26 tests
+- `src/__tests__/run-gemini-bridge.ts` — Test runner
+
+### Modified files
+
+- `src/bridge/index.ts` — Added Gemini bridge exports
+- `src/__tests__/run.ts` — Added Gemini bridge test group (Test 13)
+- `package.json` — Added `test:bridge-gemini` script
+
+### Key conversions
+
+| Gemini | Canonical |
+|---|---|
+| `systemInstruction.parts[].text` | `instructions[]` (role: 'system') |
+| `contents[].role: 'model'` | `messages[].role: 'assistant'` |
+| `functionCall` parts | `tool_use` content + `toolCalls[]` |
+| `functionResponse` parts | Elevated to `role: 'tool'` message |
+| `inlineData` (image) | `CanonicalImagePart` (base64 source) |
+| `fileData` | Text placeholder with URI |
+| `topK` | `extensions.gemini.topK` |
+| `safetySettings` | `extensions.gemini.safetySettings` |
+| `responseMimeType` + `responseSchema` | `responseFormat.type: 'json_schema'` |
+| `functionCallingConfig.mode` | `CanonicalToolChoice` (auto/required/none) |
+
+### Test results
+
+- test:bridge-gemini: 26/26 ✅
+- test:bridge-types: 30/30 ✅
+- test:bridge-openai: 35/35 ✅
+- test:bridge-openai-response: 23/23 ✅
+- test:bridge-anthropic: 111/111 ✅
+- npm test: all passed ✅
+- tsc --noEmit: clean ✅
+- npm run build: clean ✅
+
+---
+
 ## Phase 1D — OpenAI Response + Streaming ↔ Canonical
 
 **Commit:** d5eff6c
