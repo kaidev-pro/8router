@@ -1,0 +1,8 @@
+{
+  "model": "gpt-4o",
+  "input": "Continue the conversation",
+  "previous_response_id": "resp-abc100",
+  "metadata": {
+    "conversation_id": "conv-123"
+  }
+}

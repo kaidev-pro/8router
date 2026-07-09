@@ -122,3 +122,23 @@ export {
   canonicalRequestToGemini,
 } from './gemini/index.js';
 export type { GeminiConversionResult, GeminiSerializationResult } from './gemini/index.js';
+
+// OpenAI Responses API bridge (Phase 1F)
+export {
+  responsesRequestToCanonical,
+  canonicalRequestToResponses,
+  responsesResponseToCanonical,
+  canonicalResponseToResponses,
+  ResponsesStreamToCanonical,
+  responsesEventsToCanonicalEvents,
+  canonicalEventsToResponsesEvents,
+  canonicalEventToResponsesEvents,
+  responsesUsageToCanonical,
+  canonicalUsageToResponses,
+} from './openai-responses/index.js';
+export type {
+  ResponsesConversionResult,
+  ResponsesSerializationResult,
+  ResponsesResponseToCanonicalResult,
+  ResponsesResponseSerializationResult,
+} from './openai-responses/index.js';

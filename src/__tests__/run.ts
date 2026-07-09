@@ -142,6 +142,12 @@ index abc..def 100644
   runGeminiBridgeTests();
   console.log('');
 
+  // Test 14: OpenAI Responses API Bridge (Phase 1F)
+  console.log('14. OpenAI Responses API Bridge');
+  const { runResponsesBridgeTests } = await import('./openai-responses-bridge.test.js');
+  runResponsesBridgeTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

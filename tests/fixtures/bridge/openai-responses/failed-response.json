@@ -1,0 +1,12 @@
+{
+  "id": "resp-abc126",
+  "object": "response",
+  "created_at": 1720000000,
+  "status": "failed",
+  "error": {
+    "code": "server_error",
+    "message": "Internal server error"
+  },
+  "model": "gpt-4o",
+  "output": []
+}

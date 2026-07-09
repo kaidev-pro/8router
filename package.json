@@ -45,6 +45,7 @@
     "test:bridge-anthropic": "tsx src/__tests__/run-anthropic-bridge.ts",
     "test:bridge-openai-response": "tsx src/__tests__/run-openai-response-bridge.ts",
     "test:bridge-gemini": "tsx src/__tests__/run-gemini-bridge.ts",
+    "test:bridge-openai-responses": "tsx src/__tests__/run-openai-responses-bridge.ts",
     "test:router": "bash scripts/test-router.sh",
     "test:openai-compat": "bash scripts/test-openai-compat.sh",
     "test:providers-live": "bash scripts/test-providers-live.sh",

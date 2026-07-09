@@ -1,0 +1,26 @@
+{
+  "id": "resp-abc123",
+  "object": "response",
+  "created_at": 1720000000,
+  "status": "completed",
+  "model": "gpt-4o",
+  "output": [
+    {
+      "type": "message",
+      "id": "msg-001",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "The capital of France is Paris."
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 15,
+    "output_tokens": 8,
+    "total_tokens": 23
+  }
+}

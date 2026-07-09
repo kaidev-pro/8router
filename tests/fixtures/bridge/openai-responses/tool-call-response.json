@@ -1,0 +1,22 @@
+{
+  "id": "resp-abc124",
+  "object": "response",
+  "created_at": 1720000000,
+  "status": "completed",
+  "model": "gpt-4o",
+  "output": [
+    {
+      "type": "function_call",
+      "id": "fc-001",
+      "call_id": "call-abc123",
+      "name": "get_weather",
+      "arguments": "{\"location\":\"Tokyo\",\"unit\":\"celsius\"}",
+      "status": "completed"
+    }
+  ],
+  "usage": {
+    "input_tokens": 20,
+    "output_tokens": 15,
+    "total_tokens": 35
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "type": "response.function_call_arguments.delta",
+  "event_id": "evt-002",
+  "output_index": 0,
+  "delta": "{\"location\":"
+}

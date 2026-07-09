@@ -1,0 +1,43 @@
+{
+  "id": "resp-abc125",
+  "object": "response",
+  "created_at": 1720000000,
+  "status": "completed",
+  "model": "o3-mini",
+  "output": [
+    {
+      "type": "reasoning",
+      "id": "reasoning-001",
+      "summary": [
+        {
+          "type": "summary_text",
+          "text": "The user asked about quantum computing. Let me think..."
+        },
+        {
+          "type": "summary_text",
+          "text": "Quantum computing uses qubits which can be in superposition."
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "id": "msg-002",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Quantum computing uses qubits instead of classical bits."
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 25,
+    "output_tokens": 50,
+    "total_tokens": 75,
+    "output_tokens_details": {
+      "reasoning_tokens": 30
+    }
+  }
+}

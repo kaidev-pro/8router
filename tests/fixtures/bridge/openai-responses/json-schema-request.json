@@ -1,0 +1,22 @@
+{
+  "model": "gpt-4o",
+  "input": "Generate a JSON response",
+  "text": {
+    "format": {
+      "type": "json_schema",
+      "name": "test_schema",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ]
+      },
+      "strict": true
+    }
+  }
+}

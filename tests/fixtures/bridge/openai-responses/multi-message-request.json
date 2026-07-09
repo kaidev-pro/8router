@@ -1,0 +1,35 @@
+{
+  "model": "gpt-4o",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Hello!"
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Hi! How can I help?"
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "What is 2+2?"
+        }
+      ]
+    }
+  ]
+}

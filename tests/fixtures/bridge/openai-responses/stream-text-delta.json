@@ -1,0 +1,7 @@
+{
+  "type": "response.output_text.delta",
+  "event_id": "evt-001",
+  "output_index": 0,
+  "content_index": 0,
+  "delta": "Hello! "
+}
