@@ -37,6 +37,14 @@ import { getSetupGuideHTML } from '../setup-guide.js';
 import { getDashboardHTML } from '../dashboard/dashboard.js';
 import { getAllPoolStatuses } from '../providers/key-pool.js';
 import { pickBestModel } from '../providers/smart-picker.js';
+import {
+  getAllCredentials, getCredentialById, createCredential, updateCredential,
+  deleteCredential, getDecryptedCredential, setCredentialStatus,
+  type CreateCredentialInput, type UpdateCredentialInput,
+  getProviderMeta, isProviderConfigurable,
+  testProviderConnection,
+  maskCredential,
+} from '../security/credentials/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -1856,6 +1864,110 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
       res.json(result);
     } else {
       res.status(404).json({ error: { message: 'No model matches the given criteria', type: 'not_found' } });
+    }
+  });
+
+  // ── Provider Credentials API ──────────────────────────────────────
+  // GET /8router/api/providers — list all connected credentials (safe)
+  app.get('/8router/api/providers', (_req, res) => {
+    try {
+      const credentials = getAllCredentials();
+      res.json({ credentials });
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed to load providers', type: 'internal' } });
+    }
+  });
+
+  // GET /8router/api/providers/supported — list all supported provider metadata
+  app.get('/8router/api/providers/supported', (_req, res) => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    import('../security/credentials/provider-meta.js').then(mod => {
+      res.json({ providers: mod.PROVIDER_SECURITY_META });
+    }).catch(() => res.status(500).json({ error: { message: 'Failed to load provider metadata', type: 'internal' } }));
+  });
+
+  // POST /8router/api/providers — add a provider credential
+  app.post('/8router/api/providers', (req, res) => {
+    try {
+      const { provider, displayName, apiKey, baseUrl, isEnabled } = req.body;
+      if (!provider || !apiKey) {
+        return res.status(400).json({ error: { message: 'provider and apiKey are required', type: 'validation' } });
+      }
+      if (!isProviderConfigurable(provider)) {
+        return res.status(400).json({ error: { message: 'Provider is not yet available', type: 'validation' } });
+      }
+      const input: CreateCredentialInput = { provider, displayName, apiKey, baseUrl, isEnabled };
+      const credential = createCredential(input);
+      res.status(201).json(credential);
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed to save credential', type: 'internal' } });
+    }
+  });
+
+  // PATCH /8router/api/providers/:id — update credential
+  app.patch('/8router/api/providers/:id', (req, res) => {
+    try {
+      const existing = getCredentialById(req.params.id);
+      if (!existing) return res.status(404).json({ error: { message: 'Credential not found', type: 'not_found' } });
+      const input: UpdateCredentialInput = {};
+      if (req.body.displayName !== undefined) input.displayName = req.body.displayName;
+      if (req.body.baseUrl !== undefined) input.baseUrl = req.body.baseUrl;
+      if (req.body.isEnabled !== undefined) input.isEnabled = req.body.isEnabled;
+      if (req.body.apiKey !== undefined) input.apiKey = req.body.apiKey;
+      const updated = updateCredential(req.params.id, input);
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed to update credential', type: 'internal' } });
+    }
+  });
+
+  // DELETE /8router/api/providers/:id — delete credential
+  app.delete('/8router/api/providers/:id', (req, res) => {
+    try {
+      const ok = deleteCredential(req.params.id);
+      if (!ok) return res.status(404).json({ error: { message: 'Credential not found', type: 'not_found' } });
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed to delete credential', type: 'internal' } });
+    }
+  });
+
+  // POST /8router/api/providers/:id/test — test provider connection
+  app.post('/8router/api/providers/:id/test', async (req, res) => {
+    try {
+      const cred = getCredentialById(req.params.id);
+      if (!cred) return res.status(404).json({ error: { message: 'Credential not found', type: 'not_found' } });
+      const apiKey = getDecryptedCredential(req.params.id);
+      if (!apiKey && cred.credentialType !== 'local_endpoint') {
+        return res.status(400).json({ error: { message: 'No API key to test', type: 'validation' } });
+      }
+      const result = await testProviderConnection(cred.provider, apiKey || '', cred.baseUrl || undefined);
+      setCredentialStatus(req.params.id, result.status, result.error);
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Test failed', type: 'internal' } });
+    }
+  });
+
+  // POST /8router/api/providers/:id/enable — enable credential
+  app.post('/8router/api/providers/:id/enable', (req, res) => {
+    try {
+      const ok = updateCredential(req.params.id, { isEnabled: true });
+      if (!ok) return res.status(404).json({ error: { message: 'Not found', type: 'not_found' } });
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed', type: 'internal' } });
+    }
+  });
+
+  // POST /8router/api/providers/:id/disable — disable credential
+  app.post('/8router/api/providers/:id/disable', (req, res) => {
+    try {
+      const ok = updateCredential(req.params.id, { isEnabled: false });
+      if (!ok) return res.status(404).json({ error: { message: 'Not found', type: 'not_found' } });
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed', type: 'internal' } });
     }
   });
 

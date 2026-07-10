@@ -148,6 +148,12 @@ index abc..def 100644
   runResponsesBridgeTests();
   console.log('');
 
+  // Test 15: Provider Credentials (Phase 2A)
+  console.log('15. Provider Credentials');
+  const { runProviderCredentialsTests } = await import('./provider-credentials.test.js');
+  runProviderCredentialsTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

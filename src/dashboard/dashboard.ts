@@ -1258,6 +1258,7 @@ tr:hover td { background:var(--bg-card-hover) }
           ${t('db.btn.refresh', locale)}
         </button>
       </div>
+      <p style="margin:0 0 16px;font-size:12px;color:var(--text-muted)">Your provider keys are encrypted and never shown again after saving. Add your own API key or local endpoint to start routing.</p>
       <div class="tbl-wrap">
         <table>
           <thead><tr><th>${t('db.col.provider', locale)}</th><th>${t('db.col.tier', locale)}</th><th>${t('db.col.health', locale)}</th><th>${t('db.col.latency', locale)}</th><th>${t('db.col.apiKeys', locale)}</th><th>${t('db.col.requests', locale)}</th><th>${t('db.col.tokens', locale)}</th><th>${t('db.col.errors', locale)}</th><th>${t('db.col.lastError', locale)}</th><th></th></tr></thead>
