@@ -262,6 +262,8 @@
   "db.health.degraded": "Degraded",
   "db.health.disabled": "Disabled",
   "db.health.critical": "Critical",
+  "db.health.unknown": "Unknown",
+  "db.health.circuit": "Circuit breaker",
   "db.health.warning": "Warning",
   "db.quota.requests": "requests",
   "db.quota.tokens": "tokens",

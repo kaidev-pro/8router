@@ -1873,31 +1873,50 @@ async function loadProv() {
     var provs = await apiFetch(API+'/8router/providers');
     var health = [];
     try { health = await apiFetch(API+'/8router/health') || []; } catch(e) {}
+    // Phase 2D: also fetch per-credential health from new endpoint
+    var credHealth = [];
+    try { var chResp = await apiFetch(API+'/8router/api/provider-health'); credHealth = (chResp && chResp.items) || []; } catch(e) {}
     var hMap = {};
     health.forEach(function(h){ hMap[h.providerId || h.id] = h });
+    // Merge credential health
+    var credMap = {};
+    credHealth.forEach(function(ch){ credMap[ch.providerCredentialId || ch.id] = ch });
     document.getElementById('prov-tbody').innerHTML = provs.map(function(p) {
       var h = hMap[p.id] || hMap[p.name] || null;
+      // Phase 2D: check credential health for circuit state
+      var credKey = Object.keys(credMap).find(function(k) { return credMap[k].provider === p.id });
+      var ch = credKey ? credMap[credKey] : null;
       var status = 'healthy';
       var statusLabel = ct('db.health.healthy');
-      if (h) {
+      if (ch && ch.status) {
+        status = ch.status;
+        statusLabel = ct('db.health.' + ch.status) || ch.status;
+        if (ch.circuitState === 'open') {
+          status = 'down';
+          statusLabel = ct('db.health.down') + ' (circuit)';
+        }
+      } else if (h) {
         if (h.healthy === false) { status = 'down'; statusLabel = ct('db.health.down'); }
         else if (h.degraded === true) { status = 'degraded'; statusLabel = ct('db.health.degraded'); }
         else if (h.disabled === true) { status = 'disabled'; statusLabel = ct('db.health.disabled'); }
       }
-      var latency = (h && (h.latencyMs || h.latency || h.avgLatency)) || '-';
+      var latency = ch ? (ch.averageLatencyMs || ch.lastLatencyMs || '-') : ((h && (h.latencyMs || h.latency || h.avgLatency)) || '-');
       if (typeof latency === 'number') latency = latency + 'ms';
-      var lastError = (h && (h.lastError || h.error)) || '';
-      var lastErrorHtml = lastError ? '<span class="error-text" title="' + lastError.replace(/"/g,'&quot;') + '">' + lastError + '</span>' : '<span style="color:var(--text-muted)">\u2014</span>';
+      var lastError = ch ? (ch.lastErrorMessage || '') : ((h && (h.lastError || h.error)) || '');
+      var lastErrorHtml = lastError ? '<span class="error-text" title="' + lastError.replace(/"/g,'&quot;') + '">' + lastError + '</span>' : '<span style="color:var(--text-muted)">\\u2014</span>';
+      var circuitLabel = ch && ch.circuitState ? ' <span style="font-size:10px;color:var(--text-muted)">[' + ch.circuitState + ']</span>' : '';
       return '<tr><td style="font-family:Inter,sans-serif">'+provLogo(p.id)+'<strong>'+p.name+'</strong> <span style="color:var(--text-muted);font-size:11px">('+p.id+')</span></td>' +
       '<td><span class="badge '+p.tier+'">'+p.tier+'</span></td>' +
-      '<td><span class="health-badge '+status+'"><span class="health-dot"></span> '+statusLabel+'</span></td>' +
+      '<td><span class="health-badge '+status+'"><span class="health-dot"></span> '+statusLabel+'</span>'+circuitLabel+'</td>' +
       '<td><span class="latency-text">'+latency+'</span></td>' +
       '<td>'+(p.apiKeys?p.apiKeys.length:1)+' keys</td>' +
       '<td>'+(p.totalRequests||0).toLocaleString()+'</td>' +
       '<td>'+(p.totalTokens||0).toLocaleString()+'</td>' +
       '<td style="color:var(--red)">'+(p.errors||0)+'</td>' +
       '<td>'+lastErrorHtml+'</td>' +
-      '<td><button class="test-btn" onclick="testProvider(this,\\''+p.id+'\\')">Test</button></td></tr>';
+      '<td><button class="test-btn" onclick="testProvider(this,\\\\''+p.id+'\\\\')">Test</button>' +
+      (credKey ? ' <button class="test-btn" style="margin-left:4px;font-size:10px" onclick="resetHealth(\\\\''+credKey+'\\\\')">Reset</button>' : '') +
+      '</td></tr>';
     }).join('');
   } catch(e) {}
 }
@@ -1925,6 +1944,14 @@ async function testProvider(btn, providerId) {
   }
   btn.disabled = false;
   setTimeout(function(){ btn.className = 'test-btn'; btn.textContent = ct('db.btn.test'); btn.style.color = ''; btn.style.borderColor = ''; }, 3000);
+}
+
+// Phase 2D: Reset health for a provider credential
+async function resetHealth(credentialId) {
+  try {
+    await fetch(API+'/8router/api/provider-health/' + encodeURIComponent(credentialId) + '/reset', { method: 'POST' });
+    loadProv(); // Refresh table
+  } catch(e) { alert('Reset failed'); }
 }
 
 // ═══ COMBOS ═══

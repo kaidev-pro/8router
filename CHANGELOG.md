@@ -415,3 +415,36 @@ Anthropic and Gemini: beta/optional (available if user connects them)
 - Phase 2F: Canonical runtime path
 - Managed credits (never)
 - Token resale (never)
+
+## Phase 2D — Provider Health + Circuit Breaker Runtime
+
+**Date:** 2026-07-10
+**Status:** ✅ Complete. canonical.enabled remains false.
+
+### What changed
+
+- Provider health tracking per user credential (not global)
+- Circuit breaker: closed → open → half_open → closed
+- Health-aware provider selection (skips open circuit providers)
+- Failure type classification: rate_limit, auth_error, timeout, network_error, provider_error, model_unavailable, context_length, invalid_request
+- Retry-After header support for circuit cooldown
+- Auth errors (401/403) open circuit immediately
+- Dashboard health badges with circuit state + Reset button
+- GET /8router/api/provider-health — returns per-credential health
+- POST /8router/api/provider-health/:id/reset — reset health/circuit state
+
+### Circuit Breaker Defaults
+
+- Failure threshold: 3 consecutive failures
+- Cooldown: 60 seconds (configurable via env)
+- Half-open: allows probe after cooldown
+- Successful probe closes circuit
+
+### Security
+
+- Health records contain no raw provider keys
+- Error messages are redacted before storage
+- Per-user isolation (User A health ≠ User B health)
+- No platform-owned fallback
+
+### Tests added: 85 (health + circuit breaker + error classification + selection)

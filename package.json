@@ -49,6 +49,7 @@
     "test:provider-credentials": "tsx src/__tests__/run-provider-credentials.ts",
     "test:access-keys": "tsx src/__tests__/run-access-keys.ts",
     "test:runtime-routing": "tsx src/__tests__/run-runtime-routing.ts",
+    "test:provider-health": "tsx src/__tests__/run-provider-health.ts",
     "test:router": "bash scripts/test-router.sh",
     "test:openai-compat": "bash scripts/test-openai-compat.sh",
     "test:providers-live": "bash scripts/test-providers-live.sh",

@@ -2,6 +2,7 @@
 // Model alias resolution + direct provider routing
 
 import { getAllCredentials, getDecryptedCredential, type SafeCredential } from '../security/credentials/credential-manager.js';
+import { shouldSkipProvider } from './health/manager.js';
 import { ERRORS, type OpenAIError } from './errors.js';
 
 // ─── Model Alias Definitions ────────────────────────────────────────
@@ -93,11 +94,13 @@ export function resolveModelForProvider(model: string, provider: string): string
 /**
  * Resolve a model name to a provider route with decrypted API key.
  * Returns the primary route + fallback pool.
+ * Phase 2D: userId enables health-aware provider selection.
  */
 export async function resolveRoute(
   model: string,
   allowedProviders: string[],
-  allowedModels: string[]
+  allowedModels: string[],
+  userId?: string,
 ): Promise<RouteResult> {
   // Get all user credentials
   const allCreds = getAllCredentials();
@@ -165,14 +168,27 @@ export async function resolveRoute(
 
   // Build ordered credential list
   const routePool: ProviderRoute[] = [];
+  const skippedProviders: string[] = [];
   for (const provider of providerOrder) {
     const cred = availableCreds.find(c => c.provider === provider);
     if (cred) {
+      // Phase 2D: health-aware skip
+      if (userId) {
+        const { skip, reason } = shouldSkipProvider(userId, cred.id);
+        if (skip) {
+          skippedProviders.push(`${provider}:${reason}`);
+          continue;
+        }
+      }
       routePool.push(buildRoute(cred, resolvedModel));
     }
   }
 
   if (routePool.length === 0) {
+    // Phase 2D: differentiate circuit breaker from no providers
+    if (skippedProviders.length > 0) {
+      return { ok: false, error: ERRORS.noHealthyProvider(), httpStatus: 503 };
+    }
     // Check if the explicit provider exists but is not connected
     if (!isAlias(model) && model.includes('/')) {
       const providerHint = model.split('/')[0];

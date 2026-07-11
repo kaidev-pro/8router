@@ -63,8 +63,12 @@ export const ERRORS = {
   streamingNotSupported: () =>
     openaiError('Streaming is not enabled yet for this provider.', 'invalid_request_error', 'streaming_not_supported'),
 
-  modelNotAllowed: (model: string) =>
-    openaiError(`Model "${model}" is not allowed by your 8Router access key policy.`, 'invalid_request_error', 'model_not_allowed'),
+  modelNotAllowed: (model: string): OpenAIError => ({
+    error: { message: `Model '${model}' is not allowed by your 8Router access key policy.`, type: 'invalid_request_error', param: 'model', code: 'model_not_allowed' },
+  }),
+  noHealthyProvider: (): OpenAIError => ({
+    error: { message: 'All connected providers are temporarily unavailable due to circuit breaker cooldown.', type: 'provider_unavailable', param: null, code: 'no_healthy_provider' },
+  }),
 } as const;
 
 export function redactError(detail: string): string {

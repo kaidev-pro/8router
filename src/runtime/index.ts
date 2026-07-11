@@ -14,3 +14,5 @@ export {
   type ProviderResponse, type ForwardOptions,
 } from './provider-client.js';
 export { logRuntimeRequest } from './logging.js';
+// Phase 2D — Provider Health
+export * from './health/index.js';

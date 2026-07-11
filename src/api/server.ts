@@ -38,7 +38,7 @@ import { getDashboardHTML } from '../dashboard/dashboard.js';
 import { getAllPoolStatuses } from '../providers/key-pool.js';
 import { pickBestModel } from '../providers/smart-picker.js';
 import { createAccessKey, listAccessKeys, getAccessKeyById, updateAccessKey, revokeAccessKey, rotateAccessKey, deleteAccessKey } from '../security/access-keys/manager.js';
-import { handleChatCompletions as runtimeChatCompletions, handleModels as runtimeModels } from '../runtime/index.js';
+import { handleChatCompletions as runtimeChatCompletions, handleModels as runtimeModels, getUserHealthSummary, resetProviderHealth as resetHealth } from '../runtime/index.js';
 import {
   getAllCredentials, getCredentialById, createCredential, updateCredential,
   deleteCredential, getDecryptedCredential, setCredentialStatus,
@@ -2083,6 +2083,32 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
       res.json(result);
     } catch (err: any) {
       res.status(500).json({ error: { message: 'Failed to rotate access key', type: 'internal' } });
+    }
+  });
+
+  // ── Phase 2D: Provider Health API ──────────────────────────────────
+  app.get('/8router/api/provider-health', (req, res) => {
+    try {
+      const authHeader = req.headers.authorization || '';
+      const ak = typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
+        ? authHeader.slice(7).trim() : '';
+      // Support dashboard API key auth or sk-8router auth
+      const userId = 'local'; // Dashboard is always local user
+      const summary = getUserHealthSummary(userId);
+      res.json({ items: summary });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/8router/api/provider-health/:credentialId/reset', (req, res) => {
+    try {
+      const userId = 'local';
+      const { credentialId } = req.params;
+      resetHealth(userId, credentialId);
+      res.json({ ok: true, message: 'Health and circuit state reset.' });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
     }
   });
 

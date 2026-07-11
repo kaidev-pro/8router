@@ -262,6 +262,8 @@
   "db.health.degraded": "Terdegradasi",
   "db.health.disabled": "Nonaktif",
   "db.health.critical": "Kritis",
+  "db.health.unknown": "Tidak Diketahui",
+  "db.health.circuit": "Pemutus Sirkuit",
   "db.health.warning": "Peringatan",
   "db.quota.requests": "permintaan",
   "db.quota.tokens": "token",

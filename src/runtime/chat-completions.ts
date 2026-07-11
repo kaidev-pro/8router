@@ -1,5 +1,6 @@
 // 8Router — /v1/chat/completions Handler
 // Full runtime path: auth → routing → fallback → response
+// Phase 2D: health-aware with circuit breaker
 
 import type { Request, Response } from 'express';
 import { authenticateRequest, updateAccessKeyUsage } from './auth.js';
@@ -7,6 +8,7 @@ import { ERRORS, redactError } from './errors.js';
 import { resolveRoute, type ProviderRoute } from './provider-select.js';
 import { forwardToProvider, isRetryable, type ProviderResponse } from './provider-client.js';
 import { getDecryptedCredential } from '../security/credentials/credential-manager.js';
+import { recordProviderSuccess, recordProviderFailure } from './health/manager.js';
 import { logRuntimeRequest } from './logging.js';
 
 // ─── Non-Streaming Handler ──────────────────────────────────────────
@@ -36,11 +38,12 @@ export async function handleChatCompletions(req: Request, res: Response): Promis
   const isStream = body.stream === true;
   const requestedModel = body.model;
 
-  // Resolve route
+  // Resolve route — Phase 2D: passes userId for health-aware selection
   const routeResult = await resolveRoute(
     requestedModel,
     ctx.allowedProviders,
-    ctx.allowedModels
+    ctx.allowedModels,
+    ctx.userId,
   );
 
   if (!routeResult.ok) {
@@ -50,7 +53,10 @@ export async function handleChatCompletions(req: Request, res: Response): Promis
 
   // Build fallback pool
   const pool: ProviderRoute[] = [routeResult.route, ...routeResult.fallbackPool];
-  const fallbackLog: Array<{ provider: string; model: string; status: string; errorCode?: string; latencyMs: number }> = [];
+  const fallbackLog: Array<{
+    provider: string; model: string; status: string;
+    errorCode?: string; latencyMs: number; circuitState?: string;
+  }> = [];
 
   // Try each provider
   let lastError: string = '';
@@ -72,7 +78,7 @@ export async function handleChatCompletions(req: Request, res: Response): Promis
       stream: isStream,
     });
 
-    // Streaming success: pipe SSE directly
+    // ── Streaming success ──
     if (isStream && result.ok && result.body && typeof result.body?.getReader === 'function') {
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
@@ -100,12 +106,20 @@ export async function handleChatCompletions(req: Request, res: Response): Promis
         res.end();
       }
 
+      // Phase 2D: record health success
+      recordProviderSuccess({
+        userId: ctx.userId,
+        providerCredentialId: route.credentialId,
+        provider: route.provider,
+        latencyMs: result.latencyMs,
+        status: 200,
+      });
       logRuntimeRequest(ctx.accessKeyId, ctx.userId, requestedModel, route.provider, route.model, 'auto', 'success', 200, Date.now() - start, fallbackLog.length, null);
       updateAccessKeyUsage(ctx.accessKeyId);
       return;
     }
 
-    // Non-streaming success
+    // ── Non-streaming success ──
     if (result.ok) {
       res.setHeader('x-8router-provider', route.provider);
       res.setHeader('x-8router-model', route.model);
@@ -113,20 +127,44 @@ export async function handleChatCompletions(req: Request, res: Response): Promis
         res.setHeader('x-8router-fallback-count', String(fallbackLog.length));
       }
 
+      // Phase 2D: record health success
+      recordProviderSuccess({
+        userId: ctx.userId,
+        providerCredentialId: route.credentialId,
+        provider: route.provider,
+        latencyMs: result.latencyMs,
+        status: 200,
+      });
       logRuntimeRequest(ctx.accessKeyId, ctx.userId, requestedModel, route.provider, route.model, 'auto', 'success', 200, Date.now() - start, fallbackLog.length, null);
       updateAccessKeyUsage(ctx.accessKeyId);
       res.status(200).json(result.body);
       return;
     }
 
-    // Track failure
+    // ── Failure ──
     lastError = result.error || 'unknown';
+
+    // Phase 2D: classify and record failure
+    const isTimeout = result.status === 504;
+    const isNetwork = result.status === 502;
+    const errType = isTimeout ? 'timeout' : isNetwork ? 'network_error' : 'provider_error';
+    recordProviderFailure({
+      userId: ctx.userId,
+      providerCredentialId: route.credentialId,
+      provider: route.provider,
+      latencyMs: result.latencyMs,
+      status: result.status,
+      errorType: errType as any,
+      safeMessage: lastError,
+    });
+
     fallbackLog.push({
       provider: route.provider,
       model: route.model,
       status: 'failed',
       errorCode: `http_${result.status}`,
       latencyMs: result.latencyMs,
+      circuitState: 'closed',  // will be updated after health recording
     });
 
     // Check if retryable

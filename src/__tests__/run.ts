@@ -166,6 +166,12 @@ index abc..def 100644
   runRuntimeRoutingTests();
   console.log('');
 
+  // Test 18: Provider Health + Circuit Breaker (Phase 2D)
+  console.log('18. Provider Health + Circuit Breaker');
+  const { runProviderHealthTests } = await import('./provider-health-circuit-breaker.test.js');
+  runProviderHealthTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

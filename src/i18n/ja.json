@@ -262,6 +262,8 @@
   "db.health.degraded": "低下",
   "db.health.disabled": "無効",
   "db.health.critical": "重大",
+  "db.health.unknown": "不明",
+  "db.health.circuit": "サーキットブレーカー",
   "db.health.warning": "警告",
   "db.quota.requests": "リクエスト",
   "db.quota.tokens": "トークン",
