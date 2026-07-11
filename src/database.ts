@@ -199,6 +199,37 @@ function initSchema(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_quota_provider ON quotaTracking(provider);
     CREATE INDEX IF NOT EXISTS idx_quota_period ON quotaTracking(period);
     CREATE INDEX IF NOT EXISTS idx_quota_period_end ON quotaTracking(periodEnd);
+
+    -- Access keys for API authentication
+    CREATE TABLE IF NOT EXISTS access_keys (
+      id TEXT PRIMARY KEY,
+      userId TEXT DEFAULT 'local',
+      name TEXT NOT NULL,
+      keyPrefix TEXT NOT NULL,
+      keyHash TEXT NOT NULL,
+      keyHint TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      isEnabled INTEGER DEFAULT 1,
+      projectName TEXT DEFAULT '',
+      defaultModelAlias TEXT DEFAULT '8router/auto',
+      allowedProviders TEXT DEFAULT '[]',
+      allowedModels TEXT DEFAULT '[]',
+      routingMode TEXT DEFAULT 'auto',
+      dailyRequestLimit INTEGER,
+      monthlyRequestLimit INTEGER,
+      rateLimitPerMinute INTEGER,
+      expiresAt TEXT,
+      lastUsedAt TEXT,
+      lastUsedIp TEXT,
+      lastUsedUserAgent TEXT,
+      revokedAt TEXT,
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_ak_prefix ON access_keys(keyPrefix);
+    CREATE INDEX IF NOT EXISTS idx_ak_user ON access_keys(userId);
+    CREATE INDEX IF NOT EXISTS idx_ak_status ON access_keys(status);
   `);
 
   // ─── Migrations (add columns to existing tables) ─────────────
@@ -240,6 +271,32 @@ export interface ConnectionRow {
   totalRequests: number;
   totalTokens: number;
   totalCost: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AccessKeyRow {
+  id: string;
+  userId: string;
+  name: string;
+  keyPrefix: string;
+  keyHash: string;
+  keyHint: string;
+  status: string;
+  isEnabled: number;
+  projectName: string;
+  defaultModelAlias: string;
+  allowedProviders: string;
+  allowedModels: string;
+  routingMode: string;
+  dailyRequestLimit: number | null;
+  monthlyRequestLimit: number | null;
+  rateLimitPerMinute: number | null;
+  expiresAt: string | null;
+  lastUsedAt: string | null;
+  lastUsedIp: string | null;
+  lastUsedUserAgent: string | null;
+  revokedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

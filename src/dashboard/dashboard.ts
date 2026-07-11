@@ -934,6 +934,10 @@ tr:hover td { background:var(--bg-card-hover) }
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></span>
       <span class="lbl">${t('db.sidebar.keys', locale)}</span>
     </div>
+    <div class="sb-item" onclick="go('accesskeys',this)">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M2 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8z"/></svg></span>
+      <span class="lbl">${t('db.sidebar.accessKeys', locale)}</span>
+    </div>
     <div class="sb-section">${t('db.sidebar.system', locale)}</div>
     <div class="sb-item" onclick="go('settings',this)">
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span>
@@ -1443,6 +1447,30 @@ tr:hover td { background:var(--bg-card-hover) }
       </div>
     </div>
 
+    <!-- ═══ ACCESS KEYS (Phase 2B) ═══ -->
+    <div id="pg-accesskeys" class="page">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+        <div class="card-header" style="margin-bottom:0">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M2 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8z"/></svg>
+          <div>
+            <div class="page-title" style="font-size:22px">${t('db.page.accessKeys', locale)}</div>
+            <div class="page-subtitle" style="margin-bottom:0">${t('db.page.accessKeysDesc', locale)}</div>
+          </div>
+        </div>
+        <button style="padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s;flex-shrink:0" onclick="createAccessKey()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+          ${t('db.btn.createKey', locale)}
+        </button>
+      </div>
+      <p style="margin:0 0 16px;font-size:12px;color:var(--text-muted)">Provider keys stay encrypted inside 8Router. Your tools only use these 8Router access keys.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>${t('db.col.name', locale)}</th><th>Key</th><th>Project</th><th>Routing</th><th>Model</th><th>${t('db.col.status', locale)}</th><th>${t('db.col.lastUsed', locale)}</th><th></th></tr></thead>
+          <tbody id="accesskey-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- ═══ LOGS ═══ -->
     <div id="pg-logs" class="page">
       <div class="card-header" style="margin-bottom:20px">
@@ -1600,6 +1628,7 @@ const pageIcons = {
   connections: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>',
   clitools: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>',
   apikeys: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
+  accesskeys: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="M2 8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8z"/></svg>',
   logs: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>',
   playground: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>'
 };
@@ -1629,6 +1658,7 @@ function go(name, el) {
     connections: [ct('db.page.connections'),ct('db.page.connectionsDesc')],
     clitools: [ct('db.page.cli'),ct('db.page.cliDesc')],
     apikeys: [ct('db.page.keys'),ct('db.page.keysDesc')],
+    accesskeys: [ct('db.page.accessKeys'),ct('db.page.accessKeysDesc')],
     logs: [ct('db.page.logs'),ct('db.page.logsDesc')],
     playground: [ct('db.page.playground'),ct('db.page.playgroundDesc')]
   };
@@ -1644,6 +1674,7 @@ function go(name, el) {
   if (name === 'quota') loadQuota();
   if (name === 'clitools') loadCliTools();
   if (name === 'apikeys') loadApiKeys();
+  if (name === 'accesskeys') loadAccessKeys();
   if (name === 'logs') loadLogs();
 }
 
@@ -2307,6 +2338,71 @@ async function revokeApiKey(id) {
     loadApiKeys();
   } catch(e) {
     alert(ct('db.keys.revokeFailed'));
+  }
+}
+
+// ═══ ACCESS KEYS (Phase 2B) ═══
+async function loadAccessKeys() {
+  try {
+    var resp = await apiFetch(API+'/8router/api-access-keys');
+    var keys = resp && resp.accessKeys ? resp.accessKeys : [];
+    var tbody = document.getElementById('accesskey-tbody');
+    if (!keys.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">No access keys yet. Create your first 8Router access key to connect Cursor, Cline, OpenWebUI, or your own AI agent.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = keys.map(function(k) {
+      var lastUsed = k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleDateString() : '-';
+      var statusCls = k.status === 'active' ? 'healthy' : 'unhealthy';
+      var provCount = Array.isArray(k.allowedProviders) ? k.allowedProviders.length : 0;
+      var modelCount = Array.isArray(k.allowedModels) ? k.allowedModels.length : 0;
+      return '<tr>' +
+        '<td style="font-family:Inter,sans-serif;font-weight:500">' + (k.name||'Unnamed') + '</td>' +
+        '<td style="font-family:JetBrains Mono,monospace;font-size:12px">' + (k.keyHint||'') + '</td>' +
+        '<td>' + (k.projectName||'-') + '</td>' +
+        '<td><span style="font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(255,255,255,0.06)">' + (k.routingMode||'auto') + '</span></td>' +
+        '<td style="font-size:12px">' + (k.defaultModelAlias||'8router/auto') + '</td>' +
+        '<td><span class="badge ' + statusCls + '">' + k.status + '</span></td>' +
+        '<td style="font-size:12px">' + lastUsed + '</td>' +
+        '<td style="display:flex;gap:4px">' +
+          '<button style="padding:4px 10px;border-radius:6px;border:1px solid var(--red);background:transparent;color:var(--red);font-size:11px;font-weight:600;cursor:pointer" onclick="revokeAccessKey(\'' + k.id + '\')">Revoke</button>' +
+        '</td></tr>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('accesskey-tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">Failed to load access keys</td></tr>';
+  }
+}
+
+async function createAccessKey() {
+  var name = prompt('Access key name (e.g. "Cursor Laptop", "Cline Agent"):');
+  if (name === null) return;
+  try {
+    var resp = await fetch(API+'/8router/api-access-keys', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name: name || 'Unnamed Key'})
+    });
+    if (resp.ok) {
+      var data = await resp.json();
+      if (data.rawKey) {
+        alert('✅ Access key created!\n\n🔑 ' + data.rawKey + '\n\nCopy this key now. You will not be able to see it again.\n\nBase URL: ' + window.location.origin + '/v1');
+      }
+      loadAccessKeys();
+    } else {
+      alert('Failed to create access key');
+    }
+  } catch(e) {
+    alert('Failed to create access key');
+  }
+}
+
+async function revokeAccessKey(id) {
+  if (!confirm('Revoke this access key? It will be permanently disabled.')) return;
+  try {
+    await fetch(API+'/8router/api-access-keys/' + encodeURIComponent(id) + '/revoke', {method: 'POST'});
+    loadAccessKeys();
+  } catch(e) {
+    alert('Failed to revoke');
   }
 }
 

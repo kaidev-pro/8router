@@ -154,6 +154,12 @@ index abc..def 100644
   runProviderCredentialsTests();
   console.log('');
 
+  // Test 16: Access Keys (Phase 2B)
+  console.log('16. Access Keys');
+  const { runAccessKeyTests } = await import('./access-keys.test.js');
+  runAccessKeyTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

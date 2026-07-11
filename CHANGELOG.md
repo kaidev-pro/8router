@@ -1,5 +1,43 @@
 # 8Router — Changelog
 
+## Phase 2A — User-Owned Provider Credentials
+
+**Commit:** cceb3a9
+**Date:** 2026-07-09
+**Status:** ✅ Complete. canonical.enabled remains false.
+
+### What changed
+
+User-owned provider credential system with encryption at rest.
+
+**New Files:**
+- `src/security/credentials/encrypt.ts` — AES-256-GCM encryption (scrypt KDF, random IV per credential)
+- `src/security/credentials/redact.ts` — Secret redaction + masking utility
+- `src/security/credentials/credential-manager.ts` — CRUD with encrypted storage, auto-migrates legacy plain-text keys
+- `src/security/credentials/provider-meta.ts` — 14-provider security registry (OpenAI, Anthropic, Gemini, Groq, OpenRouter, Mistral, DeepSeek, Together AI, xAI, Perplexity, Cloudflare AI, Ollama, LM Studio, vLLM)
+- `src/security/credentials/test-connection.ts` — Provider connectivity test via /models endpoint
+- `src/security/credentials/index.ts` — Barrel exports
+
+**API Endpoints:**
+- `GET /8router/api/providers` — List connected credentials (safe, masked)
+- `GET /8router/api/providers/supported` — Provider registry metadata
+- `POST /8router/api/providers` — Add provider credential
+- `PATCH /8router/api/providers/:id` — Update/rotate credential
+- `DELETE /8router/api/providers/:id` — Delete credential
+- `POST /8router/api/providers/:id/test` — Test provider connection
+- `POST /8router/api/providers/:id/enable` — Enable provider
+- `POST /8router/api/providers/:id/disable` — Disable provider
+
+**Security:**
+- Provider API keys encrypted at rest (AES-256-GCM, 2^14 scrypt N)
+- `PROVIDER_KEY_ENCRYPTION_SECRET` env var required in production
+- Keys masked (`sk-...abcd`) in API responses, never raw
+- Secrets redacted from logs/errors
+- Dashboard: security micro-copy on providers page
+
+**Tests:** 103 (encryption round-trip, masking, redaction, provider metadata)
+**No production routing change:** canonical.enabled remains false
+
 ## Phase 1F — OpenAI Responses API ↔ Canonical
 
 **Commit:** 21f5b95
@@ -288,3 +326,52 @@ capabilities. Config loading from YAML with env overrides.
 ### Test results
 
 - test:bridge-types: 30/30 ✅
+
+## Phase 2B — Virtual 8Router Access Keys
+
+**Date:** 2026-07-10
+**Status:** ✅ Complete. canonical.enabled remains false.
+
+### What changed
+
+- `sk-8router_*` virtual access keys for tools (Cursor, Cline, OpenWebUI, etc.)
+- Raw key shown only once at creation; only HMAC-SHA256 hash stored
+- Key masking (`sk-8router...abcd`) for safe display
+- Enable/disable/revoke/rotate access keys
+- Allowed providers/models policy storage
+- Routing mode + default model alias (8router/auto)
+- Rate limit policy fields stored (enforcement = Phase 2C/2D)
+- Access Keys dashboard page with create/revoke UI
+- ACCESS_KEY_HASH_SECRET env var for HMAC hashing
+- 70 new tests (hashing, generation, masking, CRUD, validation, expiration, rotation)
+
+### Security
+
+- Raw access keys never stored in database
+- HMAC-SHA256 with app secret for key hashing
+- Constant-time verification
+- keyHash never returned in API responses
+- Raw key only in create/rotate response (shown once)
+- No provider keys exposed to tools
+
+### Database
+
+- New table: `access_keys` (id, userId, name, keyPrefix, keyHash, keyHint, status, isEnabled, projectName, defaultModelAlias, allowedProviders, allowedModels, routingMode, dailyRequestLimit, monthlyRequestLimit, rateLimitPerMinute, expiresAt, lastUsedAt, revokedAt, createdAt, updatedAt)
+
+### Endpoints
+
+- GET/POST/PATCH/DELETE /8router/api-access-keys
+- POST /8router/api-access-keys/:id/revoke
+- POST /8router/api-access-keys/:id/enable
+- POST /8router/api-access-keys/:id/disable
+- POST /8router/api-access-keys/:id/rotate
+
+### Env vars added
+
+- ACCESS_KEY_HASH_SECRET (required in production, dev fallback with warning)
+
+### Not included (future phases)
+
+- Phase 2C: Runtime /v1 routing through these keys
+- Phase 2D: Rate limit enforcement
+- Managed credits or token resale (never)

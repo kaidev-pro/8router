@@ -37,6 +37,7 @@ import { getSetupGuideHTML } from '../setup-guide.js';
 import { getDashboardHTML } from '../dashboard/dashboard.js';
 import { getAllPoolStatuses } from '../providers/key-pool.js';
 import { pickBestModel } from '../providers/smart-picker.js';
+import { createAccessKey, listAccessKeys, getAccessKeyById, updateAccessKey, revokeAccessKey, rotateAccessKey, deleteAccessKey } from '../security/access-keys/manager.js';
 import {
   getAllCredentials, getCredentialById, createCredential, updateCredential,
   deleteCredential, getDecryptedCredential, setCredentialStatus,
@@ -1968,6 +1969,105 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: { message: 'Failed', type: 'internal' } });
+    }
+  });
+
+  // ── Access Keys API ──────────────────────────────────────────────────
+  // GET /8router/api/access-keys — list all virtual access keys (safe)
+  app.get('/8router/api/access-keys', (_req, res) => {
+    try {
+      const keys = listAccessKeys();
+      res.json({ accessKeys: keys });
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed to load access keys', type: 'internal' } });
+    }
+  });
+
+  // POST /8router/api/access-keys — create a new access key (returns rawKey once)
+  app.post('/8router/api/access-keys', (req, res) => {
+    try {
+      const result = createAccessKey({
+        name: req.body.name || 'Unnamed Key',
+        projectName: req.body.projectName,
+        defaultModelAlias: req.body.defaultModelAlias,
+        allowedProviders: req.body.allowedProviders,
+        allowedModels: req.body.allowedModels,
+        routingMode: req.body.routingMode,
+        dailyRequestLimit: req.body.dailyRequestLimit,
+        monthlyRequestLimit: req.body.monthlyRequestLimit,
+        rateLimitPerMinute: req.body.rateLimitPerMinute,
+        expiresAt: req.body.expiresAt,
+        isEnabled: req.body.isEnabled,
+      });
+      res.status(201).json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed to create access key', type: 'internal' } });
+    }
+  });
+
+  // PATCH /8router/api/access-keys/:id — update key metadata
+  app.patch('/8router/api/access-keys/:id', (req, res) => {
+    try {
+      const updated = updateAccessKey(req.params.id, req.body);
+      if (!updated) return res.status(404).json({ error: { message: 'Access key not found', type: 'not_found' } });
+      res.json({ accessKey: updated });
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed to update access key', type: 'internal' } });
+    }
+  });
+
+  // DELETE /8router/api/access-keys/:id — hard delete
+  app.delete('/8router/api/access-keys/:id', (req, res) => {
+    try {
+      const ok = deleteAccessKey(req.params.id);
+      if (!ok) return res.status(404).json({ error: { message: 'Access key not found', type: 'not_found' } });
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed to delete access key', type: 'internal' } });
+    }
+  });
+
+  // POST /8router/api/access-keys/:id/revoke — revoke key
+  app.post('/8router/api/access-keys/:id/revoke', (req, res) => {
+    try {
+      const ok = revokeAccessKey(req.params.id);
+      if (!ok) return res.status(404).json({ error: { message: 'Access key not found', type: 'not_found' } });
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed to revoke access key', type: 'internal' } });
+    }
+  });
+
+  // POST /8router/api/access-keys/:id/enable — enable key
+  app.post('/8router/api/access-keys/:id/enable', (req, res) => {
+    try {
+      const updated = updateAccessKey(req.params.id, { isEnabled: true });
+      if (!updated) return res.status(404).json({ error: { message: 'Access key not found', type: 'not_found' } });
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed', type: 'internal' } });
+    }
+  });
+
+  // POST /8router/api/access-keys/:id/disable — disable key
+  app.post('/8router/api/access-keys/:id/disable', (req, res) => {
+    try {
+      const updated = updateAccessKey(req.params.id, { isEnabled: false });
+      if (!updated) return res.status(404).json({ error: { message: 'Access key not found', type: 'not_found' } });
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed', type: 'internal' } });
+    }
+  });
+
+  // POST /8router/api/access-keys/:id/rotate — rotate key (returns new rawKey once)
+  app.post('/8router/api/access-keys/:id/rotate', (req, res) => {
+    try {
+      const result = rotateAccessKey(req.params.id);
+      if (!result) return res.status(404).json({ error: { message: 'Access key not found', type: 'not_found' } });
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: { message: 'Failed to rotate access key', type: 'internal' } });
     }
   });
 
