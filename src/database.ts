@@ -264,6 +264,87 @@ function initSchema(db: Database.Database) {
   if (!colNames.includes('fallbackPath')) {
     db.exec(`ALTER TABLE requests ADD COLUMN fallbackPath TEXT`);
   }
+
+  // ── Phase 2E: Runtime Request Attempts Table ──────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS runtime_request_attempts (
+      id TEXT PRIMARY KEY,
+      requestLogId TEXT NOT NULL,
+      userId TEXT,
+      attemptIndex INTEGER NOT NULL,
+      provider TEXT,
+      model TEXT,
+      baseUrlHost TEXT,
+      startedAt TEXT,
+      completedAt TEXT,
+      latencyMs INTEGER,
+      status TEXT,
+      httpStatus INTEGER,
+      success INTEGER DEFAULT 0,
+      failureType TEXT,
+      errorCode TEXT,
+      errorMessage TEXT,
+      circuitStateBefore TEXT,
+      circuitStateAfter TEXT,
+      healthStatusBefore TEXT,
+      healthStatusAfter TEXT,
+      retryAfterMs INTEGER,
+      cooldownUntil TEXT,
+      inputTokens INTEGER,
+      outputTokens INTEGER,
+      totalTokens INTEGER,
+      estimatedCost REAL,
+      currency TEXT DEFAULT 'USD',
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_rra_request ON runtime_request_attempts(requestLogId, attemptIndex);
+    CREATE INDEX IF NOT EXISTS idx_rra_user ON runtime_request_attempts(userId, createdAt);
+  `);
+
+  // Phase 2E: Extend runtime_request_logs with new columns
+  const rrlCols = db.prepare(`PRAGMA table_info(runtime_request_logs)`).all() as any[];
+  const rrlColNames = rrlCols.map(c => c.name);
+  const rrlAdd = (col: string, def: string) => {
+    if (!rrlColNames.includes(col)) {
+      try { db.exec(`ALTER TABLE runtime_request_logs ADD COLUMN ${col} ${def}`); } catch {}
+    }
+  };
+  rrlAdd('accessKeyName', 'TEXT');
+  rrlAdd('accessKeyHint', 'TEXT');
+  rrlAdd('requestId', 'TEXT');
+  rrlAdd('traceId', 'TEXT');
+  rrlAdd('endpoint', 'TEXT');
+  rrlAdd('method', 'TEXT');
+  rrlAdd('requestedAlias', 'TEXT');
+  rrlAdd('success', 'INTEGER');
+  rrlAdd('startedAt', 'TEXT');
+  rrlAdd('completedAt', 'TEXT');
+  rrlAdd('reasoningTokens', 'INTEGER');
+  rrlAdd('cachedInputTokens', 'INTEGER');
+  rrlAdd('estimatedInputCost', 'REAL');
+  rrlAdd('estimatedOutputCost', 'REAL');
+  rrlAdd('estimatedTotalCost', 'REAL');
+  rrlAdd('currency', "TEXT DEFAULT 'USD'");
+  rrlAdd('hadFallback', 'INTEGER');
+  rrlAdd('attemptCount', 'INTEGER');
+  rrlAdd('finalAttemptId', 'TEXT');
+  rrlAdd('errorType', 'TEXT');
+  rrlAdd('errorCode', 'TEXT');
+  rrlAdd('providerHealthStatus', 'TEXT');
+  rrlAdd('circuitState', 'TEXT');
+  rrlAdd('streaming', 'INTEGER');
+  rrlAdd('clientUserAgent', 'TEXT');
+  rrlAdd('clientTool', 'TEXT');
+  rrlAdd('updatedAt', 'TEXT');
+
+  // Additional indexes
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_rrl_user_created ON runtime_request_logs(userId, createdAt);
+    CREATE INDEX IF NOT EXISTS idx_rrl_user_status ON runtime_request_logs(userId, status, createdAt);
+    CREATE INDEX IF NOT EXISTS idx_rrl_user_provider ON runtime_request_logs(userId, actualProvider, createdAt);
+    CREATE INDEX IF NOT EXISTS idx_rrl_user_alias ON runtime_request_logs(userId, requestedAlias, createdAt);
+    CREATE INDEX IF NOT EXISTS idx_rrl_user_accesskey ON runtime_request_logs(userId, accessKeyId, createdAt);
+  `);
 }
 
 // ═══════════════════════════════════════════════

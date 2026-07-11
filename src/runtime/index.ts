@@ -13,6 +13,8 @@ export {
   forwardToProvider, isRetryable,
   type ProviderResponse, type ForwardOptions,
 } from './provider-client.js';
-export { logRuntimeRequest } from './logging.js';
+export { logRuntimeRequest, logAttempt, finalizeRequestLog } from './logging.js';
 // Phase 2D — Provider Health
 export * from './health/index.js';
+// Phase 2E — Usage
+export * from './usage/index.js';

@@ -1,5 +1,61 @@
 # 8Router — Changelog
 
+## Phase 2E — Usage, Fallback, and Request Logs Dashboard
+
+**Date:** 2026-07-11
+**Status:** ✅ Complete. canonical.enabled remains false.
+
+### What changed
+
+Enriched runtime observability with detailed request logs, provider attempt tracking, fallback path visibility, usage aggregation, token metrics, estimated cost, and dashboard UI.
+
+**New Files:**
+- `src/runtime/usage/types.ts` — Usage types (RuntimeRequestLog, RuntimeRequestAttempt, UsageSummary, TimeseriesPoint, BreakdownRow, LogFilters)
+- `src/runtime/usage/pricing.ts` — Static pricing registry for known models (24 models)
+- `src/runtime/usage/queries.ts` — SQL queries for usage aggregation, log listing, request detail, fallback logs, retention cleanup
+- `src/runtime/usage/index.ts` — Barrel exports
+- `src/__tests__/usage-logs-dashboard.test.ts` — 59 tests covering lifecycle, aggregation, pricing, security, retention, empty states
+- `src/__tests__/run-usage-logs-dashboard.ts` — Test runner
+
+**Modified Files:**
+- `src/database.ts` — Added `runtime_request_attempts` table + indexes + `runtime_request_logs` extended columns (accessKeyName, accessKeyHint, endpoint, method, requestedAlias, totalTokens, estimatedTotalCost, fallbackCount, hadFallback, attemptCount, finalAttemptId, streaming, providerHealthStatus, circuitState)
+- `src/runtime/logging.ts` — Enhanced with `logAttempt()`, `finalizeRequestLog()`, auto `hadFallback` flag, auto cost estimation
+- `src/runtime/chat-completions.ts` — Rewritten with full attempt tracking per provider, health state capture, token extraction, fallback path logging
+- `src/runtime/index.ts` — Added usage barrel exports
+- `src/api/server.ts` — Added 10 new API endpoints + retention cleanup on startup
+- `src/dashboard/dashboard.ts` — Updated Usage page (new API integration), Request Logs page (new table with click-to-detail), added `showRequestDetail()` function
+- `src/__tests__/run.ts` — Added Test 19: Usage/Logs/Fallback Dashboard
+- `package.json` — Added `test:usage-logs` script
+
+**API Endpoints Added:**
+- `GET /8router/api/usage/summary` — Usage summary (requests, tokens, cost, latency, success rate, fallback rate)
+- `GET /8router/api/usage/timeseries` — Timeseries data (hour/day/week granularity)
+- `GET /8router/api/usage/providers` — Usage by provider
+- `GET /8router/api/usage/models` — Usage by model
+- `GET /8router/api/usage/access-keys` — Usage by access key
+- `GET /8router/api/usage/aliases` — Usage by alias
+- `GET /8router/api/logs/requests` — Paginated request logs with filters
+- `GET /8router/api/logs/requests/:id` — Request detail with attempts
+- `GET /8router/api/logs/fallbacks` — Fallback-only logs
+
+**Database Changes:**
+- New table: `runtime_request_attempts` (id, requestLogId, userId, attemptIndex, provider, model, startedAt, completedAt, latencyMs, status, httpStatus, success, failureType, errorCode, errorMessage, circuitStateBefore, circuitStateAfter, healthStatusBefore, healthStatusAfter, baseUrlHost, inputTokens, outputTokens, totalTokens, estimatedCost, createdAt)
+- Indexes: (userId, createdAt), (requestLogId, attemptIndex), plus 4 more for common filters
+
+**Environment Variables:**
+- `RUNTIME_LOG_RETENTION_DAYS` — Default 30, range 7–365
+
+**Security/Privacy:**
+- No raw provider keys, access keys, prompts, or response bodies stored
+- Error messages redacted and truncated to 500 chars
+- Base URL exposes host only (no credentials/secret query params)
+- All APIs user-isolated
+- Retention cleanup runs on startup
+
+**Tests:** 59 tests — 0 failures
+
+---
+
 ## Phase 2A — User-Owned Provider Credentials
 
 **Commit:** cceb3a9

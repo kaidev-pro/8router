@@ -172,6 +172,12 @@ index abc..def 100644
   runProviderHealthTests();
   console.log('');
 
+  // Test 19: Usage, Logs, and Fallback Dashboard (Phase 2E)
+  console.log('19. Usage, Logs, and Fallback Dashboard');
+  const { runUsageLogsTests } = await import('./usage-logs-dashboard.test.js');
+  runUsageLogsTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

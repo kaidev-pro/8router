@@ -18,7 +18,7 @@ import { getAllCombos, getAllComboNames, isCombo, createCombo } from '../router/
 import {
   getAllCombos as dbGetAllCombos, getRequestStats, getDailyUsage,
   getActiveConnections, updateConnectionStatus, cleanupExpiredLocks,
-  getRecentRequests, getAllSettings, getSetting, setSetting,
+  getRecentRequests as dbGetRecentRequests, getAllSettings, getSetting, setSetting,
   getAllAPIKeys, createAPIKey as dbCreateAPIKey, deleteAPIKey,
   validateAPIKey, updateAPIKeyUsage, estimateCost, logRequest,
   getAllPresets, getPreset, createPreset, updatePreset, deletePreset,
@@ -39,6 +39,11 @@ import { getAllPoolStatuses } from '../providers/key-pool.js';
 import { pickBestModel } from '../providers/smart-picker.js';
 import { createAccessKey, listAccessKeys, getAccessKeyById, updateAccessKey, revokeAccessKey, rotateAccessKey, deleteAccessKey } from '../security/access-keys/manager.js';
 import { handleChatCompletions as runtimeChatCompletions, handleModels as runtimeModels, getUserHealthSummary, resetProviderHealth as resetHealth } from '../runtime/index.js';
+import {
+  getUsageSummary, getUsageTimeseries,
+  getUsageByProvider, getUsageByModel, getUsageByAccessKey, getUsageByAlias,
+  getRecentRequests, getRequestDetail, getFallbackLogs, cleanupExpiredLogs,
+} from '../runtime/usage/queries.js';
 import {
   getAllCredentials, getCredentialById, createCredential, updateCredential,
   deleteCredential, getDecryptedCredential, setCredentialStatus,
@@ -1211,7 +1216,7 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
 
   app.get('/8router/logs', (_req, res) => {
     try {
-      const logs = getRecentRequests(100);
+      const logs = dbGetRecentRequests(100);
       res.json(logs);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -2111,6 +2116,84 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
       res.status(500).json({ error: err.message });
     }
   });
+
+  // ── Phase 2E: Usage & Logs API ───────────────────────────────────
+  app.get('/8router/api/usage/summary', (req, res) => {
+    try {
+      const userId = 'local';
+      const range = (req.query.range as string) || '7d';
+      const summary = getUsageSummary(userId, range as any, req.query.from as string, req.query.to as string);
+      res.json(summary);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.get('/8router/api/usage/timeseries', (req, res) => {
+    try {
+      const userId = 'local';
+      const range = (req.query.range as string) || '7d';
+      const granularity = (req.query.granularity as string) || 'day';
+      const metric = (req.query.metric as string) || 'requests';
+      const data = getUsageTimeseries(userId, range as any, granularity as any, metric as any, req.query.from as string, req.query.to as string);
+      res.json({ data });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.get('/8router/api/usage/providers', (req, res) => {
+    try { res.json({ items: getUsageByProvider('local', (req.query.range as string || '7d') as any) }); }
+    catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+  app.get('/8router/api/usage/models', (req, res) => {
+    try { res.json({ items: getUsageByModel('local', (req.query.range as string || '7d') as any) }); }
+    catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+  app.get('/8router/api/usage/access-keys', (req, res) => {
+    try { res.json({ items: getUsageByAccessKey('local', (req.query.range as string || '7d') as any) }); }
+    catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+  app.get('/8router/api/usage/aliases', (req, res) => {
+    try { res.json({ items: getUsageByAlias('local', (req.query.range as string || '7d') as any) }); }
+    catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.get('/8router/api/logs/requests', (req, res) => {
+    try {
+      const userId = 'local';
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = Math.min(parseInt(req.query.pageSize as string) || 25, 100);
+      const filters: any = {};
+      for (const k of ['status', 'model', 'alias', 'accessKeyId', 'errorType', 'from', 'to', 'search']) {
+        if (req.query[k]) filters[k] = req.query[k];
+      }
+      if (req.query.hadFallback) filters.hadFallback = req.query.hadFallback === 'true';
+      if (req.query.provider) filters.provider = req.query.provider;
+      res.json(getRecentRequests(userId, filters, page, pageSize));
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.get('/8router/api/logs/requests/:id', (req, res) => {
+    try {
+      const detail = getRequestDetail('local', req.params.id);
+      if (!detail.log) return res.status(404).json({ error: { message: 'Request not found', type: 'not_found', code: 'not_found' } });
+      res.json(detail);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.get('/8router/api/logs/fallbacks', (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = Math.min(parseInt(req.query.pageSize as string) || 25, 100);
+      res.json(getFallbackLogs('local', page, pageSize));
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // Retention cleanup (runs on startup)
+  try {
+    const retentionDays = parseInt(process.env.RUNTIME_LOG_RETENTION_DAYS || '30');
+    const cleaned = cleanupExpiredLogs(retentionDays);
+    if (cleaned.deletedRequests > 0) {
+      console.log(`[retention] Cleaned ${cleaned.deletedRequests} expired logs, ${cleaned.deletedAttempts} attempts`);
+    }
+  } catch {}
 
   // ── Phase 2C: /8router/v1/* Alias Routes ──────────────────────────
   app.get('/8router/v1/models', (req, res) => runtimeModels(req, res));

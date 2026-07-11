@@ -1780,88 +1780,48 @@ function drawTopology(provs, health) {
 // ═══ USAGE ═══
 async function loadUsage() {
   try {
-    // Fetch usage data
-    var usage = null;
-    try {
-      var ur = await fetch(API+'/8router/usage?days=30');
-      if (ur.ok) usage = await ur.json();
-    } catch(e) {}
-    
-    // Fetch stats as fallback
-    var stats = null;
-    try {
-      var sr = await apiFetch(API+'/8router/stats');
-      if (sr.ok) stats = await sr.json();
-    } catch(e) {}
-    
-    var s = (stats && stats.session) || stats || {};
-    var at = (stats && stats.allTime) || {};
-    
-    // Update stat cards
-    var totalReqs = at.totalRequests || s.totalRequests || (usage && usage.totalRequests) || 0;
-    var inputTokens = at.inputTokens || s.inputTokens || (usage && usage.inputTokens) || 0;
-    var outputTokens = at.outputTokens || s.outputTokens || (usage && usage.outputTokens) || 0;
-    var totalTokens = at.totalTokens || s.totalTokens || (usage && usage.totalTokens) || 0;
-    var totalCost = at.totalCost || s.totalCost || (usage && usage.totalCost) || 0;
-    var avgLatency = at.avgLatencyMs || s.avgLatencyMs || (usage && usage.avgLatencyMs) || 0;
-    var errorCount = at.errorCount || s.errorCount || (usage && usage.errorCount) || 0;
-    var fallbackCount = at.fallbackCount || s.fallbackCount || (usage && usage.fallbackCount) || 0;
-    
-    document.getElementById('u-req').textContent = totalReqs.toLocaleString();
-    document.getElementById('u-input-tokens').textContent = inputTokens.toLocaleString();
-    document.getElementById('u-output-tokens').textContent = outputTokens.toLocaleString();
-    document.getElementById('u-tokens').textContent = totalTokens.toLocaleString();
-    document.getElementById('u-cost').textContent = '$' + totalCost.toFixed(2);
-    document.getElementById('u-latency').textContent = Math.round(avgLatency) + 'ms';
-    document.getElementById('u-error-rate').textContent = totalReqs > 0 ? ((errorCount / totalReqs) * 100).toFixed(1) + '%' : '0%';
-    document.getElementById('u-fb').textContent = fallbackCount.toLocaleString();
-    
-    // Draw daily chart
-    var dailyData = (usage && usage.daily) || [];
+    var range = '7d';
+    var usage = await apiFetch(API+'/8router/api/usage/summary?range='+range);
+    if (usage) {
+      document.getElementById('u-req').textContent = (usage.totalRequests||0).toLocaleString();
+      document.getElementById('u-input-tokens').textContent = (usage.totalInputTokens||0).toLocaleString();
+      document.getElementById('u-output-tokens').textContent = (usage.totalOutputTokens||0).toLocaleString();
+      document.getElementById('u-tokens').textContent = (usage.totalTokens||0).toLocaleString();
+      document.getElementById('u-cost').textContent = usage.estimatedTotalCost != null ? '$'+usage.estimatedTotalCost.toFixed(6) : '$0.00';
+      document.getElementById('u-latency').textContent = usage.averageLatencyMs != null ? usage.averageLatencyMs+'ms' : '0ms';
+      document.getElementById('u-error-rate').textContent = (100 - (usage.successRate||0)).toFixed(1)+'%';
+      document.getElementById('u-fb').textContent = (usage.fallbackCount||0).toLocaleString();
+    }
+    // Chart
+    var tsData = await apiFetch(API+'/8router/api/usage/timeseries?range='+range+'&metric=requests&granularity=day');
     var chartEl = document.getElementById('daily-chart');
-    if (chartEl && dailyData.length) {
-      var last7 = dailyData.slice(-7);
-      var maxVal = Math.max.apply(null, last7.map(function(d){ return d.requests || d.count || 0 }));
+    if (chartEl && tsData && tsData.data && tsData.data.length) {
+      var maxVal = Math.max.apply(null, tsData.data.map(function(d){ return d.value||0 }));
       if (maxVal === 0) maxVal = 1;
-      chartEl.innerHTML = last7.map(function(d) {
-        var val = d.requests || d.count || 0;
+      chartEl.innerHTML = tsData.data.slice(-7).map(function(d) {
+        var val = d.value||0;
         var h = Math.max(2, Math.round((val / maxVal) * 100));
-        var day = d.date ? d.date.slice(5) : '';
-        return '<div class="bar-col">' +
-          '<div class="bar-val">' + val + '</div>' +
-          '<div class="bar" style="height:' + h + 'px;background:var(--accent)"></div>' +
-          '<div class="bar-label">' + day + '</div>' +
-        '</div>';
+        var day = d.timestamp ? d.timestamp.slice(5) : '';
+        return '<div class="bar-col"><div class="bar-val">'+val+'</div><div class="bar" style="height:'+h+'px;background:var(--accent)"></div><div class="bar-label">'+day+'</div></div>';
       }).join('');
     } else if (chartEl) {
-      // Generate sample chart data from recent requests if daily data not available
-      chartEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px;width:100%">Daily request data will appear after API traffic is recorded</div>';
+      chartEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px;width:100%">No data yet — send requests through your /v1/chat/completions endpoint</div>';
     }
-    
-    // Top provider and model
-    var topProvider = (usage && usage.topProvider) || at.topProvider || s.topProvider || '-';
-    var topModel = (usage && usage.topModel) || at.topModel || s.topModel || '-';
-    document.getElementById('u-top-provider').textContent = topProvider;
-    document.getElementById('u-top-model').textContent = topModel;
-    
+    // Breakdowns
+    var provs = await apiFetch(API+'/8router/api/usage/providers?range='+range);
+    var models = await apiFetch(API+'/8router/api/usage/models?range='+range);
+    if (provs && provs.items && provs.items.length) document.getElementById('u-top-provider').textContent = provs.items[0].key;
+    if (models && models.items && models.items.length) document.getElementById('u-top-model').textContent = models.items[0].key;
     // Recent requests
-    var recent = (usage && usage.recentRequests) || stats.recentRequests || stats.recent || stats.requests || [];
+    var logs = await apiFetch(API+'/8router/api/logs/requests?pageSize=10');
     var recentEl = document.getElementById('recent-list');
-    if (recentEl && recent.length) {
-      var last10 = recent.slice(-10).reverse();
-      recentEl.innerHTML = last10.map(function(log) {
-        var sc = (log.statusCode || log.status || 200) >= 200 && (log.statusCode || log.status) < 400 ? 'color:var(--green)' : 'color:var(--red)';
-        var ts = log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : (log.time || '--');
-        var tokens = log.tokens || log.totalTokens || log.tokenCount || '-';
-        if (typeof tokens === 'number') tokens = tokens.toLocaleString();
-        var latency = log.latencyMs || log.latency || log.duration || '-';
-        if (typeof latency === 'number') latency = latency + 'ms';
-        return '<tr><td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">' + ts + '</td>' +
-          '<td style="font-family:Inter,sans-serif;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">' + provLogo(log.provider || log.providerId || '', 16) + (log.provider || log.providerId || '-') + '</td>' +
-          '<td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border);color:var(--accent)">' + (log.model || '-') + '</td>' +
-          '<td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">' + tokens + '</td>' +
-          '<td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">' + latency + '</td>' +
-          '<td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border);font-weight:600;' + sc + '">' + (log.statusCode || log.status || '-') + '</td></tr>';
+    if (recentEl && logs && logs.items && logs.items.length) {
+      recentEl.innerHTML = logs.items.map(function(log) {
+        var sc = log.status==='success' ? 'color:var(--green)' : 'color:var(--red)';
+        var ts = log.createdAt ? new Date(log.createdAt).toLocaleTimeString() : '--';
+        var tokens = log.totalTokens ? log.totalTokens.toLocaleString() : '-';
+        var latency = log.latencyMs ? log.latencyMs+'ms' : '-';
+        return '<tr><td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+ts+'</td><td style="font-family:Inter,sans-serif;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+(log.actualProvider||'-')+'</td><td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border);color:var(--accent)">'+(log.actualModel||log.requestedModel||'-')+'</td><td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+tokens+'</td><td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+latency+'</td><td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border);font-weight:600;'+sc+'">'+log.status+'</td></tr>';
       }).join('');
     }
   } catch(e) {}
@@ -2263,48 +2223,65 @@ function handleCliClick(id) {
 async function loadLogs() {
   var panel = document.getElementById('logs-panel');
   try {
-    // Try /8router/logs first, fall back to /8router/stats
-    var logs = null;
-    try {
-      var lr = await apiFetch(API+'/8router/logs');
-      if (lr) logs = lr;
-    } catch(e) {}
-
-    if (!logs || !logs.length) {
-      // Fallback: try /8router/stats for recent requests
-      try {
-        var sr = await apiFetch(API+'/8router/stats');
-        if (sr) { var stats = sr;
-          logs = stats.recentRequests || stats.recent || stats.requests || [];
-        }
-      } catch(e) {}
-    }
-
-    if (!logs || !logs.length) {
-      panel.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:12px">' + ct('db.logs.noLogs') + '</div>';
+    var data = await apiFetch(API+'/8router/api/logs/requests?pageSize=50');
+    if (!data || !data.items || !data.items.length) {
+      panel.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:12px">'+ct('db.logs.noLogs')+'</div>';
       return;
     }
-    // Build table: timestamp, provider, model, tokens, latency, status
-    var html = '<table style="width:100%"><thead><tr><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">' + ct('db.col.timestamp') + '</th><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">' + ct('db.col.provider') + '</th><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">' + ct('db.col.model') + '</th><th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">' + ct('db.col.tokens') + '</th><th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">' + ct('db.col.latency') + '</th><th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">' + ct('db.col.status') + '</th></tr></thead><tbody>';
-    logs.forEach(function(log) {
-      var sc = (log.statusCode || log.status) >= 200 && (log.statusCode || log.status) < 400 ? 'color:var(--green)' : 'color:var(--red)';
-      var ts = log.timestamp ? new Date(log.timestamp).toLocaleString() : (log.time || '--');
-      var tokens = log.tokens || log.totalTokens || log.tokenCount || '-';
-      if (typeof tokens === 'number') tokens = tokens.toLocaleString();
-      var latency = log.latencyMs || log.latency || log.duration || '-';
-      if (typeof latency === 'number') latency = latency + 'ms';
-      html += '<tr><td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+ts+'</td>' +
-        '<td style="font-family:Inter,sans-serif;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+provLogo(log.provider||log.providerId||'', 16)+(log.provider||log.providerId||'-')+'</td>' +
-        '<td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border);color:var(--accent)">'+(log.model||'-')+'</td>' +
-        '<td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+tokens+'</td>' +
-        '<td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+latency+'</td>' +
-        '<td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border);font-weight:600;'+sc+'">'+(log.statusCode||log.status||'-')+'</td></tr>';
+    var html = '<div style="margin-bottom:12px;font-size:11px;color:var(--text-muted)">'+(data.pagination.total||0)+' requests</div>';
+    html += '<table style="width:100%"><thead><tr><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">'+ct('db.col.timestamp')+'</th><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">Status</th><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">'+ct('db.col.provider')+'</th><th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">'+ct('db.col.model')+'</th><th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">Tokens</th><th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">Cost</th><th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">'+ct('db.col.latency')+'</th><th style="padding:8px 12px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);font-weight:700;background:var(--bg-secondary)">FB</th></tr></thead><tbody>';
+    data.items.forEach(function(log) {
+      var sc = log.status==='success' ? 'color:var(--green)' : 'color:var(--red)';
+      var ts = log.createdAt ? new Date(log.createdAt).toLocaleString() : '--';
+      var tokens = log.totalTokens ? log.totalTokens.toLocaleString() : '-';
+      var cost = log.estimatedTotalCost != null ? '$'+log.estimatedTotalCost.toFixed(6) : '-';
+      var latency = log.latencyMs ? log.latencyMs+'ms' : '-';
+      var fb = log.hadFallback ? '<span style="color:var(--yellow)">'+(log.fallbackCount||0)+'</span>' : '-';
+      html += '<tr style="cursor:pointer" onclick="showRequestDetail(\\\\''+log.id+'\\\\')"><td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+ts+'</td><td style="font-size:12px;padding:8px 12px;border-top:1px solid var(--border);font-weight:600;'+sc+'">'+log.status+'</td><td style="font-family:Inter,sans-serif;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+(log.actualProvider||'-')+'</td><td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border);color:var(--accent)">'+(log.actualModel||log.requestedModel||'-')+'</td><td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+tokens+'</td><td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+cost+'</td><td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+latency+'</td><td style="text-align:center;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+fb+'</td></tr>';
     });
     html += '</tbody></table>';
     panel.innerHTML = html;
   } catch(e) {
-    panel.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:12px">' + ct('db.logs.loadFailed') + '</div>';
+    panel.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:12px">'+ct('db.logs.loadFailed')+'</div>';
   }
+}
+
+async function showRequestDetail(requestId) {
+  var panel = document.getElementById('logs-panel');
+  try {
+    var detail = await apiFetch(API+'/8router/api/logs/requests/'+encodeURIComponent(requestId));
+    if (!detail || !detail.log) { alert('Request not found'); return; }
+    var log = detail.log;
+    var attempts = detail.attempts || [];
+    var html = '<div style="margin-bottom:16px"><button onclick="loadLogs()" style="padding:6px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;font-size:11px">← Back to Logs</button></div>';
+    html += '<div class="card" style="margin-bottom:16px"><div class="card-header"><h3>Request Detail</h3></div><div style="padding:16px">';
+    var fields = [
+      ['ID', log.id], ['Time', log.createdAt], ['Status', log.status],
+      ['Provider', log.actualProvider||'-'], ['Model', log.actualModel||log.requestedModel||'-'],
+      ['Alias', log.requestedAlias||'-'], ['Access Key', log.accessKeyName||log.accessKeyId||'-'],
+      ['Latency', log.latencyMs ? log.latencyMs+'ms' : '-'], ['HTTP Status', log.httpStatus||'-'],
+      ['Input Tokens', log.inputTokens||'-'], ['Output Tokens', log.outputTokens||'-'],
+      ['Total Tokens', log.totalTokens||'-'], ['Estimated Cost', log.estimatedTotalCost != null ? '$'+log.estimatedTotalCost.toFixed(6) : '-'],
+      ['Fallback Count', log.fallbackCount||'0'], ['Attempts', log.attemptCount||attempts.length||'1'],
+      ['Error Type', log.errorType||'-'], ['Error', log.errorMessage||'-'],
+      ['Circuit State', log.circuitState||'-'], ['Provider Health', log.providerHealthStatus||'-'],
+      ['Streaming', log.streaming ? 'Yes' : 'No'], ['Endpoint', log.endpoint||'-'],
+    ];
+    html += fields.map(function(f) {
+      return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-muted);font-size:11px">'+f[0]+'</span><span style="font-size:11px;font-family:JetBrains Mono,monospace">'+f[1]+'</span></div>';
+    }).join('');
+    html += '</div></div>';
+    if (attempts.length) {
+      html += '<div class="card"><div class="card-header"><h3>Attempts ('+attempts.length+')</h3></div><div style="padding:16px">';
+      html += '<table style="width:100%"><thead><tr><th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-muted)">#</th><th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-muted)">Provider</th><th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-muted)">Model</th><th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-muted)">Status</th><th style="padding:6px 10px;text-align:right;font-size:10px;color:var(--text-muted)">Latency</th><th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-muted)">Error Type</th><th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-muted)">Circuit</th></tr></thead><tbody>';
+      attempts.forEach(function(a) {
+        var sc = a.status==='success' ? 'color:var(--green)' : 'color:var(--red)';
+        html += '<tr><td style="padding:6px 10px;font-size:11px">'+a.attemptIndex+'</td><td style="padding:6px 10px;font-size:11px">'+a.provider+'</td><td style="padding:6px 10px;font-size:11px;color:var(--accent)">'+a.model+'</td><td style="padding:6px 10px;font-size:11px;font-weight:600;'+sc+'">'+a.status+'</td><td style="padding:6px 10px;font-size:11px;text-align:right">'+(a.latencyMs||'-')+'ms</td><td style="padding:6px 10px;font-size:11px">'+(a.failureType||'-')+'</td><td style="padding:6px 10px;font-size:11px">'+(a.circuitStateBefore||'-')+'</td></tr>';
+      });
+      html += '</tbody></table></div></div>';
+    }
+    panel.innerHTML = html;
+  } catch(e) { alert('Failed to load request detail'); }
 }
 
 // ═══ API KEYS ═══
