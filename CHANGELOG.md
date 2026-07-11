@@ -375,3 +375,43 @@ capabilities. Config loading from YAML with env overrides.
 - Phase 2C: Runtime /v1 routing through these keys
 - Phase 2D: Rate limit enforcement
 - Managed credits or token resale (never)
+
+## Phase 2C — Runtime /v1 Routing
+
+**Date:** 2026-07-10
+**Status:** ✅ Complete. canonical.enabled remains false.
+
+### What changed
+
+- `/v1/models` and `/v1/chat/completions` now accept `sk-8router_*` access keys
+- Runtime routing resolves user-owned provider credentials (encrypted at rest)
+- 8 model aliases: `8router/auto`, `cheap`, `fast`, `smart`, `coding`, `local`, `creative`, `privacy`
+- Direct provider-prefix routing: `groq/llama-3.1-8b-instant`, `openrouter/...`, etc.
+- Basic fallback across connected user-owned providers (429/5xx/timeout)
+- Streaming pass-through for OpenAI-compatible SSE streams
+- OpenAI-compatible error responses for all failure modes
+- Safe runtime request logging (no secrets)
+- Access key `lastUsedAt` usage tracking
+- `/8router/v1/*` alias routes for alternative access
+
+### Security
+
+- Runtime only uses provider keys owned by the access-key owner
+- No platform-owned provider fallback
+- Raw provider keys are never exposed in responses or logs
+- Secrets redacted from error messages
+- Access key validated via HMAC-SHA256 hash lookup
+- Runtime request logs contain no secrets
+
+### Supported Runtime Providers
+
+OpenAI, OpenRouter, Groq, Mistral, DeepSeek, Together AI, xAI, Ollama (local)
+Anthropic and Gemini: beta/optional (available if user connects them)
+
+### Not included (future phases)
+
+- Phase 2D: Circuit breaker + health scoring
+- Phase 2E: Full usage logs dashboard
+- Phase 2F: Canonical runtime path
+- Managed credits (never)
+- Token resale (never)

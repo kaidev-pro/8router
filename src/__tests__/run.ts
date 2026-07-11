@@ -160,6 +160,12 @@ index abc..def 100644
   runAccessKeyTests();
   console.log('');
 
+  // Test 17: Runtime Routing (Phase 2C)
+  console.log('17. Runtime Routing');
+  const { runRuntimeRoutingTests } = await import('./runtime-routing.test.js');
+  runRuntimeRoutingTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

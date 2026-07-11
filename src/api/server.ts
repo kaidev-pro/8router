@@ -38,6 +38,7 @@ import { getDashboardHTML } from '../dashboard/dashboard.js';
 import { getAllPoolStatuses } from '../providers/key-pool.js';
 import { pickBestModel } from '../providers/smart-picker.js';
 import { createAccessKey, listAccessKeys, getAccessKeyById, updateAccessKey, revokeAccessKey, rotateAccessKey, deleteAccessKey } from '../security/access-keys/manager.js';
+import { handleChatCompletions as runtimeChatCompletions, handleModels as runtimeModels } from '../runtime/index.js';
 import {
   getAllCredentials, getCredentialById, createCredential, updateCredential,
   deleteCredential, getDecryptedCredential, setCredentialStatus,
@@ -353,7 +354,14 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
   app.use('/v1', apiKeyAuth);
 
   // List models
-  app.get('/v1/models', (_req, res) => {
+  app.get('/v1/models', (req, res) => {
+    // Phase 2C: Route sk-8router_* keys to runtime handler
+    const auth = req.headers.authorization || '';
+    const rawKey = typeof auth === 'string' && auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+    if (rawKey.startsWith('sk-8router')) {
+      return runtimeModels(req, res);
+    }
+
     const models = engine.getRegistry().getAvailableModels();
     const comboNames = getAllComboNames();
     
@@ -387,6 +395,13 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
 
   // Chat completions — accepts OpenAI, Anthropic, and Gemini formats
   app.post('/v1/chat/completions', async (req, res) => {
+    // Phase 2C: Route sk-8router_* keys to runtime handler
+    const auth = req.headers.authorization || '';
+    const rawKey = typeof auth === 'string' && auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+    if (rawKey.startsWith('sk-8router')) {
+      return runtimeChatCompletions(req, res);
+    }
+
     try {
       const detection = detectRequestFormat(req, req.body);
       const originalFormat = detection.format;
@@ -2070,6 +2085,10 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
       res.status(500).json({ error: { message: 'Failed to rotate access key', type: 'internal' } });
     }
   });
+
+  // ── Phase 2C: /8router/v1/* Alias Routes ──────────────────────────
+  app.get('/8router/v1/models', (req, res) => runtimeModels(req, res));
+  app.post('/8router/v1/chat/completions', (req, res) => runtimeChatCompletions(req, res));
 
   // Catch-all
   app.all('*', (_req, res) => {

@@ -230,6 +230,28 @@ function initSchema(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_ak_prefix ON access_keys(keyPrefix);
     CREATE INDEX IF NOT EXISTS idx_ak_user ON access_keys(userId);
     CREATE INDEX IF NOT EXISTS idx_ak_status ON access_keys(status);
+
+    CREATE TABLE IF NOT EXISTS runtime_request_logs (
+      id TEXT PRIMARY KEY,
+      accessKeyId TEXT,
+      userId TEXT,
+      requestedModel TEXT,
+      actualProvider TEXT,
+      actualModel TEXT,
+      routeMode TEXT,
+      status TEXT,
+      httpStatus INTEGER,
+      latencyMs INTEGER,
+      fallbackCount INTEGER DEFAULT 0,
+      inputTokens INTEGER,
+      outputTokens INTEGER,
+      totalTokens INTEGER,
+      errorMessage TEXT,
+      createdAt TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_rrl_accesskey ON runtime_request_logs(accessKeyId);
+    CREATE INDEX IF NOT EXISTS idx_rrl_created ON runtime_request_logs(createdAt);
   `);
 
   // ─── Migrations (add columns to existing tables) ─────────────
