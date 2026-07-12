@@ -178,6 +178,12 @@ index abc..def 100644
   runUsageLogsTests();
   console.log('');
 
+  // Test 20: Token Saver / Safe Compression (Phase 2F)
+  console.log('20. Token Saver / Safe Compression');
+  const { runTokenSaverTests } = await import('./token-saver.test.js');
+  runTokenSaverTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

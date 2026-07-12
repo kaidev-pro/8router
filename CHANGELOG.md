@@ -1,6 +1,100 @@
 # 8Router — Changelog
 
-## Phase 2E — Usage, Fallback, and Request Logs Dashboard
+## Phase 2F — Token Saver / Safe Compression
+
+**Date:** 2026-07-11
+**Status:** ✅ Complete. canonical.enabled remains false.
+
+### What changed
+
+Safe token-reduction layer for large tool outputs and machine-generated context. Compresses noisy output without corrupting meaning, breaking tool-call JSON, or altering user intent. Fully integrated into the runtime request pipeline, dashboard, and observability stack.
+
+### Features
+
+- 4 modes: off (default), safe, balanced, aggressive
+- 11 content classifiers (terminal_log, stack_trace, test_output, lint_output, directory_tree, grep_output, git_diff, structured_json, source_code, user_text, unknown)
+- 10 compressors (duplicate-lines, progress-noise, repeated-groups, terminal-log, stack-trace, test-output, lint-output, directory-tree, grep-output, git-diff)
+- Runtime integration: compresses `role: tool` messages before forwarding to AI providers
+- Per-request mode override via `X-8Router-Token-Saver` header
+- Dashboard Token Saver settings page with mode selector and stats
+- i18n: EN, ID, JA complete translation keys
+- Observability: compression metrics in runtime_request_logs (9 fields)
+- API endpoints: settings GET/PATCH, dry-run preview POST
+- Deterministic token estimation (ceil(chars/4))
+- Transparent markers for omitted content with exact counts
+- No LLM, no external APIs, no randomness
+- Fail-open on any error
+
+### Non-Compressed (Safety)
+
+- System/developer/user messages
+- Tool-call arguments and schemas
+- Structured JSON, source code, unknown content
+- Access keys, credentials, auth headers
+
+### Files Created
+
+- src/runtime/compression/types.ts
+- src/runtime/compression/config.ts
+- src/runtime/compression/classify.ts
+- src/runtime/compression/estimate-tokens.ts
+- src/runtime/compression/policy.ts
+- src/runtime/compression/compress.ts
+- src/runtime/compression/index.ts
+- src/runtime/compression/compressors/duplicate-lines.ts
+- src/runtime/compression/compressors/progress-noise.ts
+- src/runtime/compression/compressors/repeated-groups.ts
+- src/runtime/compression/compressors/terminal-log.ts
+- src/runtime/compression/compressors/stack-trace.ts
+- src/runtime/compression/compressors/test-output.ts
+- src/runtime/compression/compressors/lint-output.ts
+- src/runtime/compression/compressors/directory-tree.ts
+- src/runtime/compression/compressors/grep-output.ts
+- src/runtime/compression/compressors/git-diff.ts
+- src/runtime/compression/compressors/index.ts
+- src/__tests__/token-saver.test.ts (62 tests)
+- src/__tests__/run-token-saver.ts
+- docs/token-saver.md
+
+### Files Modified
+
+- src/api/server.ts: GET/PATCH /8router/api/settings/token-saver, POST /8router/api/token-saver/preview
+- src/runtime/chat-completions.ts: Runtime compression integration for role=tool messages
+- src/runtime/logging.ts: compression fields in LogRequestInput + finalizeRequestLog
+- src/database.ts: 9 compression columns in runtime_request_logs
+- src/dashboard/dashboard.ts: Token Saver mode selector + stats
+- src/i18n/en.json, id.json, ja.json: Token Saver translation keys
+- src/__tests__/run.ts: Test 20 — Token Saver
+- package.json: test:token-saver script
+
+### Environment Variables
+
+- TOKEN_SAVER_MODE=off (default)
+- TOKEN_SAVER_MIN_CHARS=4000
+- TOKEN_SAVER_MIN_ESTIMATED_TOKENS=1000
+- TOKEN_SAVER_MAX_INPUT_CHARS=500000
+- TOKEN_SAVER_TIMEOUT_MS=100
+- TOKEN_SAVER_INCLUDE_MARKER=true
+
+### Tests
+- Phase 2F suite: 62 tests — all passing
+- Root cause fix: IS_FAIL regex `assertion` matched passing test descriptions; fixed to use specific `AssertionError` pattern
+- TypeScript clean (tsc --noEmit)
+- Build clean
+
+### Pitfalls
+- `classify.ts` regex: use `/.../.test()` not string methods — regex handles Unicode ✓, ✅, ❌ correctly
+- `compressContent` returns original content unchanged when below thresholds — this is correct behavior, not a bug
+- Token estimation is ceil(chars/4) — do not use for billing, only for threshold checks and metrics
+- `minChars` threshold (default 4000) means small content is never compressed — this is intentional
+- Compression never applies to `role: system`, `role: user`, or `role: developer` messages
+- Compression never applies to tool-call arguments or JSON Schema definitions
+- Source code blocks are protected (unless using git-diff strategy for actual diff content)
+- Unknown content kind is never compressed — fail-open
+- `finalizeRequestLog` must serialize `compressionStrategies` array to JSON for SQLite storage
+- `resolveCompressionMode` takes `CompressionMode`, not `CompressionConfig`, as third argument
+
+## Phase 2E — Usage, Fallback, and Request Logs Dashboard — Usage, Fallback, and Request Logs Dashboard
 
 **Date:** 2026-07-11
 **Status:** ✅ Complete. canonical.enabled remains false.

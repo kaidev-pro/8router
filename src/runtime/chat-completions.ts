@@ -10,6 +10,8 @@ import { forwardToProvider, isRetryable } from './provider-client.js';
 import { getDecryptedCredential } from '../security/credentials/credential-manager.js';
 import { recordProviderSuccess, recordProviderFailure, getProviderHealth } from './health/manager.js';
 import { logRuntimeRequest, logAttempt, finalizeRequestLog, type LogRequestInput } from './logging.js';
+import { compressContent, loadCompressionConfig, resolveCompressionMode, estimateTokens } from './compression/index.js';
+import type { CompressionResult } from './compression/index.js';
 
 // ─── Handler ─────────────────────────────────────────────────────
 
@@ -38,6 +40,61 @@ export async function handleChatCompletions(req: Request, res: Response): Promis
   const isStream = body.stream === true;
   const requestedModel = body.model;
   const isAlias = requestedModel.startsWith('8router/');
+
+  // ── Phase 2F: Token Saver compression ─────────────────────────
+  const tsConfig = loadCompressionConfig();
+  const tsHeader = req.headers['x-8router-token-saver'] as string | undefined;
+  const tsMode = resolveCompressionMode(tsHeader, undefined, tsConfig.mode);
+  let compressionMetrics: CompressionResult | null = null;
+
+  if (tsMode !== 'off' && Array.isArray(body.messages)) {
+    const compressionStart = Date.now();
+    let compressedBlocks = 0;
+    let totalTokensBefore = 0;
+    let totalTokensAfter = 0;
+    const allStrategies: string[] = [];
+
+    for (const msg of body.messages) {
+      // Only compress role=tool content
+      if (msg.role !== 'tool') continue;
+
+      const content = typeof msg.content === 'string' ? msg.content :
+                      Array.isArray(msg.content) ? msg.content.filter((c: any) => c.type === 'text').map((c: any) => c.text).join("\n") : null;
+      if (!content || content.length < tsConfig.minChars) continue;
+
+      const result = compressContent(content, tsMode);
+      if (result.applied) {
+        compressedBlocks++;
+        totalTokensBefore += result.estimatedTokensBefore;
+        totalTokensAfter += result.estimatedTokensAfter;
+        allStrategies.push(...result.strategies);
+
+        // Replace content
+        if (typeof msg.content === 'string') {
+          msg.content = result.compressedContent;
+        } else if (Array.isArray(msg.content)) {
+          // Replace first text block
+          for (const c of msg.content) {
+            if (c.type === 'text') { c.text = result.compressedContent; break; }
+          }
+        }
+      }
+    }
+
+    if (compressedBlocks > 0) {
+      compressionMetrics = {
+        applied: true, mode: tsMode, contentKind: 'terminal_log',
+        compressedContent: '', originalChars: 0, compressedChars: 0,
+        estimatedTokensBefore: totalTokensBefore,
+        estimatedTokensAfter: totalTokensAfter,
+        estimatedTokensSaved: totalTokensBefore - totalTokensAfter,
+        percentSaved: totalTokensBefore > 0 ? Math.round(((totalTokensBefore - totalTokensAfter) / totalTokensBefore) * 100) : 0,
+        compressionLatencyMs: Date.now() - compressionStart,
+        strategies: [...new Set(allStrategies)],
+        warnings: [],
+      };
+    }
+  }
 
   // Resolve route — Phase 2D: passes userId for health-aware selection
   const routeResult = await resolveRoute(
@@ -143,6 +200,15 @@ export async function handleChatCompletions(req: Request, res: Response): Promis
           finalAttemptId: attemptId || undefined,
           providerHealthStatus: healthAfter?.status,
           circuitState: healthAfter?.circuitState,
+          compressionMode: compressionMetrics ? compressionMetrics.mode : undefined,
+          compressionApplied: compressionMetrics?.applied,
+          compressedBlockCount: compressionMetrics?.applied ? 1 : 0,
+          estimatedTokensBeforeCompression: compressionMetrics?.estimatedTokensBefore,
+          estimatedTokensAfterCompression: compressionMetrics?.estimatedTokensAfter,
+          estimatedTokensSaved: compressionMetrics?.estimatedTokensSaved,
+          compressionPercentSaved: compressionMetrics?.percentSaved,
+          compressionLatencyMs: compressionMetrics?.compressionLatencyMs,
+          compressionStrategies: compressionMetrics?.strategies,
         });
       }
 
@@ -209,6 +275,15 @@ export async function handleChatCompletions(req: Request, res: Response): Promis
           finalAttemptId: attemptId || undefined,
           providerHealthStatus: healthAfter?.status,
           circuitState: healthAfter?.circuitState,
+          compressionMode: compressionMetrics ? compressionMetrics.mode : undefined,
+          compressionApplied: compressionMetrics?.applied,
+          compressedBlockCount: compressionMetrics?.applied ? 1 : 0,
+          estimatedTokensBeforeCompression: compressionMetrics?.estimatedTokensBefore,
+          estimatedTokensAfterCompression: compressionMetrics?.estimatedTokensAfter,
+          estimatedTokensSaved: compressionMetrics?.estimatedTokensSaved,
+          compressionPercentSaved: compressionMetrics?.percentSaved,
+          compressionLatencyMs: compressionMetrics?.compressionLatencyMs,
+          compressionStrategies: compressionMetrics?.strategies,
         });
       }
 
@@ -261,6 +336,15 @@ export async function handleChatCompletions(req: Request, res: Response): Promis
       actualModel: pool[pool.length - 1]?.model,
       fallbackCount: attemptIndex - 1, attemptCount: attemptIndex,
       errorType: lastErrType, errorMessage: lastError,
+      compressionMode: compressionMetrics ? compressionMetrics.mode : undefined,
+      compressionApplied: compressionMetrics?.applied,
+      compressedBlockCount: compressionMetrics?.applied ? 1 : 0,
+      estimatedTokensBeforeCompression: compressionMetrics?.estimatedTokensBefore,
+      estimatedTokensAfterCompression: compressionMetrics?.estimatedTokensAfter,
+      estimatedTokensSaved: compressionMetrics?.estimatedTokensSaved,
+      compressionPercentSaved: compressionMetrics?.percentSaved,
+      compressionLatencyMs: compressionMetrics?.compressionLatencyMs,
+      compressionStrategies: compressionMetrics?.strategies,
     });
   }
 

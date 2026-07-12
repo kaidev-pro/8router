@@ -39,6 +39,7 @@ import { getAllPoolStatuses } from '../providers/key-pool.js';
 import { pickBestModel } from '../providers/smart-picker.js';
 import { createAccessKey, listAccessKeys, getAccessKeyById, updateAccessKey, revokeAccessKey, rotateAccessKey, deleteAccessKey } from '../security/access-keys/manager.js';
 import { handleChatCompletions as runtimeChatCompletions, handleModels as runtimeModels, getUserHealthSummary, resetProviderHealth as resetHealth } from '../runtime/index.js';
+import { loadCompressionConfig, compressContent, toMetrics } from '../runtime/compression/index.js';
 import {
   getUsageSummary, getUsageTimeseries,
   getUsageByProvider, getUsageByModel, getUsageByAccessKey, getUsageByAlias,
@@ -2194,6 +2195,53 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
       console.log(`[retention] Cleaned ${cleaned.deletedRequests} expired logs, ${cleaned.deletedAttempts} attempts`);
     }
   } catch {}
+
+  // ── Phase 2F: Token Saver API ─────────────────────────────────────
+  const compressionConfig = loadCompressionConfig();
+
+  app.get('/8router/api/settings/token-saver', (_req, res) => {
+    try {
+      res.json({
+        mode: compressionConfig.mode,
+        minChars: compressionConfig.minChars,
+        minEstimatedTokens: compressionConfig.minEstimatedTokens,
+        maxInputChars: compressionConfig.maxInputChars,
+        timeoutMs: compressionConfig.timeoutMs,
+        preserveHeadLines: compressionConfig.preserveHeadLines,
+        preserveTailLines: compressionConfig.preserveTailLines,
+        minSavingsPercent: compressionConfig.minSavingsPercent,
+        includeMarker: compressionConfig.includeMarker,
+      });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.patch('/8router/api/settings/token-saver', (req, res) => {
+    try {
+      const { mode } = req.body || {};
+      if (mode && ['off', 'safe', 'balanced', 'aggressive'].includes(mode)) {
+        // Update in-memory config (runtime restart needed for persistence)
+        compressionConfig.mode = mode as any;
+        res.json({ ok: true, mode: compressionConfig.mode, note: 'Change applies to new requests. Restart to reset.' });
+      } else {
+        res.status(400).json({ error: { message: 'Invalid mode. Use: off, safe, balanced, aggressive', type: 'invalid_request', code: 'invalid_mode' } });
+      }
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  app.post('/8router/api/token-saver/preview', (req, res) => {
+    try {
+      const { content, mode } = req.body || {};
+      if (!content || typeof content !== 'string') {
+        return res.status(400).json({ error: { message: 'content is required (string)', type: 'invalid_request', code: 'missing_content' } });
+      }
+      if (content.length > 100000) {
+        return res.status(400).json({ error: { message: 'Preview limited to 100KB', type: 'invalid_request', code: 'input_too_large' } });
+      }
+      const result = compressContent(content, (mode || compressionConfig.mode) as any);
+      // Return metrics only, never the compressed content (privacy)
+      res.json(toMetrics(result));
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
 
   // ── Phase 2C: /8router/v1/* Alias Routes ──────────────────────────
   app.get('/8router/v1/models', (req, res) => runtimeModels(req, res));

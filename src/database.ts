@@ -336,6 +336,16 @@ function initSchema(db: Database.Database) {
   rrlAdd('clientUserAgent', 'TEXT');
   rrlAdd('clientTool', 'TEXT');
   rrlAdd('updatedAt', 'TEXT');
+  // Phase 2F: Token Saver compression columns
+  rrlAdd('compressionMode', 'TEXT');
+  rrlAdd('compressionApplied', 'INTEGER');
+  rrlAdd('compressedBlockCount', 'INTEGER');
+  rrlAdd('estimatedTokensBeforeCompression', 'INTEGER');
+  rrlAdd('estimatedTokensAfterCompression', 'INTEGER');
+  rrlAdd('estimatedTokensSaved', 'INTEGER');
+  rrlAdd('compressionPercentSaved', 'INTEGER');
+  rrlAdd('compressionLatencyMs', 'INTEGER');
+  rrlAdd('compressionStrategies', 'TEXT');
 
   // Additional indexes
   db.exec(`

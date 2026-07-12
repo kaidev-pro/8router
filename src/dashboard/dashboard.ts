@@ -1056,23 +1056,32 @@ tr:hover td { background:var(--bg-card-hover) }
         <div class="toggle on" id="toggle-dashboard"></div>
       </div>
 
-      <!-- Token Saver -->
-      <div class="caveman-card">
+      <!-- Token Saver / Safe Compression -->
+      <div class="caveman-card" style="margin-top:16px">
         <div class="card-header" style="margin-bottom:4px">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
           <h3>${t('db.toksv.title', locale)}</h3>
         </div>
         <div class="sub">${t('db.toksv.desc', locale)}</div>
-        <div class="caveman-row">
-          <input type="range" min="0" max="5" value="0" class="caveman-slider" id="caveman" oninput="setCaveman(this.value)">
-          <div class="caveman-val" id="caveman-val">0</div>
+        <div style="margin:12px 0">
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:6px">${t('db.toksv.mode', locale)}</label>
+          <select id="ts-mode" style="width:100%;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-main);font-size:13px;cursor:pointer">
+            <option value="off">${t('db.toksv.modeOff', locale)}</option>
+            <option value="safe">${t('db.toksv.modeSafe', locale)}</option>
+            <option value="balanced">${t('db.toksv.modeBalanced', locale)}</option>
+            <option value="aggressive">${t('db.toksv.modeAggressive', locale)}</option>
+          </select>
+          <div id="ts-mode-desc" style="font-size:12px;color:var(--text-secondary);margin-top:6px">${t('db.toksv.modeOffDesc', locale)}</div>
         </div>
-        <div id="caveman-desc" style="font-size:12px;color:var(--text-secondary);margin-top:8px">${t('db.toksv.off', locale)}</div>
-        <div class="caveman-levels">
-          <span>0:Off</span><span>1:Mild</span><span>2:Med</span><span>3:Aggro</span><span>4:Xtreme</span><span>5:Max</span>
+        <div style="margin:8px 0;padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:3px solid var(--accent)">
+          <div style="font-size:11px;color:var(--text-muted);line-height:1.5">${t('db.toksv.safetyNote', locale)}</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+          <button id="ts-save-btn" onclick="saveTokenSaver()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600">${t('db.toksv.save', locale)}</button>
+          <span id="ts-save-status" style="font-size:12px;color:var(--text-muted)"></span>
         </div>
         <!-- Token Saver Stats -->
-        <div id="ts-stats-container" style="margin-top:16px">
+        <div id="ts-stats-container" style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:1px">${t('db.compress.title', locale)}</div>
           <div class="ts-stats">
             <div class="ts-stat">
@@ -2411,16 +2420,57 @@ async function revokeAccessKey(id) {
 }
 
 // ═══ CAVEMAN ═══
-function setCaveman(v) {
-  document.getElementById('caveman-val').textContent = v;
-  var descs = [ct('db.toksv.off'),ct('db.toksv.mild'),ct('db.toksv.medium'),ct('db.toksv.aggro'),ct('db.toksv.extreme'),ct('db.toksv.max')];
-  document.getElementById('caveman-desc').textContent = descs[v];
-  fetch(API+'/8router/caveman',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({level:parseInt(v)})});
+// Token Saver mode descriptions
+var tsModeDescs = {off:'db.toksv.modeOffDesc',safe:'db.toksv.modeSafeDesc',balanced:'db.toksv.modeBalancedDesc',aggressive:'db.toksv.modeAggressiveDesc'};
+function onTokenSaverModeChange() {
+  var sel = document.getElementById('ts-mode');
+  if (!sel) return;
+  var mode = sel.value;
+  var descEl = document.getElementById('ts-mode-desc');
+  if (descEl) descEl.textContent = ct(tsModeDescs[mode] || 'db.toksv.modeOffDesc');
+}
+
+async function saveTokenSaver() {
+  var sel = document.getElementById('ts-mode');
+  if (!sel) return;
+  var status = document.getElementById('ts-save-status');
+  var btn = document.getElementById('ts-save-btn');
+  if (btn) btn.disabled = true;
+  if (status) { status.textContent = ct('db.toksv.saving'); status.style.color = 'var(--text-muted)'; }
+  try {
+    var r = await fetch(API+'/8router/api/settings/token-saver', {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({mode: sel.value})
+    });
+    if (r.ok) {
+      if (status) { status.textContent = ct('db.toksv.saved'); status.style.color = 'var(--green)'; }
+    } else {
+      var err = await r.json().catch(function(){return {}});
+      if (status) { status.textContent = err.error || ct('db.toksv.saveError'); status.style.color = 'var(--red)'; }
+    }
+  } catch(e) {
+    if (status) { status.textContent = ct('db.toksv.saveError'); status.style.color = 'var(--red)'; }
+  }
+  if (btn) btn.disabled = false;
+  setTimeout(function() { if (status) status.textContent = ''; }, 3000);
 }
 
 // ═══ TOKEN SAVER STATS ═══
 async function loadTokenSaverStats() {
   try {
+    // Load token saver mode setting
+    try {
+      var r = await fetch(API+'/8router/api/settings/token-saver');
+      if (r.ok) {
+        var cfg = await r.json();
+        var sel = document.getElementById('ts-mode');
+        if (sel && cfg.mode) sel.value = cfg.mode;
+        onTokenSaverModeChange();
+      }
+    } catch(e) {}
+    
+    // Load compression stats
     var stats = null;
     try {
       var sr = await fetch(API+'/8router/stats');
@@ -2436,7 +2486,7 @@ async function loadTokenSaverStats() {
     var tokensBefore = at.tokensBeforeCompression || s.tokensBeforeCompression || 0;
     var tokensAfter = at.tokensAfterCompression || s.tokensAfterCompression || 0;
     var pctSaved = tokensBefore > 0 ? ((tokensBefore - tokensAfter) / tokensBefore * 100) : (compressionSaved > 0 ? 15 : 0);
-    var costSaved = compressionSaved * 0.000002; // rough estimate $0.002 per 1K tokens
+    var costSaved = compressionSaved * 0.000002;
     
     var el;
     if ((el = document.getElementById('ts-saved-today'))) el.textContent = compressionSaved.toLocaleString();

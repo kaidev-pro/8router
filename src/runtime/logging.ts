@@ -37,6 +37,16 @@ export interface LogRequestInput {
   streaming?: boolean;
   clientUserAgent?: string;
   clientTool?: string;
+  // Phase 2F: Token Saver compression metrics
+  compressionMode?: string;
+  compressionApplied?: boolean;
+  compressedBlockCount?: number;
+  estimatedTokensBeforeCompression?: number;
+  estimatedTokensAfterCompression?: number;
+  estimatedTokensSaved?: number;
+  compressionPercentSaved?: number;
+  compressionLatencyMs?: number;
+  compressionStrategies?: string[];
 }
 
 export function logRuntimeRequest(input: LogRequestInput): string | null {
@@ -74,7 +84,10 @@ export function logRuntimeRequest(input: LogRequestInput): string | null {
         fallbackCount, hadFallback, attemptCount,
         errorType, errorCode, errorMessage,
         providerHealthStatus, circuitState, streaming,
-        clientUserAgent, clientTool, createdAt, updatedAt
+        clientUserAgent, clientTool, createdAt, updatedAt,
+        compressionMode, compressionApplied, compressedBlockCount,
+        estimatedTokensBeforeCompression, estimatedTokensAfterCompression,
+        estimatedTokensSaved, compressionPercentSaved, compressionLatencyMs, compressionStrategies
       ) VALUES (
         ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?,
@@ -85,12 +98,15 @@ export function logRuntimeRequest(input: LogRequestInput): string | null {
         ?, ?, ?,
         ?, ?, ?,
         ?, ?, ?,
-        ?, ?, ?, ?
+        ?, ?, ?, ?,
+        ?, ?, ?,
+        ?, ?, ?,
+        ?, ?, ?
       )
     `).run(
       id, input.userId, input.accessKeyId,
       input.accessKeyName || null, input.accessKeyHint || null,
-      id, null, // requestId = id, traceId null
+      id, null,
       input.endpoint || '/v1/chat/completions', input.method || 'POST',
       input.requestedModel, input.requestedAlias || null, input.routeMode || null,
       input.actualProvider || null, input.actualModel || null,
@@ -99,12 +115,16 @@ export function logRuntimeRequest(input: LogRequestInput): string | null {
       input.inputTokens || null, input.outputTokens || null, input.totalTokens || null,
       input.reasoningTokens || null, input.cachedInputTokens || null,
       estimatedInputCost, estimatedOutputCost, estimatedTotalCost,
-      hadFallback, input.fallbackCount || 0, null, // attemptCount set later
+      hadFallback, input.fallbackCount || 0, null,
       input.errorType || null, input.errorCode || null, safeError,
       input.providerHealthStatus || null, input.circuitState || null,
       input.streaming ? 1 : 0,
       input.clientUserAgent || null, input.clientTool || null,
       now, now,
+      input.compressionMode || null, input.compressionApplied ? 1 : 0, input.compressedBlockCount || 0,
+      input.estimatedTokensBeforeCompression || null, input.estimatedTokensAfterCompression || null,
+      input.estimatedTokensSaved || null, input.compressionPercentSaved || null,
+      input.compressionLatencyMs || null, input.compressionStrategies ? JSON.stringify(input.compressionStrategies) : null,
     );
 
     return id;
@@ -202,6 +222,16 @@ export function finalizeRequestLog(requestLogId: string, updates: {
   errorMessage?: string;
   providerHealthStatus?: string;
   circuitState?: string;
+  // Phase 2F: Token Saver compression
+  compressionMode?: string;
+  compressionApplied?: boolean;
+  compressedBlockCount?: number;
+  estimatedTokensBeforeCompression?: number;
+  estimatedTokensAfterCompression?: number;
+  estimatedTokensSaved?: number;
+  compressionPercentSaved?: number;
+  compressionLatencyMs?: number;
+  compressionStrategies?: string[];
 }): void {
   try {
     const db = getDB();
@@ -211,7 +241,13 @@ export function finalizeRequestLog(requestLogId: string, updates: {
     for (const [key, val] of Object.entries(updates)) {
       if (val !== undefined) {
         sets.push(`${key} = ?`);
-        params.push(key === 'errorMessage' ? (val ? redactSecrets(String(val)).slice(0, 500) : null) : val);
+        if (key === 'errorMessage') {
+          params.push(val ? redactSecrets(String(val)).slice(0, 500) : null);
+        } else if (key === 'compressionStrategies' && Array.isArray(val)) {
+          params.push(JSON.stringify(val));
+        } else {
+          params.push(val);
+        }
       }
     }
 
