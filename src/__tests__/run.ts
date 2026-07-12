@@ -202,6 +202,12 @@ index abc..def 100644
   runShadowProductionTests();
   console.log('');
 
+  // Test 24: Canonical Config Persistence (Phase 3A.3)
+  console.log('24. Canonical Config Persistence');
+  const { runConfigPersistenceTests } = await import('./canonical-config-persistence.test.js');
+  runConfigPersistenceTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }
