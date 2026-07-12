@@ -1,11 +1,20 @@
-// 8Router — Canonical Experiment Metrics (Phase 2H)
-// Aggregate metrics for the canonical runtime experiment.
+// 8Router — Canonical Experiment Metrics (Phase 3A)
+// Aggregate metrics for the canonical runtime experiment with coverage tracking.
 
-import type { CanonicalMetrics, CanonicalMismatchKind } from './types.js';
-import { getState } from './state.js';
+import type { CanonicalMetrics, CanonicalMismatchKind, MismatchSeverity } from './types.js';
+import { CRITICAL_MISMATCH_KINDS } from './types.js';
+import {
+  getState,
+  getCoverageByProvider, getCoverageByModel, getCoverageByAlias, getCoverageByAccessKey,
+  getStreamingComparisons, getToolCallComparisons, getFallbackComparisons, getTokenSaverComparisons,
+  getCriticalMismatchCount, getExperimentLogWriteFailures, getAutoDisableEvents, getManualDisableEvents,
+  getComparisonLatencyPercentiles,
+} from './state.js';
 
 export function computeMetrics(): CanonicalMetrics {
   const s = getState();
+  const lat = getComparisonLatencyPercentiles();
+  const critCount = getCriticalMismatchCount();
   return {
     requestsObserved: s.requestsObserved,
     shadowRequests: s.shadowRequests,
@@ -16,7 +25,23 @@ export function computeMetrics(): CanonicalMetrics {
     canonicalFailureRate: s.requestsObserved > 0 ? s.canonicalFailures / s.requestsObserved : 0,
     averageComparisonLatencyMs: 0, // computed from logs
     averageOverheadMs: 0, // computed from logs
-    topMismatchKinds: [], // computed from logs
+    topMismatchKinds: getTopMismatchKinds(),
+    criticalMismatchCount: critCount,
+    nonCriticalMismatchCount: s.mismatchCount - critCount,
+    requestsByProvider: getCoverageByProvider(),
+    requestsByModel: getCoverageByModel(),
+    requestsByAlias: getCoverageByAlias(),
+    requestsByAccessKey: getCoverageByAccessKey(),
+    streamingComparisons: getStreamingComparisons(),
+    toolCallComparisons: getToolCallComparisons(),
+    fallbackComparisons: getFallbackComparisons(),
+    tokenSaverComparisons: getTokenSaverComparisons(),
+    comparisonLatencyP50Ms: lat.p50,
+    comparisonLatencyP95Ms: lat.p95,
+    comparisonLatencyP99Ms: lat.p99,
+    experimentLogWriteFailures: getExperimentLogWriteFailures(),
+    autoDisableEvents: getAutoDisableEvents(),
+    manualDisableEvents: getManualDisableEvents(),
   };
 }
 
@@ -32,6 +57,11 @@ export function getTopMismatchKinds(limit = 10): Array<{ kind: CanonicalMismatch
     .sort((a, b) => b[1] - a[1])
     .slice(0, limit)
     .map(([kind, count]) => ({ kind, count }));
+}
+
+export function getMismatchSeverity(kind: CanonicalMismatchKind): MismatchSeverity {
+  if (CRITICAL_MISMATCH_KINDS.includes(kind)) return 'critical';
+  return 'warning';
 }
 
 export function resetMetrics(): void {

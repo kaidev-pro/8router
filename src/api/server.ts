@@ -2401,10 +2401,114 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
     const offset = parseInt(req.query.offset as string) || 0;
     try {
-      const rows = db.prepare('SELECT id, mode, sampled, eligible, skip_reason, request_matched, response_matched, mismatch_count, mismatch_kinds, comparison_latency_ms, canonical_failure, used_canonical_path, fell_back_to_legacy, created_at FROM canonical_experiment_logs ORDER BY created_at DESC LIMIT ? OFFSET ?').all(limit, offset);
-      const total = (db.prepare('SELECT COUNT(*) as count FROM canonical_experiment_logs').get() as any)?.count || 0;
+      // Phase 3A: Support filters
+      const conditions: string[] = [];
+      const params: unknown[] = [];
+
+      if (req.query.critical === '1') {
+        conditions.push('critical = 1');
+      }
+      if (req.query.mismatch_kind) {
+        conditions.push('mismatch_kinds LIKE ?');
+        params.push(`%${req.query.mismatch_kind}%`);
+      }
+      if (req.query.provider) {
+        conditions.push('provider = ?');
+        params.push(req.query.provider);
+      }
+      if (req.query.model) {
+        conditions.push('model = ?');
+        params.push(req.query.model);
+      }
+      if (req.query.alias) {
+        conditions.push('alias = ?');
+        params.push(req.query.alias);
+      }
+
+      const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+      const rows = db.prepare(`SELECT id, mode, sampled, eligible, skip_reason, request_matched, response_matched, mismatch_count, mismatch_kinds, comparison_latency_ms, canonical_failure, used_canonical_path, fell_back_to_legacy, provider, model, alias, critical, created_at FROM canonical_experiment_logs ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
+      const total = (db.prepare(`SELECT COUNT(*) as count FROM canonical_experiment_logs ${where}`).get(...params) as any)?.count || 0;
       res.json({ logs: rows, total, limit, offset });
     } catch { res.json({ logs: [], total: 0, limit, offset }); }
+  });
+
+  // ── Phase 3A: Shadow Production Validation Endpoints ───────
+
+  app.get('/8router/api/canonical-experiment/readiness', async (_req, res) => {
+    try {
+      const { generateReadinessReport } = await import('../runtime/canonical-experiment/readiness.js');
+      const report = generateReadinessReport();
+      res.json(report);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'unknown';
+      res.status(500).json({ error: msg.slice(0, 200) });
+    }
+  });
+
+  app.get('/8router/api/canonical-experiment/readiness/export', async (req, res) => {
+    try {
+      const { generateReadinessReport, exportReadinessMarkdown } = await import('../runtime/canonical-experiment/readiness.js');
+      const report = generateReadinessReport();
+      const format = req.query.format;
+
+      if (format === 'markdown' || format === 'md') {
+        res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="readiness-report.md"');
+        res.send(exportReadinessMarkdown(report));
+      } else {
+        res.json(report);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'unknown';
+      res.status(500).json({ error: msg.slice(0, 200) });
+    }
+  });
+
+  app.patch('/8router/api/canonical-experiment/shadow-rate', async (req, res) => {
+    try {
+      const { shadowSampleRate } = req.body || {};
+      if (typeof shadowSampleRate !== 'number' || shadowSampleRate < 0 || shadowSampleRate > 1) {
+        res.status(400).json({ error: 'shadowSampleRate must be a number between 0 and 1' });
+        return;
+      }
+      // Update env-level config by setting env and reloading
+      process.env.CANONICAL_SHADOW_SAMPLE_RATE = String(shadowSampleRate);
+      const { reloadCanonicalExperimentConfig } = await import('../runtime/canonical-experiment/config.js');
+      const config = reloadCanonicalExperimentConfig();
+      res.json({ ok: true, shadowSampleRate: config.shadowSampleRate });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'unknown';
+      res.status(500).json({ error: msg.slice(0, 200) });
+    }
+  });
+
+  app.post('/8router/api/canonical-experiment/manual-disable', async (_req, res) => {
+    try {
+      const { triggerManualDisable } = await import('../runtime/canonical-experiment/state.js');
+      const { fireAlert } = await import('../runtime/canonical-experiment/alerts.js');
+      triggerManualDisable();
+      await fireAlert('canonical.shadow_auto_disabled', {
+        reason: 'manual_kill_switch',
+        triggeredBy: 'api',
+      });
+      res.json({ ok: true });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'unknown';
+      res.status(500).json({ error: msg.slice(0, 200) });
+    }
+  });
+
+  app.post('/8router/api/canonical-experiment/retention-cleanup', async (_req, res) => {
+    try {
+      const db = getDB();
+      const { cleanupExpiredExperimentLogs, getRetentionStats } = await import('../runtime/canonical-experiment/retention.js');
+      const stats = getRetentionStats(db);
+      const result = cleanupExpiredExperimentLogs(db);
+      res.json({ ok: true, deleted: result.deleted, error: result.error, stats });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'unknown';
+      res.status(500).json({ error: msg.slice(0, 200) });
+    }
   });
 
   // ── Phase 2C: /8router/v1/* Alias Routes ──────────────────────────

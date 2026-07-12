@@ -120,6 +120,8 @@ export function compareResponses(
               const cf = ct.function as Record<string, unknown> | undefined;
               if (lf?.name !== cf?.name) mismatches.push('response_tool_call_name');
               if (lt.id !== ct.id) mismatches.push('response_tool_call_id');
+              // Compare argument hashes (detects content changes without storing plaintext)
+              if (lf?.argumentsHash !== cf?.argumentsHash) mismatches.push('response_tool_call_arguments_shape');
             }
           }
         }

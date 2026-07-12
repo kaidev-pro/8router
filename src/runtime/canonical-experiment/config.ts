@@ -67,6 +67,71 @@ function parseMode(raw: string | undefined): CanonicalRuntimeMode {
   return 'off';
 }
 
+// ── Phase 3A: Shadow Production Validation Config ────────────
+
+export interface ShadowProductionConfig {
+  logRetentionDays: number;
+  alertWebhookUrl: string;
+  maxMismatchRate: number;
+  maxCriticalMismatchRate: number;
+  maxLogFailuresPerMinute: number;
+  minRequestsForReadiness: number;
+  minUniqueAccessKeysForReadiness: number;
+  minRuntimeHoursForReadiness: number;
+  readinessCriticalMismatchRate: number;
+  readinessNonCriticalMismatchRate: number;
+  readinessLatencyP99Ms: number;
+}
+
+export function loadShadowProductionConfig(): ShadowProductionConfig {
+  return {
+    logRetentionDays: clamp(
+      parseInt(process.env.CANONICAL_EXPERIMENT_LOG_RETENTION_DAYS || '14', 10) || 14, 1, 90
+    ),
+    alertWebhookUrl: (process.env.CANONICAL_ALERT_WEBHOOK_URL || '').trim(),
+    maxMismatchRate: clamp(
+      parseFloat(process.env.CANONICAL_MAX_MISMATCH_RATE || '0.005') || 0.005, 0, 1
+    ),
+    maxCriticalMismatchRate: clamp(
+      parseFloat(process.env.CANONICAL_MAX_CRITICAL_MISMATCH_RATE || '0') || 0, 0, 1
+    ),
+    maxLogFailuresPerMinute: clamp(
+      parseInt(process.env.CANONICAL_MAX_LOG_FAILURES_PER_MINUTE || '10', 10) || 10, 1, 1000
+    ),
+    minRequestsForReadiness: clamp(
+      parseInt(process.env.CANONICAL_MIN_REQUESTS_FOR_READINESS || '10000', 10) || 10000, 1, 1000000
+    ),
+    minUniqueAccessKeysForReadiness: clamp(
+      parseInt(process.env.CANONICAL_MIN_ACCESS_KEYS_FOR_READINESS || '20', 10) || 20, 1, 1000
+    ),
+    minRuntimeHoursForReadiness: clamp(
+      parseFloat(process.env.CANONICAL_MIN_RUNTIME_HOURS_FOR_READINESS || '168') || 168, 1, 8760
+    ),
+    readinessCriticalMismatchRate: 0,
+    readinessNonCriticalMismatchRate: 0.005,
+    readinessLatencyP99Ms: 25,
+  };
+}
+
+let _cachedShadowConfig: ShadowProductionConfig | null = null;
+
+export function getShadowProductionConfig(): ShadowProductionConfig {
+  if (!_cachedShadowConfig) {
+    _cachedShadowConfig = loadShadowProductionConfig();
+  }
+  return _cachedShadowConfig;
+}
+
+export function reloadShadowProductionConfig(): ShadowProductionConfig {
+  _cachedShadowConfig = null;
+  return loadShadowProductionConfig();
+}
+
+export function resetCanonicalExperimentConfig(): void {
+  _cachedConfig = null;
+  _cachedShadowConfig = null;
+}
+
 let _cachedConfig: CanonicalExperimentConfig | null = null;
 
 export function getCanonicalExperimentConfig(): CanonicalExperimentConfig {

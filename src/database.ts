@@ -390,6 +390,32 @@ function initSchema(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_canonexp_mode_created ON canonical_experiment_logs(mode, created_at);
     CREATE INDEX IF NOT EXISTS idx_canonexp_request ON canonical_experiment_logs(request_log_id);
   `);
+
+  // Phase 3A: Add provider/model/alias/critical columns and indexes
+  try {
+    db.exec(`ALTER TABLE canonical_experiment_logs ADD COLUMN provider TEXT;`);
+  } catch {} // column already exists
+  try {
+    db.exec(`ALTER TABLE canonical_experiment_logs ADD COLUMN model TEXT;`);
+  } catch {}
+  try {
+    db.exec(`ALTER TABLE canonical_experiment_logs ADD COLUMN alias TEXT;`);
+  } catch {}
+  try {
+    db.exec(`ALTER TABLE canonical_experiment_logs ADD COLUMN critical INTEGER NOT NULL DEFAULT 0;`);
+  } catch {}
+  try {
+    db.exec(`ALTER TABLE canonical_experiment_logs ADD COLUMN mismatch_kind TEXT;`);
+  } catch {}
+  try {
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_canonexp_provider_created ON canonical_experiment_logs(provider, created_at);
+      CREATE INDEX IF NOT EXISTS idx_canonexp_model_created ON canonical_experiment_logs(model, created_at);
+      CREATE INDEX IF NOT EXISTS idx_canonexp_alias_created ON canonical_experiment_logs(alias, created_at);
+      CREATE INDEX IF NOT EXISTS idx_canonexp_critical_created ON canonical_experiment_logs(critical, created_at);
+      CREATE INDEX IF NOT EXISTS idx_canonexp_mismatch_kind_created ON canonical_experiment_logs(mismatch_kind, created_at);
+    `);
+  } catch {}
 }
 
 // ═══════════════════════════════════════════════

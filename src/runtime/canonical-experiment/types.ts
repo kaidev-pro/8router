@@ -130,6 +130,78 @@ export interface CanonicalMetrics {
   averageComparisonLatencyMs: number;
   averageOverheadMs: number;
   topMismatchKinds: Array<{ kind: CanonicalMismatchKind; count: number }>;
+  criticalMismatchCount: number;
+  nonCriticalMismatchCount: number;
+  requestsByProvider: Record<string, number>;
+  requestsByModel: Record<string, number>;
+  requestsByAlias: Record<string, number>;
+  requestsByAccessKey: Record<string, number>;
+  streamingComparisons: number;
+  toolCallComparisons: number;
+  fallbackComparisons: number;
+  tokenSaverComparisons: number;
+  comparisonLatencyP50Ms: number | null;
+  comparisonLatencyP95Ms: number | null;
+  comparisonLatencyP99Ms: number | null;
+  experimentLogWriteFailures: number;
+  autoDisableEvents: number;
+  manualDisableEvents: number;
+}
+
+// ── Phase 3A: Readiness Gates ────────────────────────────────
+
+export type ReadinessGateStatus = 'passed' | 'warning' | 'blocked' | 'insufficient_data';
+
+export interface ReadinessGateResult {
+  name: string;
+  status: ReadinessGateStatus;
+  current: number | string;
+  threshold: number | string;
+  message?: string;
+}
+
+export interface ShadowReadinessReport {
+  status: 'insufficient_data' | 'blocked' | 'warning' | 'ready';
+  generatedAt: string;
+  windowStart: string;
+  windowEnd: string;
+  gates: ReadinessGateResult[];
+  totals: {
+    comparedRequests: number;
+    uniqueAccessKeys: number;
+    runtimeHours: number;
+    criticalMismatches: number;
+    nonCriticalMismatches: number;
+    mismatchRate: number;
+  };
+  coverage: {
+    providers: Record<string, number>;
+    aliases: Record<string, number>;
+    requestTypes: Record<string, number>;
+  };
+  latency: {
+    p50Ms: number | null;
+    p95Ms: number | null;
+    p99Ms: number | null;
+  };
+  blockers: string[];
+  warnings: string[];
+}
+
+// ── Phase 3A: Alert Events ───────────────────────────────────
+
+export type CanonicalAlertEvent =
+  | 'canonical.critical_mismatch'
+  | 'canonical.mismatch_rate_warning'
+  | 'canonical.shadow_auto_disabled'
+  | 'canonical.log_write_failure'
+  | 'canonical.retention_cleanup_failure'
+  | 'canonical.resource_threshold_warning';
+
+export interface CanonicalAlertPayload {
+  event: CanonicalAlertEvent;
+  timestamp: string;
+  details: Record<string, string | number | boolean>;
 }
 
 export const DEFAULT_EXPERIMENT_CONFIG: CanonicalExperimentConfig = {

@@ -1,4 +1,4 @@
-// 8Router — Canonical Experiment barrel (Phase 2H)
+// 8Router — Canonical Experiment barrel (Phase 3A)
 
 export type {
   CanonicalRuntimeMode,
@@ -9,6 +9,11 @@ export type {
   CanonicalExperimentState,
   CanonicalExperimentLog,
   CanonicalMetrics,
+  ReadinessGateStatus,
+  ReadinessGateResult,
+  ShadowReadinessReport,
+  CanonicalAlertEvent,
+  CanonicalAlertPayload,
 } from './types.js';
 
 export {
@@ -20,7 +25,12 @@ export {
   loadCanonicalExperimentConfig,
   getCanonicalExperimentConfig,
   reloadCanonicalExperimentConfig,
+  loadShadowProductionConfig,
+  getShadowProductionConfig,
+  reloadShadowProductionConfig,
+  resetCanonicalExperimentConfig,
 } from './config.js';
+export type { ShadowProductionConfig } from './config.js';
 
 export { isEligibleForExperiment } from './sampler.js';
 
@@ -35,7 +45,26 @@ export {
   recordCanonicalFailure,
   recordLegacyFallback,
   triggerAutoDisable,
+  triggerManualDisable,
   resetState,
+  recordCoverage,
+  recordCriticalMismatch,
+  recordComparisonLatency,
+  recordLogWriteFailure,
+  getCoverageByProvider,
+  getCoverageByModel,
+  getCoverageByAlias,
+  getCoverageByAccessKey,
+  getStreamingComparisons,
+  getToolCallComparisons,
+  getFallbackComparisons,
+  getTokenSaverComparisons,
+  getCriticalMismatchCount,
+  getExperimentLogWriteFailures,
+  getAutoDisableEvents,
+  getManualDisableEvents,
+  getComparisonLatencyPercentiles,
+  getFirstRequestAt,
 } from './state.js';
 
 export {
@@ -56,6 +85,7 @@ export {
   computeMetrics,
   recordMismatchKind,
   getTopMismatchKinds,
+  getMismatchSeverity,
   resetMetrics,
 } from './metrics.js';
 
@@ -64,3 +94,9 @@ export { checkAutoDisable } from './auto-disable.js';
 export { runShadow } from './shadow.js';
 
 export { decideCanary, recordCanarySuccess, recordCanaryFailure } from './canary.js';
+
+export { generateReadinessReport, exportReadinessMarkdown } from './readiness.js';
+
+export { fireAlert } from './alerts.js';
+
+export { cleanupExpiredExperimentLogs, getRetentionStats } from './retention.js';

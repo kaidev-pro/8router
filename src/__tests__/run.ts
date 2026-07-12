@@ -196,6 +196,12 @@ index abc..def 100644
   runCanonicalExperimentTests();
   console.log('');
 
+  // Test 23: Shadow Production Validation (Phase 3A)
+  console.log('23. Shadow Production Validation');
+  const { runShadowProductionTests } = await import('./canonical-shadow-production.test.js');
+  runShadowProductionTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

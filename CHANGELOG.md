@@ -1,5 +1,55 @@
 # 8Router — Changelog
 
+## Phase 3A — Shadow Production Validation
+
+**Date:** 2026-07-12
+**Commit:** phase3a-shadow-production-validation
+**Status:** ✅ Implementation Complete. `canonical.enabled` remains `false`. Production validation in progress.
+
+### Added
+- **Readiness Engine** (`src/runtime/canonical-experiment/readiness.ts`) — Evaluates 9 acceptance gates, produces `ShadowReadinessReport` with blockers/warnings, exports as Markdown
+- **Alert System** (`src/runtime/canonical-experiment/alerts.ts`) — Webhook-based alerting for 6 event types. Sanitized payloads (no secrets, no raw content). 5s bounded timeout. Non-blocking.
+- **Retention Cleanup** (`src/runtime/canonical-experiment/retention.ts`) — Non-blocking cleanup of expired experiment logs. Configurable via `CANONICAL_EXPERIMENT_LOG_RETENTION_DAYS` (1–90 days). Never touches `runtime_request_logs`
+- **Extended Metrics** — 15 new metric fields: critical/non-critical counts, coverage by provider/model/alias/access-key, streaming/tool-call/fallback/token-saver comparison counts, p50/p95/p99 latency, log write failures, auto-disable events, manual disable events
+- **Coverage Tracking** — In-memory counters for provider, model, alias, access key coverage. Latency percentile tracking (buffer capped at 10K samples)
+- **Shadow Production Config** — 11 new env vars for retention, alerting, thresholds, and readiness gate thresholds
+- **Database** — 5 new columns (`provider`, `model`, `alias`, `critical`, `mismatch_kind`), 5 new indexes for filtering and aggregation
+- **7 New API Endpoints** — readiness, readiness/export (JSON/Markdown), shadow-rate update, manual-disable, retention-cleanup, enhanced logs with filters (critical, mismatch_kind, provider, model, alias)
+- **Tool Call Argument Comparison** — Added `argumentsHash` comparison to detect tool-call argument differences (uses existing `argumentsHash` from normalization)
+- **Dashboard** — Complete `loadCanonicalExperiment()` with Status Card, Readiness Card (gate table), Metrics Card, Coverage Matrix, Mismatch Breakdown, Controls (mode switch, kill switch, retention cleanup), Canary Blocked Notice
+- **74 Shadow Production Tests** — Configuration, sampling, shadow safety, comparison, readiness, coverage, latency, auto-disable, metrics, alerts, state management, normalize, full pipeline, canary, readiness export, missing content
+
+### Changed
+- `CanonicalMetrics` — Extended with 15 new fields (coverage, latency, lifecycle events)
+- `compareResponses()` — Now compares `argumentsHash` for tool-call argument detection
+- `computeMetrics()` — Uses coverage state and latency percentiles
+- `getTopMismatchKinds()` — Returns actual in-memory counts
+- `resetState()` — Now resets all coverage maps, latency buffer, and counters
+- `triggerAutoDisable()` — Now increments auto-disable event counter
+- `canonical_experiment_logs` — Now includes provider, model, alias, critical, mismatch_kind columns
+- Logs API — Now supports query parameter filters (critical, mismatch_kind, provider, model, alias)
+
+### Security Guarantees
+- `canonical.enabled` remains false by default
+- `CANONICAL_RUNTIME_MODE` defaults to `off`
+- Shadow mode makes no duplicate provider request
+- Canary remains disabled until shadow validation passes
+- `enforced` mode remains blocked
+- No request/response content persisted (SHA-256 fingerprints only)
+- No raw API keys or provider credentials exposed
+- Alert payloads sanitized — blocked keys: authorization, api_key, token, cookie, secret, password, credential, access_key, provider_key
+- Cleanup never touches `runtime_request_logs`
+- All 6 existing regression suites pass unchanged
+
+### Roadmap
+- Phase 1A–1F ✅ Canonical Bridge
+- Phase 2A–2H ✅ Runtime, Security, Observability, Experiment Layer
+- Phase 3A ✅ Shadow Production Validation
+- Phase 3B 🔲 Canary Readiness Gate
+- Phase 3C 🔲 Small Canary Rollout
+- Phase 3D 🔲 Expanded Canary
+- Phase 3E 🔲 Canonical Default Readiness
+
 ## Phase 2H — Controlled Canonical Runtime Experiment
 
 **Date:** 2026-07-12

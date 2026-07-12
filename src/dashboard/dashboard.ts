@@ -2667,6 +2667,156 @@ async function loadTokenSaverStats() {
   } catch(e) {}
 }
 
+// ═══ CANONICAL EXPERIMENT ═══
+async function loadCanonicalExperiment() {
+  var el = document.getElementById('canonexp-content');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:12px">'+ct('db.canonical.loading')+'</div>';
+  try {
+    var [statusRes, metricsRes, readinessRes] = await Promise.all([
+      fetch(API+'/8router/api/canonical-experiment/status').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(API+'/8router/api/canonical-experiment/metrics').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(API+'/8router/api/canonical-experiment/readiness').then(r => r.ok ? r.json() : null).catch(() => null),
+    ]);
+
+    if (!statusRes) { el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--red);font-size:12px">'+ct('db.canonical.error')+'</div>'; return; }
+
+    var cfg = statusRes.config || {};
+    var state = statusRes.state || {};
+    var metrics = statusRes.metrics || {};
+    var readiness = readinessRes || {};
+    var topKinds = metrics.topMismatchKinds || [];
+    var providers = metrics.requestsByProvider || {};
+    var aliases = metrics.requestsByAlias || {};
+    var modeColor = state.mode === 'shadow' ? 'var(--green)' : state.mode === 'canary' ? 'var(--yellow)' : 'var(--text-muted)';
+
+    // ── Status Card ──
+    var statusHtml = '<div class="card" style="margin-bottom:20px">' +
+      '<div class="card-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg> '+ct('db.canonical.status')+'</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;padding:16px">' +
+        '<div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">'+ct('db.canonical.mode')+'</div><div style="font-size:18px;font-weight:700;color:'+modeColor+'">'+(state.mode||'off')+'</div></div>' +
+        '<div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">'+ct('db.canonical.enabled')+'</div><div style="font-size:18px;font-weight:700">'+(state.enabled ? ct('db.canonical.yes') : ct('db.canonical.no'))+'</div></div>' +
+        '<div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">'+ct('db.canonical.autoDisabled')+'</div><div style="font-size:18px;font-weight:700">'+(state.autoDisabled ? '🔴 YES' : ct('db.canonical.no'))+'</div></div>' +
+        '<div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">'+ct('db.canonical.observed')+'</div><div style="font-size:18px;font-weight:700">'+(state.requestsObserved||0).toLocaleString()+'</div></div>' +
+        '<div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Sample Rate</div><div style="font-size:18px;font-weight:700">'+(cfg.shadowSampleRate||0)+'</div></div>' +
+        '<div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Auto-Disable</div><div style="font-size:18px;font-weight:700">'+(cfg.autoDisable ? 'ON' : 'OFF')+'</div></div>' +
+      '</div></div>';
+
+    // ── Readiness Card ──
+    var readyStatus = readiness.status || 'insufficient_data';
+    var readyColor = readyStatus === 'ready' ? 'var(--green)' : readyStatus === 'blocked' ? 'var(--red)' : readyStatus === 'warning' ? 'var(--yellow)' : 'var(--text-muted)';
+    var gates = readiness.gates || [];
+    var gatesHtml = '<div class="card" style="margin-bottom:20px">' +
+      '<div class="card-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg> Readiness <span style="font-size:12px;font-weight:400;margin-left:auto;padding:4px 10px;border-radius:12px;background:'+readyColor+'22;color:'+readyColor+'">'+readyStatus.toUpperCase()+'</span></div>' +
+      '<div style="padding:16px"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="text-align:left;color:var(--text-muted)"><th style="padding:6px 8px">Gate</th><th style="padding:6px 8px">Status</th><th style="padding:6px 8px">Current</th><th style="padding:6px 8px">Threshold</th></tr></thead><tbody>';
+    for (var i = 0; i < gates.length; i++) {
+      var g = gates[i];
+      var gIcon = g.status === 'passed' ? '✅' : g.status === 'blocked' ? '🔴' : g.status === 'warning' ? '🟡' : '⚪';
+      var gColor = g.status === 'passed' ? 'var(--green)' : g.status === 'blocked' ? 'var(--red)' : g.status === 'warning' ? 'var(--yellow)' : 'var(--text-muted)';
+      gatesHtml += '<tr style="border-top:1px solid var(--border)"><td style="padding:6px 8px">'+g.name+'</td><td style="padding:6px 8px;color:'+gColor+'">'+gIcon+' '+g.status+'</td><td style="padding:6px 8px">'+g.current+'</td><td style="padding:6px 8px">'+g.threshold+'</td></tr>';
+    }
+    gatesHtml += '</tbody></table></div></div>';
+
+    // ── Metrics Card ──
+    var metricsHtml = '<div class="card" style="margin-bottom:20px">' +
+      '<div class="card-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> '+ct('db.canonical.metrics')+'</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;padding:16px">' +
+        '<div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">'+ct('db.canonical.matchRate')+'</div><div style="font-size:18px;font-weight:700">'+((metrics.matchRate||0)*100).toFixed(2)+'%</div></div>' +
+        '<div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">'+ct('db.canonical.mismatchRate')+'</div><div style="font-size:18px;font-weight:700">'+((metrics.mismatchRate||0)*100).toFixed(2)+'%</div></div>' +
+        '<div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">'+ct('db.canonical.failRate')+'</div><div style="font-size:18px;font-weight:700">'+((metrics.canonicalFailureRate||0)*100).toFixed(2)+'%</div></div>' +
+        '<div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">'+ct('db.canonical.fallbacks')+'</div><div style="font-size:18px;font-weight:700">'+(state.legacyFallbacks||0).toLocaleString()+'</div></div>' +
+        '<div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Critical Mismatches</div><div style="font-size:18px;font-weight:700;color:'+(metrics.criticalMismatchCount>0?'var(--red)':'var(--green)')+'">'+(metrics.criticalMismatchCount||0)+'</div></div>' +
+        '<div><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">p50 / p95 / p99</div><div style="font-size:14px;font-weight:600">'+(metrics.comparisonLatencyP50Ms!=null?metrics.comparisonLatencyP50Ms.toFixed(1):'—')+'ms / '+(metrics.comparisonLatencyP95Ms!=null?metrics.comparisonLatencyP95Ms.toFixed(1):'—')+'ms / '+(metrics.comparisonLatencyP99Ms!=null?metrics.comparisonLatencyP99Ms.toFixed(1):'—')+'ms</div></div>' +
+      '</div></div>';
+
+    // ── Coverage Matrix Card ──
+    var covHtml = '<div class="card" style="margin-bottom:20px">' +
+      '<div class="card-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> Coverage Matrix</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px">' +
+        '<div><div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--text-muted)">Providers</div>';
+    var provKeys = Object.keys(providers);
+    if (provKeys.length === 0) covHtml += '<div style="font-size:12px;color:var(--text-muted)">No data yet</div>';
+    for (var pi = 0; pi < provKeys.length; pi++) {
+      covHtml += '<div style="font-size:12px;margin-bottom:4px"><span style="color:var(--text-main)">'+provKeys[pi]+'</span> <span style="color:var(--text-muted)">('+providers[provKeys[pi]]+')</span></div>';
+    }
+    covHtml += '</div><div><div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--text-muted)">Aliases</div>';
+    var aliasKeys = Object.keys(aliases);
+    if (aliasKeys.length === 0) covHtml += '<div style="font-size:12px;color:var(--text-muted)">No data yet</div>';
+    for (var ai = 0; ai < aliasKeys.length; ai++) {
+      covHtml += '<div style="font-size:12px;margin-bottom:4px"><span style="color:var(--text-main)">'+aliasKeys[ai]+'</span> <span style="color:var(--text-muted)">('+aliases[aliasKeys[ai]]+')</span></div>';
+    }
+    covHtml += '</div></div></div>';
+
+    // ── Mismatch Breakdown Card ──
+    var misHtml = '<div class="card" style="margin-bottom:20px">' +
+      '<div class="card-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg> Top Mismatch Kinds</div>' +
+      '<div style="padding:16px">';
+    if (topKinds.length === 0) misHtml += '<div style="font-size:12px;color:var(--text-muted)">No mismatches recorded</div>';
+    for (var mi = 0; mi < Math.min(topKinds.length, 10); mi++) {
+      var mk = topKinds[mi];
+      var isCritical = ['request_role','response_role','response_tool_call_name','response_tool_call_id','response_finish_reason','response_text_hash','stream_event_order','conversion_error'].indexOf(mk.kind)>=0;
+      misHtml += '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border)"><span'+(isCritical?' style="color:var(--red)"':'')+'>'+mk.kind+'</span><span style="font-weight:600">'+mk.count+'</span></div>';
+    }
+    misHtml += '</div></div>';
+
+    // ── Controls Card ──
+    var ctrlHtml = '<div class="card" style="margin-bottom:20px">' +
+      '<div class="card-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> '+ct('db.canonical.controls')+'</div>' +
+      '<div style="padding:16px;display:flex;flex-wrap:wrap;gap:10px">' +
+        '<button onclick="canonicalSetMode(\'shadow\')" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text-main);font-size:12px;cursor:pointer;'+(state.mode==='shadow'?'border-color:var(--green);background:var(--green);color:#fff':'')+'">Shadow</button>' +
+        '<button onclick="canonicalSetMode(\'off\')" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text-main);font-size:12px;cursor:pointer;'+(state.mode==='off'?'border-color:var(--accent);background:var(--accent);color:#fff':'')+'">Off</button>' +
+        '<button onclick="canonicalManualDisable()" style="padding:8px 16px;border:1px solid var(--red);border-radius:8px;background:transparent;color:var(--red);font-size:12px;cursor:pointer">Kill Switch</button>' +
+        '<button onclick="canonicalRetentionPolicy()" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text-main);font-size:12px;cursor:pointer">Retention Cleanup</button>' +
+      '</div>' +
+      '<div style="padding:0 16px 16px;font-size:11px;color:var(--text-muted)">'+ct('db.canonical.shadowInfo')+'</div>' +
+      '</div>';
+
+    // ── Canary Blocked Notice ──
+    var canaryHtml = '<div class="card" style="margin-bottom:20px;opacity:0.5">' +
+      '<div class="card-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Canary <span style="font-size:11px;font-weight:400;margin-left:auto;padding:4px 10px;border-radius:12px;background:var(--red)22;color:var(--red)">BLOCKED UNTIL SHADOW VALIDATION PASSES</span></div>' +
+      '<div style="padding:0 16px 16px;font-size:11px;color:var(--text-muted)">'+ct('db.canonical.canaryWarn')+'</div>' +
+      '</div>';
+
+    el.innerHTML = statusHtml + gatesHtml + metricsHtml + covHtml + misHtml + ctrlHtml + canaryHtml;
+  } catch(e) {
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--red);font-size:12px">'+ct('db.canonical.error')+'</div>';
+  }
+}
+
+async function canonicalSetMode(mode) {
+  try {
+    if (mode === 'off') {
+      await fetch(API+'/8router/api/canonical-experiment/disable', {method:'POST'});
+    } else {
+      await fetch(API+'/8router/api/canonical-experiment/enable', {method:'POST'});
+      await fetch(API+'/8router/api/canonical-experiment/settings', {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({mode: mode})
+      });
+    }
+    loadCanonicalExperiment();
+  } catch(e) {}
+}
+
+async function canonicalManualDisable() {
+  if (!confirm('Trigger manual kill switch? This will disable the canonical experiment.')) return;
+  try {
+    await fetch(API+'/8router/api/canonical-experiment/manual-disable', {method:'POST'});
+    loadCanonicalExperiment();
+  } catch(e) {}
+}
+
+async function canonicalRetentionPolicy() {
+  try {
+    var r = await fetch(API+'/8router/api/canonical-experiment/retention-cleanup', {method:'POST'});
+    if (r.ok) {
+      var data = await r.json();
+      alert('Retention cleanup complete. Deleted: ' + data.deleted + ' logs');
+    }
+  } catch(e) {}
+}
+
 // ═══ SAVE SETTING ═══
 async function saveSetting(key, value) {
   var payload = {};
