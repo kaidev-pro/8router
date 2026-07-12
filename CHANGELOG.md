@@ -1,6 +1,54 @@
 # 8Router — Changelog
 
-## Phase 3A — Shadow Production Validation
+## Phase 3A.4 — Provider Activation, Access-Key Onboarding & Beta Traffic
+
+**Date:** 2026-07-12
+**Commit:** phase3a4-provider-activation-beta-traffic
+**Status:** ✅ Activation infrastructure complete. Provider credentials needed for live traffic.
+
+### Added
+- **Provider Activation Inventory** (`docs/evidence/phase3a/provider-activation-inventory.md`) — Activation strategy, credential setup procedure, security checklist
+- **Beta Onboarding Documentation** (`docs/beta/phase3a-beta-onboarding.md`) — User guide for beta participants: setup, aliases, privacy, troubleshooting
+- **Access Key Inventory** (`docs/evidence/phase3a/access-key-inventory.md`) — Internal and beta key tracking, security properties
+- **Runtime Telemetry Validation** (`docs/evidence/phase3a/runtime-telemetry-validation.md`) — Telemetry checks and expected values after activation
+- **Fallback Routing Validation** (`docs/evidence/phase3a/fallback-routing-validation.md`) — Primary/fallback routing test scenarios
+- **Beta Issue Log** (`docs/evidence/phase3a/beta-issue-log.md`) — Issue tracking template and prioritization
+- **25 Provider Activation & Access Key Security Tests** — Credential encryption, raw key safety, lifecycle, API response safety, database schema safety
+
+### Security Properties Verified
+- Credential encryption at rest (AES-256-GCM)
+- Raw API keys never returned after creation
+- Access keys stored as HMAC-SHA256 hashes only
+- Raw access keys shown once at creation
+- Disabled credentials excluded from runtime routing
+- No plaintext keys in database
+- No plaintext keys in API responses
+- .env not committed to git
+
+### Current Blocker
+Provider credentials needed to unblock live traffic:
+- Add at least 2 providers (recommended: OpenRouter + Groq)
+- Create access keys for beta users
+- Route real traffic through production endpoint
+
+### Phase 3A Evidence Status
+| Gate | Required | Current |
+|------|----------|---------|
+| Providers activated | ≥ 2 | 0 (credentials needed) |
+| Access keys | ≥ 1 | 1 (internal-smoke) |
+| Compared requests | ≥ 10,000 | 0 |
+| Unique access keys | ≥ 20 | 1 |
+| Live traffic | Yes | No |
+
+### Roadmap
+- Phase 1A–1F ✅ Canonical Bridge
+- Phase 2A–2H ✅ Runtime, Security, Observability, Experiment Layer
+- Phase 3A ✅ Shadow Production Validation
+- Phase 3A.2 ✅ Production Deployment
+- Phase 3A.3 ✅ Shadow Validation Operations
+- Phase 3A.4 ✅ Provider Activation Infrastructure
+- Phase 3A Live Evidence ⏳ Blocked (provider credentials needed)
+- Phase 3B 🔲 Canary Readiness Gate
 
 **Date:** 2026-07-12
 **Commit:** phase3a-shadow-production-validation

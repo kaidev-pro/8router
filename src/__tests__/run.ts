@@ -208,6 +208,12 @@ index abc..def 100644
   runConfigPersistenceTests();
   console.log('');
 
+  // Test 25: Provider Activation & Access Key Security (Phase 3A.4)
+  console.log('25. Provider Activation & Access Key Security');
+  const { runProviderActivationTests } = await import('./provider-activation-security.test.js');
+  runProviderActivationTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

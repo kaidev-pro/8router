@@ -56,6 +56,7 @@
     "test:canonical-experiment": "npx tsx src/__tests__/run-canonical-runtime-experiment.ts",
     "test:canonical-shadow-production": "npx tsx src/__tests__/run-canonical-shadow-production.ts",
     "test:canonical-config-persistence": "npx tsx src/__tests__/run-canonical-config-persistence.ts",
+    "test:provider-activation-security": "npx tsx src/__tests__/run-provider-activation-security.ts",
     "test:router": "bash scripts/test-router.sh",
     "test:openai-compat": "bash scripts/test-openai-compat.sh",
     "test:providers-live": "bash scripts/test-providers-live.sh",
