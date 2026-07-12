@@ -12,6 +12,11 @@ import { recordProviderSuccess, recordProviderFailure, getProviderHealth } from 
 import { logRuntimeRequest, logAttempt, finalizeRequestLog, type LogRequestInput } from './logging.js';
 import { compressContent, loadCompressionConfig, resolveCompressionMode, estimateTokens } from './compression/index.js';
 import type { CompressionResult } from './compression/index.js';
+import { getCanonicalExperimentConfig } from './canonical-experiment/config.js';
+import { isEligibleForExperiment } from './canonical-experiment/sampler.js';
+import { runShadow } from './canonical-experiment/shadow.js';
+import { decideCanary, recordCanaryFailure } from './canonical-experiment/canary.js';
+import { recordObservation, recordCanonicalFailure } from './canonical-experiment/state.js';
 
 // ─── Handler ─────────────────────────────────────────────────────
 
@@ -292,6 +297,24 @@ export async function handleChatCompletions(req: Request, res: Response): Promis
         provider: route.provider, latencyMs: result.latencyMs, status: 200,
       });
       updateAccessKeyUsage(ctx.accessKeyId);
+
+      // ── Phase 2H: Canonical Experiment ──────────────────────────
+      // Run shadow/canary check AFTER sending response (never delay user)
+      const canonConfig = getCanonicalExperimentConfig();
+      if (canonConfig.mode !== 'off' && !isStream) {
+        recordObservation();
+        const requestId = parentLogId || `req_${Date.now()}`;
+        const sampled = isEligibleForExperiment(requestId, ctx.userId, ctx.accessKeyId, canonConfig,
+          canonConfig.mode === 'shadow' ? canonConfig.shadowSampleRate : 1);
+        if (sampled && canonConfig.mode === 'shadow') {
+          try {
+            runShadow(body as Record<string, unknown>, result.body as Record<string, unknown>, canonConfig);
+          } catch (e) {
+            recordCanonicalFailure();
+          }
+        }
+      }
+
       res.status(200).json(result.body);
       return;
     }

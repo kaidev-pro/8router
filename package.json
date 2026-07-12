@@ -53,6 +53,7 @@
     "test:usage-logs": "tsx src/__tests__/run-usage-logs-dashboard.ts",
     "test:token-saver": "npx tsx src/__tests__/run-token-saver.ts",
     "test:cli-integrations": "npx tsx src/__tests__/run-cli-tool-integrations.ts",
+    "test:canonical-experiment": "npx tsx src/__tests__/run-canonical-runtime-experiment.ts",
     "test:router": "bash scripts/test-router.sh",
     "test:openai-compat": "bash scripts/test-openai-compat.sh",
     "test:providers-live": "bash scripts/test-providers-live.sh",

@@ -355,6 +355,41 @@ function initSchema(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_rrl_user_alias ON runtime_request_logs(userId, requestedAlias, createdAt);
     CREATE INDEX IF NOT EXISTS idx_rrl_user_accesskey ON runtime_request_logs(userId, accessKeyId, createdAt);
   `);
+
+  // ── Phase 2H: Canonical Experiment Logs ──────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS canonical_experiment_logs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      request_log_id TEXT,
+      access_key_id TEXT,
+      mode TEXT NOT NULL DEFAULT 'off',
+      sampled INTEGER NOT NULL DEFAULT 0,
+      eligible INTEGER NOT NULL DEFAULT 0,
+      skip_reason TEXT,
+      request_matched INTEGER,
+      response_matched INTEGER,
+      stream_matched INTEGER,
+      tool_calls_matched INTEGER,
+      usage_matched INTEGER,
+      metadata_matched INTEGER,
+      mismatch_count INTEGER NOT NULL DEFAULT 0,
+      mismatch_kinds TEXT,
+      comparison_latency_ms INTEGER,
+      canonical_latency_overhead_ms INTEGER,
+      legacy_fingerprint TEXT,
+      canonical_fingerprint TEXT,
+      canonical_failure INTEGER DEFAULT 0,
+      canonical_failure_type TEXT,
+      canonical_failure_message TEXT,
+      used_canonical_path INTEGER DEFAULT 0,
+      fell_back_to_legacy INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_canonexp_user_created ON canonical_experiment_logs(user_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_canonexp_mode_created ON canonical_experiment_logs(mode, created_at);
+    CREATE INDEX IF NOT EXISTS idx_canonexp_request ON canonical_experiment_logs(request_log_id);
+  `);
 }
 
 // ═══════════════════════════════════════════════

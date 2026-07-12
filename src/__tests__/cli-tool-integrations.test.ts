@@ -407,7 +407,6 @@ function run() {
     console.log('\nFailures:');
     failures.forEach(f => console.log(`  - ${f}`));
   }
-  process.exit(failed > 0 ? 1 : 0);
 }
 
 export function runCliIntegrationTests(): void {

@@ -955,6 +955,11 @@ tr:hover td { background:var(--bg-card-hover) }
       <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg></span>
       <span class="lbl">${t('db.sidebar.playground', locale)}</span>
     </div>
+    <div class="sb-section">Experiment</div>
+    <div class="sb-item" onclick="go('canonicalexperiment',this)">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <span class="lbl">${t('db.sidebar.canonical', locale)}</span>
+    </div>
   </div>
 
   <div class="sb-footer">
@@ -1571,6 +1576,21 @@ tr:hover td { background:var(--bg-card-hover) }
       </div>
     </div>
 
+    <!-- ═══ CANONICAL EXPERIMENT ═══ -->
+    <div id="pg-canonicalexperiment" class="page">
+      <div class="card-header" style="margin-bottom:20px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        <div>
+          <div class="page-title" style="font-size:22px">${t('db.page.canonical', locale)}</div>
+          <div class="page-subtitle" style="margin-bottom:0">${t('db.page.canonicalDesc', locale)}</div>
+        </div>
+        <button style="margin-left:auto;padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer" onclick="loadCanonicalExperiment()">${t('db.btn.refresh', locale)}</button>
+      </div>
+      <div id="canonexp-content">
+        <div style="padding:40px;text-align:center;color:var(--text-muted);font-size:12px">${t('db.canonical.loading', locale)}</div>
+      </div>
+    </div>
+
   </div><!-- /content -->
 </div><!-- /main -->
 
@@ -1669,7 +1689,8 @@ function go(name, el) {
     apikeys: [ct('db.page.keys'),ct('db.page.keysDesc')],
     accesskeys: [ct('db.page.accessKeys'),ct('db.page.accessKeysDesc')],
     logs: [ct('db.page.logs'),ct('db.page.logsDesc')],
-    playground: [ct('db.page.playground'),ct('db.page.playgroundDesc')]
+    playground: [ct('db.page.playground'),ct('db.page.playgroundDesc')],
+    canonicalexperiment: [ct('db.page.canonical'),ct('db.page.canonicalDesc')]
   };
   var ttl = titles[name] || [name, ''];
   document.getElementById('tb-title').textContent = ttl[0];
@@ -1685,6 +1706,7 @@ function go(name, el) {
   if (name === 'apikeys') loadApiKeys();
   if (name === 'accesskeys') loadAccessKeys();
   if (name === 'logs') loadLogs();
+  if (name === 'canonicalexperiment') loadCanonicalExperiment();
 }
 
 // ═══ DASHBOARD DATA ═══

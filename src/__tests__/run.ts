@@ -190,6 +190,12 @@ index abc..def 100644
   runCliIntegrationTests();
   console.log('');
 
+  // Test 22: Canonical Runtime Experiment (Phase 2H)
+  console.log('22. Canonical Runtime Experiment');
+  const { runCanonicalExperimentTests } = await import('./canonical-runtime-experiment.test.js');
+  runCanonicalExperimentTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

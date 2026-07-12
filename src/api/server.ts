@@ -26,6 +26,7 @@ import {
   getQuotaSummary, getQuotaStatus, setQuotaLimit, trackQuotaUsage,
   getDetailedHealth, getProviderDetailed, getRecentRequestsWithFallback, getDetailedStats,
   } from '../database.js';
+  import { getDB } from '../database.js';
   import { applyGuardrails, getGuardrailsConfig, setGuardrailsConfig } from '../guardrails.js';
 import { getLandingHTML } from '../landing.js';
 import { getLocale, setLocaleCookie, type Locale } from '../i18n/index.js';
@@ -2346,6 +2347,64 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
     } catch (err: any) {
       res.status(400).json({ error: err.message });
     }
+  });
+
+  // ── Phase 2H: Canonical Experiment ────────────────────────────
+  app.get('/8router/api/canonical-experiment/status', async (_req, res) => {
+    // Return safe state from the canonical experiment module
+    // Do NOT expose raw request/response content
+    const { getState } = await import('../runtime/canonical-experiment/state.js');
+    const { getCanonicalExperimentConfig } = await import('../runtime/canonical-experiment/config.js');
+    const { computeMetrics } = await import('../runtime/canonical-experiment/metrics.js');
+    const config = getCanonicalExperimentConfig();
+    const state = getState();
+    const metrics = computeMetrics();
+    res.json({ config: { ...config, userAllowlist: config.userAllowlist.length, accessKeyAllowlist: config.accessKeyAllowlist.length }, state, metrics });
+  });
+
+  app.patch('/8router/api/canonical-experiment/settings', async (req, res) => {
+    const { updateMode, setEnabled } = await import('../runtime/canonical-experiment/state.js');
+    const { reloadCanonicalExperimentConfig } = await import('../runtime/canonical-experiment/config.js');
+    const { mode, shadowSampleRate, canaryPercent, mismatchThreshold, autoDisable } = req.body || {};
+    if (mode === 'enforced') { res.status(400).json({ error: 'enforced mode not allowed' }); return; }
+    if (mode) updateMode(mode);
+    // For now just update env-level config by reloading
+    const config = reloadCanonicalExperimentConfig();
+    res.json({ ok: true, config: { mode: config.mode } });
+  });
+
+  app.post('/8router/api/canonical-experiment/enable', async (_req, res) => {
+    const { setEnabled, updateMode } = await import('../runtime/canonical-experiment/state.js');
+    setEnabled(true);
+    const { reloadCanonicalExperimentConfig } = await import('../runtime/canonical-experiment/config.js');
+    const config = reloadCanonicalExperimentConfig();
+    if (config.mode === 'enforced') { setEnabled(false); res.status(400).json({ error: 'cannot enable enforced' }); return; }
+    res.json({ ok: true, mode: config.mode });
+  });
+
+  app.post('/8router/api/canonical-experiment/disable', async (_req, res) => {
+    const { setEnabled } = await import('../runtime/canonical-experiment/state.js');
+    setEnabled(false);
+    res.json({ ok: true });
+  });
+
+  app.get('/8router/api/canonical-experiment/metrics', async (_req, res) => {
+    const { computeMetrics, getTopMismatchKinds } = await import('../runtime/canonical-experiment/metrics.js');
+    const metrics = computeMetrics();
+    metrics.topMismatchKinds = getTopMismatchKinds();
+    res.json(metrics);
+  });
+
+  app.get('/8router/api/canonical-experiment/logs', async (req, res) => {
+    // Paginated safe logs — no raw content
+    const db = getDB();
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const offset = parseInt(req.query.offset as string) || 0;
+    try {
+      const rows = db.prepare('SELECT id, mode, sampled, eligible, skip_reason, request_matched, response_matched, mismatch_count, mismatch_kinds, comparison_latency_ms, canonical_failure, used_canonical_path, fell_back_to_legacy, created_at FROM canonical_experiment_logs ORDER BY created_at DESC LIMIT ? OFFSET ?').all(limit, offset);
+      const total = (db.prepare('SELECT COUNT(*) as count FROM canonical_experiment_logs').get() as any)?.count || 0;
+      res.json({ logs: rows, total, limit, offset });
+    } catch { res.json({ logs: [], total: 0, limit, offset }); }
   });
 
   // ── Phase 2C: /8router/v1/* Alias Routes ──────────────────────────

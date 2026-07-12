@@ -1,5 +1,41 @@
 # 8Router — Changelog
 
+## Phase 2H — Controlled Canonical Runtime Experiment
+
+**Date:** 2026-07-12
+**Commit:** phase2h-controlled-canonical-runtime-experiment
+**Status:** ✅ Complete. `canonical.enabled` remains `false`.
+
+### Added
+- **Canonical Experiment Module** (`src/runtime/canonical-experiment/`) — 10 modules: types, config, sampler, state, normalize, compare, metrics, auto-disable, shadow, canary
+- **Runtime Modes** — off (default), shadow, canary. `enforced` blocked in Phase 2H
+- **Deterministic Sampling** — SHA-256(requestId + userId + accessKeyId), allowlist overrides
+- **Shadow Mode** — parallel canonical conversion + structural comparison. Never changes user response. Never makes duplicate provider call
+- **Canary Mode** — bounded opt-in with automatic legacy fallback on failure
+- **Structural Normalization** — key order, finish reason aliases, null/omitted equivalence
+- **SHA-256 Fingerprints** — one-way hashes for content, arguments, text. No plaintext stored
+- **Mismatch Taxonomy** — 20 kinds with severity levels (info/warning/critical). Key kinds: `response_text_hash`, `response_text_length`, `response_finish_reason`, `response_tool_call_name`, `response_tool_call_id`, `conversion_error`
+- **Auto-Disable / Kill Switch** — threshold-based auto-disable + manual enable/disable endpoints
+- **Database** — `canonical_experiment_logs` table with 5 indexes
+- **6 API Endpoints** — status, settings, enable, disable, metrics, logs
+- **Runtime Integration** — shadow hook in chat-completions.ts (fires after response sent, never delays user)
+- **Dashboard** — Canonical Experiment page with status/metrics/controls cards, mode switcher
+- **i18n** — EN/ID/JA (24 keys each)
+- **77 Tests** — config, sampler, state, normalize, compare, shadow, canary, auto-disable, metrics, safety
+
+### Security Guarantees
+- `canonical.enabled` remains false by default
+- `CANONICAL_RUNTIME_MODE` defaults to `off`
+- Shadow mode makes no duplicate provider request
+- Canary mode safely falls back to legacy on failure
+- No request/response content persisted
+- No raw API keys or provider credentials exposed
+- Fingerprints use one-way SHA-256 hashing
+- User-owned provider key isolation maintained
+- Experiment APIs dashboard-auth protected
+- Circuit breaker, health, Token Saver, usage logging all preserved
+- No managed credits or token resale added
+
 ## Phase 2G — CLI Tool Setup Polish
 
 **Date:** 2026-07-12
