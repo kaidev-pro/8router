@@ -2367,10 +2367,12 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
     const { reloadCanonicalExperimentConfig } = await import('../runtime/canonical-experiment/config.js');
     const { mode, shadowSampleRate, canaryPercent, mismatchThreshold, autoDisable } = req.body || {};
     if (mode === 'enforced') { res.status(400).json({ error: 'enforced mode not allowed' }); return; }
-    if (mode) updateMode(mode);
-    // For now just update env-level config by reloading
+    if (mode) { process.env.CANONICAL_RUNTIME_MODE = mode; updateMode(mode); }
+    if (shadowSampleRate !== undefined) { process.env.CANONICAL_SHADOW_SAMPLE_RATE = String(shadowSampleRate); }
+    if (canaryPercent !== undefined) { process.env.CANONICAL_CANARY_SAMPLE_RATE = String(canaryPercent); }
+    if (autoDisable !== undefined) { process.env.CANONICAL_AUTO_DISABLE = String(autoDisable); }
     const config = reloadCanonicalExperimentConfig();
-    res.json({ ok: true, config: { mode: config.mode } });
+    res.json({ ok: true, config: { mode: config.mode, shadowSampleRate: config.shadowSampleRate } });
   });
 
   app.post('/8router/api/canonical-experiment/enable', async (_req, res) => {
