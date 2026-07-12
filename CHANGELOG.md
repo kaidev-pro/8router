@@ -1,5 +1,67 @@
 # 8Router — Changelog
 
+## Phase 2G — CLI Tool Setup Polish
+
+**Date:** 2026-07-12
+**Commit:** phase2g-cli-tool-setup-polish
+**Status:** ✅ Complete. `canonical.enabled` remains `false`.
+
+### Added
+- **Tool Integration Registry** — 14 tools with typed metadata, capability flags, and status badges (Supported / Experimental / Coming Soon)
+- **Template Renderer** — Safe variable substitution (BASE_URL, API_KEY, MODEL) with format-aware escaping for JSON, YAML, shell, ENV, and code
+- **Setup Validation** — URL, model, and access key format validation; trailing-slash normalization; duplicate /v1 prevention; embedded credential rejection
+- **Dashboard CLI Tools Page** — Setup builder with 4 steps: environment selection (hosted/local/custom), access key input (password-masked, memory-only), model selector (grouped aliases), generated config display with copy button
+- **Connection Testing** — Tests endpoint reachability, access key validity, models availability; returns latency; safe error messages only; no stack traces
+- **API Endpoints:**
+  - `GET /8router/api/integrations/tools` — Safe tool metadata (no secrets)
+  - `POST /8router/api/integrations/test` — Connection testing
+  - `POST /8router/api/integrations/render` — Server-side config rendering
+- **i18n EN/ID/JA** — 18 new keys for setup steps, status badges, security warnings, troubleshooting, and UI actions
+- **Documentation** — `docs/cli-integrations.md` with setup guides for all supported tools, compatibility matrix, SDK examples, troubleshooting, and security guidance
+- **62 Tests** — Registry (10), rendering (15), security (5), validation (13), UI/data (6), config examples (7), API structure (6)
+
+### Supported Tools
+| Tool | Status |
+|------|--------|
+| Cursor | Supported |
+| Cline | Supported |
+| Continue | Supported |
+| Roo Code | Supported |
+| Open WebUI | Supported |
+| OpenAI SDK | Supported |
+| cURL | Supported |
+| Environment File | Supported |
+| Claude Code | Experimental |
+| Codex CLI | Experimental |
+| Aider | Experimental |
+| LibreChat | Coming Soon |
+| LobeChat | Coming Soon |
+| Zed | Coming Soon |
+
+### Security
+- Raw access key never embedded in static HTML, logs, URLs, or analytics
+- Password-masked input field for manual key entry
+- Template renderer escapes values for shell injection prevention
+- No provider credentials referenced in templates
+- All validation errors/warnings redact secret values
+- Connection test uses `Cache-Control: no-store`
+- Embedded URL credentials are rejected
+
+### Files
+- `src/integrations/tools/types.ts` — Type definitions and constants
+- `src/integrations/tools/registry.ts` — 14 tools with templates
+- `src/integrations/tools/render.ts` — Format-aware template renderer
+- `src/integrations/tools/validate.ts` — URL/model/key validation
+- `src/integrations/tools/index.ts` — Barrel exports
+- `src/__tests__/cli-tool-integrations.test.ts` — 62 tests
+- `src/__tests__/run-cli-tool-integrations.ts` — Test runner
+- `docs/cli-integrations.md` — Full setup guide
+- `src/api/server.ts` — 3 new API endpoints
+- `src/dashboard/dashboard.ts` — Enhanced CLI Tools page with setup builder
+- `src/i18n/en.json` — EN translation keys
+- `src/i18n/id.json` — ID translation keys
+- `src/i18n/ja.json` — JA translation keys
+
 ## Phase 2F — Token Saver / Safe Compression
 
 **Date:** 2026-07-11

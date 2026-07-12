@@ -2243,6 +2243,111 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
 
+  // ── Phase 2G: CLI Tool Integrations API ─────────────────────────────
+  app.get('/8router/api/integrations/tools', (_req, res) => {
+    try {
+      const { getToolRegistry } = require('../integrations/tools/registry.js');
+      res.json(getToolRegistry());
+    } catch (err: any) {
+      // Dynamic import fallback
+      import('../integrations/tools/registry.js')
+        .then(m => res.json(m.getToolRegistry()))
+        .catch(() => res.status(500).json({ error: 'Failed to load tool registry' }));
+    }
+  });
+
+  app.post('/8router/api/integrations/test', async (req, res) => {
+    const { baseUrl, apiKey, model, testType } = req.body || {};
+    if (!baseUrl || !apiKey || !model) {
+      return res.status(400).json({ error: 'baseUrl, apiKey, and model are required' });
+    }
+
+    const { validateBaseUrl, normalizeBaseUrl, validateAccessKeyFormat } = await import('../integrations/tools/validate.js');
+    const urlValidation = validateBaseUrl(baseUrl);
+    if (!urlValidation.valid) {
+      return res.status(400).json({ error: urlValidation.errors.join(', ') });
+    }
+
+    const keyValidation = validateAccessKeyFormat(apiKey);
+    if (!keyValidation.valid) {
+      return res.status(400).json({ error: keyValidation.errors.join(', ') });
+    }
+
+    const normalizedUrl = normalizeBaseUrl(baseUrl);
+    const start = Date.now();
+
+    try {
+      // Test /v1/models endpoint
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const response = await fetch(`${normalizedUrl}/models`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      const latencyMs = Date.now() - start;
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        const safeError = errorText.replace(/sk-[a-zA-Z0-9_]+/g, '***').substring(0, 200);
+        return res.json({
+          success: false,
+          endpointReachable: true,
+          accessKeyValid: response.status !== 401 && response.status !== 403,
+          modelsAvailable: false,
+          modelAvailable: false,
+          latencyMs,
+          error: response.status === 401 || response.status === 403 ? 'Invalid or revoked access key' : `Endpoint returned ${response.status}`,
+          errorCode: response.status === 401 || response.status === 403 ? 'invalid_key' : 'endpoint_error',
+        });
+      }
+
+      const data = await response.json().catch(() => ({})) as any;
+      const models = data?.data || [];
+      const modelIds = models.map((m: any) => m.id);
+      const modelAvailable = modelIds.includes(model);
+
+      res.json({
+        success: true,
+        endpointReachable: true,
+        accessKeyValid: true,
+        modelsAvailable: models.length > 0,
+        modelAvailable,
+        latencyMs,
+      });
+    } catch (err: any) {
+      const latencyMs = Date.now() - start;
+      const isTimeout = err.name === 'AbortError';
+      res.json({
+        success: false,
+        endpointReachable: false,
+        accessKeyValid: false,
+        modelsAvailable: false,
+        modelAvailable: false,
+        latencyMs,
+        error: isTimeout ? 'Connection timed out' : 'Endpoint unreachable',
+        errorCode: isTimeout ? 'timeout' : 'unreachable',
+      });
+    }
+  });
+
+  app.post('/8router/api/integrations/render', async (req, res) => {
+    const { toolId, baseUrl, model, apiKey, templateId } = req.body || {};
+    if (!toolId || !baseUrl || !model || !apiKey) {
+      return res.status(400).json({ error: 'toolId, baseUrl, model, and apiKey are required' });
+    }
+
+    try {
+      const { renderToolConfig } = await import('../integrations/tools/render.js');
+      const results = renderToolConfig({ toolId, baseUrl, model, apiKey, templateId });
+      res.set('Cache-Control', 'no-store');
+      res.json(results);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
   // ── Phase 2C: /8router/v1/* Alias Routes ──────────────────────────
   app.get('/8router/v1/models', (req, res) => runtimeModels(req, res));
   app.post('/8router/v1/chat/completions', (req, res) => runtimeChatCompletions(req, res));

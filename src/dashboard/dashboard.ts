@@ -2181,51 +2181,198 @@ async function loadSettings() {
 }
 // ═══ CLI TOOLS ═══
 var cliTools = [
-  {id:'claude-code', name:'Claude Code', desc:'Anthropic Claude Code CLI', color:'#e87040', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" fill="none"/></svg>'},
-  {id:'codex', name:'OpenAI Codex', desc:'OpenAI Codex CLI', color:'#10a37f', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">C</text></svg>'},
-  {id:'hermes', name:'Hermes Agent', desc:'AI agent framework', color:'#eab308', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15 9 22 9 16 14 18 22 12 17 6 22 8 14 2 9 9 9"/></svg>'},
-  {id:'opencode', name:'OpenCode', desc:'Open-source AI terminal assistant', color:'#84abff', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>'},
-  {id:'cline', name:'Cline', desc:'AI coding assistant for VS Code', color:'#8b5cf6', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="11" font-weight="bold" fill="#fff">C</text></svg>'},
-  {id:'cursor', name:'Cursor', desc:'AI-first code editor', color:'#f2f2f2', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="4 4 12 20 14 14 20 12 4 4"/></svg>'},
-  {id:'continue', name:'Continue', desc:'Autocomplete & chat for VS Code', color:'#00d294', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>'},
-  {id:'roo', name:'Roo Code', desc:'AI assistant with custom modes', color:'#ff6568', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>'},
-  {id:'factory-droid', name:'Factory Droid', desc:'Factory-built AI assistant', color:'#8a8f9c', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><circle cx="14" cy="10" r="1.5" fill="currentColor"/></svg>'}
+  {id:'cursor', name:'Cursor', desc:'AI-first code editor', color:'#f2f2f2', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="4 4 12 20 14 14 20 12 4 4"/></svg>', status:'supported'},
+  {id:'cline', name:'Cline', desc:'AI coding assistant for VS Code', color:'#8b5cf6', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="11" font-weight="bold" fill="#fff">C</text></svg>', status:'supported'},
+  {id:'continue', name:'Continue', desc:'Open-source AI code assistant', color:'#00d294', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>', status:'supported'},
+  {id:'roo-code', name:'Roo Code', desc:'AI coding assistant', color:'#ff6568', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>', status:'supported'},
+  {id:'openwebui', name:'Open WebUI', desc:'Self-hosted LLM interface', color:'#10a37f', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>', status:'supported'},
+  {id:'claude-code', name:'Claude Code', desc:'Anthropic CLI (experimental)', color:'#e87040', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" fill="none"/></svg>', status:'experimental'},
+  {id:'codex', name:'Codex CLI', desc:'OpenAI-compatible CLI (experimental)', color:'#10a37f', icon:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">C</text></svg>', status:'experimental'},
+  {id:'aider', name:'Aider', desc:'AI pair programming (experimental)', color:'#84abff', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>', status:'experimental'},
+  {id:'openai-sdk', name:'OpenAI SDK', desc:'Python & Node.js SDK', color:'#f2f2f2', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>', status:'supported'},
+  {id:'curl', name:'cURL', desc:'Command-line HTTP client', color:'#eab308', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>', status:'supported'},
+  {id:'librechat', name:'LibreChat', desc:'Multi-model ChatGPT clone', color:'#8a8f9c', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><circle cx="14" cy="10" r="1.5" fill="currentColor"/></svg>', status:'coming_soon'},
+  {id:'lobechat', name:'LobeChat', desc:'Modern ChatGPT UI framework', color:'#8a8f9c', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>', status:'coming_soon'}
 ];
 
+var cliSetupTool = null;
+var cliSetupEnv = 'hosted';
+var cliSetupKey = '';
+var cliSetupModel = '8router/auto';
+var cliTestResult = null;
+
 async function loadCliTools() {
-  var statusMap = {};
-  try {
-    var health = await apiFetch(API+'/8router/health');
-    health.forEach(function(h) { statusMap[h.providerId] = h; });
-  } catch(e) {}
-
-  document.getElementById('cli-grid').innerHTML = cliTools.map(function(tool) {
-    var status = 'unknown';
-    var statusText = ct('db.cli.unknown');
-    if (tool.id === 'hermes') {
-      status = 'connected';
-      statusText = ct('db.status.connected');
-    } else if (statusMap[tool.id]) {
-      status = statusMap[tool.id].healthy ? 'connected' : 'not-installed';
-      statusText = statusMap[tool.id].healthy ? ct('db.status.connected') : ct('db.btn.error');
-    }
-
+  var grid = document.getElementById('cli-grid');
+  grid.innerHTML = cliTools.map(function(tool) {
+    var badgeColor = tool.status === 'supported' ? 'var(--green)' : tool.status === 'experimental' ? 'var(--accent)' : 'var(--text-muted)';
+    var badgeText = tool.status === 'supported' ? ct('db.cli.supported') : tool.status === 'experimental' ? ct('db.cli.experimental') : ct('db.cli.comingSoon');
     return '<div class="cli-card" onclick="handleCliClick(\\'' + tool.id + '\\')">' +
       '<div class="cli-card-inner">' +
         '<div class="cli-logo" style="background:' + tool.color + '20;color:' + tool.color + '">' + tool.icon + '</div>' +
         '<div class="cli-info">' +
           '<div class="cli-name">' + tool.name + '</div>' +
           '<div class="cli-desc">' + tool.desc + '</div>' +
-          '<div class="cli-status ' + status + '">' + statusText + '</div>' +
+          '<div class="cli-status" style="color:' + badgeColor + '">' + badgeText + '</div>' +
         '</div>' +
         '<div class="cli-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>' +
       '</div>' +
     '</div>';
   }).join('');
+
+  // Add setup builder panel below if a tool is selected
+  if (cliSetupTool) {
+    grid.innerHTML += renderSetupBuilder();
+  }
 }
 
 function handleCliClick(id) {
-  console.log('CLI Tool clicked:', id);
+  cliSetupTool = id;
+  cliTestResult = null;
+  loadCliTools();
+}
+
+function closeSetupBuilder() {
+  cliSetupTool = null;
+  cliTestResult = null;
+  loadCliTools();
+}
+
+function renderSetupBuilder() {
+  var tool = cliTools.find(function(t) { return t.id === cliSetupTool; });
+  if (!tool) return '';
+  var isSupported = tool.status !== 'coming_soon';
+  var baseUrl = cliSetupEnv === 'hosted' ? 'https://8router.8agents.xyz/v1' : cliSetupEnv === 'local' ? 'http://localhost:8081/v1' : '';
+  var badgeColor = tool.status === 'supported' ? 'var(--green)' : tool.status === 'experimental' ? 'var(--accent)' : 'var(--text-muted)';
+
+  var html = '<div style="margin-top:24px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;padding:32px">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">';
+  html += '<div style="display:flex;align-items:center;gap:12px">';
+  html += '<div class="cli-logo" style="background:' + tool.color + '20;color:' + tool.color + '">' + tool.icon + '</div>';
+  html += '<div>';
+  html += '<div style="font-size:18px;font-weight:700">' + tool.name + '</div>';
+  html += '<div style="font-size:12px;color:' + badgeColor + '">' + (tool.status === 'supported' ? ct('db.cli.supported') : tool.status === 'experimental' ? ct('db.cli.experimental') : ct('db.cli.comingSoon')) + '</div>';
+  html += '</div></div>';
+  html += '<button onclick="closeSetupBuilder()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 16px;color:var(--text);cursor:pointer;font-size:12px">✕ ' + ct('db.btn.close') + '</button>';
+  html += '</div>';
+
+  if (!isSupported) {
+    html += '<div style="text-align:center;padding:40px;color:var(--text-muted)">' + ct('db.cli.comingSoonMsg') + '</div></div>';
+    return html;
+  }
+
+  // Step 1 — Environment
+  html += '<div style="margin-bottom:20px">';
+  html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)">' + ct('db.cli.step1Title') + '</div>';
+  html += '<div style="display:flex;gap:8px">';
+  [{v:'h',l:'Hosted'},{v:'l',l:'Local'},{v:'c',l:'Custom'}].forEach(function(e) {
+    var active = (e.v === 'h' && cliSetupEnv==='hosted') || (e.v === 'l' && cliSetupEnv==='local') || (e.v === 'c' && cliSetupEnv==='custom');
+    html += '<button onclick="cliSetupEnv=\''+(e.v==='h'?'hosted':e.v==='l'?'local':'custom')+'\';loadCliTools()" style="padding:8px 16px;border-radius:8px;border:1px solid '+(active?'var(--accent)':'var(--border)')+';background:'+(active?'var(--accent)':'transparent')+';color:'+(active?'#fff':'var(--text)')+';cursor:pointer;font-size:12px">'+e.l+'</button>';
+  });
+  html += '</div>';
+  if (cliSetupEnv === 'custom') {
+    html += '<input id="cli-custom-url" type="text" placeholder="https://your-endpoint.com/v1" value="'+baseUrl+'" style="margin-top:8px;width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:monospace">';
+  }
+  html += '</div>';
+
+  // Step 2 — Access Key
+  html += '<div style="margin-bottom:20px">';
+  html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)">' + ct('db.cli.step2Title') + '</div>';
+  html += '<input id="cli-api-key" type="password" placeholder="sk-8router_..." style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:monospace">';
+  html += '<div style="margin-top:6px;font-size:11px;color:var(--text-muted)">' + ct('db.cli.keyWarning') + '</div>';
+  html += '</div>';
+
+  // Step 3 — Model
+  html += '<div style="margin-bottom:20px">';
+  html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)">' + ct('db.cli.step3Title') + '</div>';
+  html += '<select id="cli-model-select" onchange="cliSetupModel=this.value" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px">';
+  var groups = {General:['8router/auto','8router/smart','8router/fast','8router/cheap'],Specialized:['8router/coding','8router/creative'],'Local':['8router/local','8router/privacy']};
+  Object.keys(groups).forEach(function(g) {
+    html += '<optgroup label="'+g+'">';
+    groups[g].forEach(function(m) {
+      html += '<option value="'+m+'"'+(m===cliSetupModel?' selected':'')+'>'+m+'</option>';
+    });
+    html += '</optgroup>';
+  });
+  html += '</select></div>';
+
+  // Step 4 — Generated Config
+  baseUrl = cliSetupEnv === 'custom' ? (document.getElementById('cli-custom-url') ? document.getElementById('cli-custom-url').value : baseUrl) : baseUrl;
+  html += '<div style="margin-bottom:20px">';
+  html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)">' + ct('db.cli.step4Title') + '</div>';
+
+  var config = generateConfig(tool.id, baseUrl, cliSetupModel);
+  html += '<div style="position:relative">';
+  html += '<pre style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:12px;font-family:monospace;overflow-x:auto;white-space:pre-wrap;word-break:break-all;color:var(--text)">' + escapeHtml(config) + '</pre>';
+  html += '<button onclick="copyCliConfig()" style="position:absolute;top:8px;right:8px;padding:6px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:11px;cursor:pointer;font-weight:600">' + ct('db.btn.copy') + '</button>';
+  html += '</div></div>';
+
+  // Test Connection
+  html += '<div style="display:flex;gap:8px;align-items:center">';
+  html += '<button onclick="testCliConnection()" style="padding:10px 20px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:13px;cursor:pointer;font-weight:600">' + ct('db.cli.testConnection') + '</button>';
+  if (cliTestResult) {
+    var ok = cliTestResult.success;
+    html += '<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:'+(ok?'var(--green)':'var(--red)')+'">';
+    html += ok ? '✓ ' + ct('db.cli.connected') : '✗ ' + (cliTestResult.error || ct('db.cli.testFailed'));
+    if (cliTestResult.latencyMs) html += ' (' + cliTestResult.latencyMs + 'ms)';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Security note
+  html += '<div style="margin-top:16px;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:11px;color:var(--text-muted)">';
+  html += '🔒 ' + ct('db.cli.securityNote');
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+function generateConfig(toolId, baseUrl, model) {
+  var configs = {
+    'curl': 'curl ' + baseUrl + '/chat/completions \\\n  -H \'Authorization: Bearer <YOUR_KEY>\' \\\n  -H \'Content-Type: application/json\' \\\n  -d \'{"model":"' + model + '","messages":[{"role":"user","content":"Hello from 8Router"}]}\'',
+    'openai-sdk': 'import OpenAI from \'openai\';\n\nconst client = new OpenAI({\n  baseURL: \''+baseUrl+'\',\n  apiKey: \'<YOUR_KEY>\',\n});\n\nconst r = await client.chat.completions.create({\n  model: \''+model+'\',\n  messages: [{role:\'user\', content:\'Hello from 8Router\'}],\n});\nconsole.log(r.choices[0].message.content);',
+    'continue': '{\n  "models": [{\n    "title": "8Router ' + model + '",\n    "provider": "openai",\n    "model": "' + model + '",\n    "apiBase": "' + baseUrl + '",\n    "apiKey": "<YOUR_KEY>"\n  }]\n}',
+    'env-file': 'EIGHTROUTER_BASE_URL=' + baseUrl + '\nEIGHTROUTER_API_KEY=<YOUR_KEY>\nEIGHTROUTER_MODEL=' + model,
+  };
+  if (configs[toolId]) return configs[toolId];
+  return ct('db.cli.configDesc') + '\n\nBase URL: ' + baseUrl + '\nAPI Key: <YOUR_KEY>\nModel: ' + model;
+}
+
+function copyCliConfig() {
+  var el = document.querySelector('#cli-grid pre');
+  if (el) {
+    navigator.clipboard.writeText(el.textContent).then(function() {
+      alert(ct('db.cli.copied'));
+    }).catch(function() {
+      alert(ct('db.cli.copyFailed'));
+    });
+  }
+}
+
+async function testCliConnection() {
+  var apiKey = document.getElementById('cli-api-key');
+  var keyVal = apiKey ? apiKey.value : '';
+  if (!keyVal) { alert(ct('db.cli.enterKey')); return; }
+  var baseUrl = cliSetupEnv === 'custom' ? (document.getElementById('cli-custom-url') ? document.getElementById('cli-custom-url').value : '') : (cliSetupEnv === 'hosted' ? 'https://8router.8agents.xyz/v1' : 'http://localhost:8081/v1');
+
+  cliTestResult = { success: false, error: ct('db.cli.testing') };
+  loadCliTools();
+
+  try {
+    var resp = await fetch(API + '/8router/api/integrations/test', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ baseUrl: baseUrl, apiKey: keyVal, model: cliSetupModel, testType: 'models' })
+    });
+    cliTestResult = await resp.json();
+  } catch(e) {
+    cliTestResult = { success: false, error: ct('db.cli.testFailed') };
+  }
+  loadCliTools();
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ═══ LOGS ═══

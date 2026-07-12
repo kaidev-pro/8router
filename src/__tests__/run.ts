@@ -184,6 +184,12 @@ index abc..def 100644
   runTokenSaverTests();
   console.log('');
 
+  // Test 21: CLI Tool Integrations (Phase 2G)
+  console.log('21. CLI Tool Integrations');
+  const { runCliIntegrationTests } = await import('./cli-tool-integrations.test.js');
+  runCliIntegrationTests();
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }
