@@ -3,15 +3,21 @@
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
+export function getAccessKeyHashSecretStatus(): 'ready' | 'missing' | 'invalid' {
+  const secret = process.env.ACCESS_KEY_HASH_SECRET;
+  if (!secret) return 'missing';
+  if (secret.trim().length < 32) return 'invalid';
+  return 'ready';
+}
+
 function getHashSecret(): string {
   const secret = process.env.ACCESS_KEY_HASH_SECRET;
-  if (secret) return secret;
+  if (secret && secret.trim().length >= 32) return secret;
   if (process.env.NODE_ENV !== 'production') {
-    console.warn('[security] ACCESS_KEY_HASH_SECRET not set — using dev fallback (DO NOT use in production)');
+    console.warn('[security] ACCESS_KEY_HASH_SECRET not set or too short — using dev fallback (DO NOT use in production)');
     return 'dev-access-key-hash-secret-do-not-use-in-production';
   }
-  console.error('[security] ACCESS_KEY_HASH_SECRET is REQUIRED in production');
-  return 'dev-access-key-hash-secret-do-not-use-in-production';
+  throw new Error('ACCESS_KEY_HASH_SECRET is required in production');
 }
 
 /**
@@ -37,7 +43,7 @@ export function verifyAccessKey(rawKey: string, storedHash: string): boolean {
  * Throws in production if not set.
  */
 export function assertAccessKeyHashReady(): void {
-  if (process.env.NODE_ENV === 'production' && !process.env.ACCESS_KEY_HASH_SECRET) {
+  if (process.env.NODE_ENV === 'production' && getAccessKeyHashSecretStatus() !== 'ready') {
     throw new Error('ACCESS_KEY_HASH_SECRET is required in production');
   }
 }

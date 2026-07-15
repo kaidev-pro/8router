@@ -2,7 +2,7 @@
 // Validates incoming access keys for runtime routing (Phase 2C use)
 
 import { getDB, type AccessKeyRow } from '../../database.js';
-import { verifyAccessKey } from './hash.js';
+import { assertAccessKeyHashReady, verifyAccessKey } from './hash.js';
 import { redactSecrets } from '../credentials/redact.js';
 
 const KEY_PREFIX = 'sk-8router_';
@@ -36,6 +36,7 @@ export type ValidationResult = AccessKeyContext | InvalidResult;
  * Never throws for normal invalid keys.
  */
 export function validateAccessKey(rawKey: string): ValidationResult {
+  try { assertAccessKeyHashReady(); } catch { return { valid: false, reason: 'not_found' }; }
   if (!rawKey || typeof rawKey !== 'string') {
     return { valid: false, reason: 'missing' };
   }

@@ -11,14 +11,21 @@ const TAG_LEN = 16;
 const KEY_LEN = 32;
 const SCRYPT_N = 2 ** 14;
 
+export function getProviderEncryptionSecretStatus(): 'ready' | 'missing' | 'invalid' {
+  const secret = process.env.PROVIDER_KEY_ENCRYPTION_SECRET;
+  if (!secret) return 'missing';
+  if (secret.trim().length < 32) return 'invalid';
+  return 'ready';
+}
+
 function getSecret(): string {
   const secret = process.env.PROVIDER_KEY_ENCRYPTION_SECRET;
-  if (!secret) {
-    // In dev/test, use a generated fallback with warning
+  if (!secret || secret.trim().length < 32) {
+    // In dev/test, use a fallback with warning. Production always fails closed.
     if (process.env.NODE_ENV === 'production') {
       throw new Error('PROVIDER_KEY_ENCRYPTION_SECRET is required in production');
     }
-    console.warn('[security] PROVIDER_KEY_ENCRYPTION_SECRET not set — using dev fallback');
+    console.warn('[security] PROVIDER_KEY_ENCRYPTION_SECRET not set or too short — using dev fallback');
     return 'dev-only-8router-secret-do-not-use-in-prod';
   }
   return secret;
@@ -60,7 +67,7 @@ export function isEncrypted(value: string): boolean {
 }
 
 export function assertEncryptionReady(): void {
-  if (process.env.NODE_ENV === 'production' && !process.env.PROVIDER_KEY_ENCRYPTION_SECRET) {
+  if (process.env.NODE_ENV === 'production' && getProviderEncryptionSecretStatus() !== 'ready') {
     throw new Error('PROVIDER_KEY_ENCRYPTION_SECRET is required in production');
   }
 }

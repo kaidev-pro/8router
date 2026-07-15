@@ -2439,8 +2439,19 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
   app.get('/8router/api/canonical-experiment/readiness', async (_req, res) => {
     try {
       const { generateReadinessReport } = await import('../runtime/canonical-experiment/readiness.js');
+      const { getAccessKeyHashSecretStatus } = await import('../security/access-keys/hash.js');
+      const { getProviderEncryptionSecretStatus } = await import('../security/credentials/encrypt.js');
+      const { getAllCredentials } = await import('../security/credentials/credential-manager.js');
       const report = generateReadinessReport();
-      res.json(report);
+      res.json({
+        ...report,
+        securityConfiguration: {
+          accessKeyHashSecret: getAccessKeyHashSecretStatus(),
+          providerEncryptionSecret: getProviderEncryptionSecretStatus(),
+          providerCredential: getAllCredentials().some((c: any) => c.isEnabled) ? 'ready' : 'missing',
+          liveTraffic: report.status === 'ready' ? 'ready' : 'insufficient_data',
+        },
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'unknown';
       res.status(500).json({ error: msg.slice(0, 200) });

@@ -191,11 +191,76 @@ async function run() {
     assert(!json.includes('gsk_update_test'), 'Updated credential should not contain raw key');
     deleteCredential(cred.id);
   });
+
+  // ── Section 4: Production Secret Enforcement ─────────
+  console.log('\n── Production Secret Enforcement ──');
+
+  test('13. production access key creation fails without hash secret', () => {
+    const oldNodeEnv = process.env.NODE_ENV;
+    const oldSecret = process.env.ACCESS_KEY_HASH_SECRET;
+    process.env.NODE_ENV = 'production';
+    delete process.env.ACCESS_KEY_HASH_SECRET;
+    try {
+      let threw = false;
+      try { createAccessKey({ name: 'Missing Secret Test' }); } catch { threw = true; }
+      assert(threw, 'Access key creation must fail without ACCESS_KEY_HASH_SECRET in production');
+    } finally {
+      process.env.NODE_ENV = oldNodeEnv;
+      if (oldSecret !== undefined) process.env.ACCESS_KEY_HASH_SECRET = oldSecret; else delete process.env.ACCESS_KEY_HASH_SECRET;
+    }
+  });
+
+  test('14. production access key creation fails with short hash secret', () => {
+    const oldNodeEnv = process.env.NODE_ENV;
+    const oldSecret = process.env.ACCESS_KEY_HASH_SECRET;
+    process.env.NODE_ENV = 'production';
+    process.env.ACCESS_KEY_HASH_SECRET = 'short';
+    try {
+      let threw = false;
+      try { createAccessKey({ name: 'Invalid Secret Test' }); } catch { threw = true; }
+      assert(threw, 'Access key creation must fail with invalid ACCESS_KEY_HASH_SECRET in production');
+    } finally {
+      process.env.NODE_ENV = oldNodeEnv;
+      if (oldSecret !== undefined) process.env.ACCESS_KEY_HASH_SECRET = oldSecret; else delete process.env.ACCESS_KEY_HASH_SECRET;
+    }
+  });
+
+  test('15. production credential creation fails without encryption secret', () => {
+    const oldNodeEnv = process.env.NODE_ENV;
+    const oldSecret = process.env.PROVIDER_KEY_ENCRYPTION_SECRET;
+    process.env.NODE_ENV = 'production';
+    delete process.env.PROVIDER_KEY_ENCRYPTION_SECRET;
+    try {
+      let threw = false;
+      try { createCredential({ provider: 'groq', apiKey: 'gsk_missing_secret_test' }); } catch { threw = true; }
+      assert(threw, 'Provider credential creation must fail without PROVIDER_KEY_ENCRYPTION_SECRET in production');
+    } finally {
+      process.env.NODE_ENV = oldNodeEnv;
+      if (oldSecret !== undefined) process.env.PROVIDER_KEY_ENCRYPTION_SECRET = oldSecret; else delete process.env.PROVIDER_KEY_ENCRYPTION_SECRET;
+    }
+  });
+
+  test('16. production credential creation fails with short encryption secret', () => {
+    const oldNodeEnv = process.env.NODE_ENV;
+    const oldSecret = process.env.PROVIDER_KEY_ENCRYPTION_SECRET;
+    process.env.NODE_ENV = 'production';
+    process.env.PROVIDER_KEY_ENCRYPTION_SECRET = 'short';
+    try {
+      let threw = false;
+      try { createCredential({ provider: 'groq', apiKey: 'gsk_invalid_secret_test' }); } catch { threw = true; }
+      assert(threw, 'Provider credential creation must fail with invalid PROVIDER_KEY_ENCRYPTION_SECRET in production');
+    } finally {
+      process.env.NODE_ENV = oldNodeEnv;
+      if (oldSecret !== undefined) process.env.PROVIDER_KEY_ENCRYPTION_SECRET = oldSecret; else delete process.env.PROVIDER_KEY_ENCRYPTION_SECRET;
+    }
+  });
+
 }
 
 function runProviderActivationTests(): void {
   run().then(() => {
-    console.log(`\n=== Results: ${passed} passed, ${failed} failed ===`);
+
+  console.log(`\n=== Results: ${passed} passed, ${failed} failed ===`);
     if (failures.length > 0) {
       console.log('\nFailures:');
       failures.forEach(f => console.log(`  - ${f}`));

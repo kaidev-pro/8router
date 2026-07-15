@@ -4,7 +4,7 @@
 import { randomUUID } from 'node:crypto';
 import { getDB, type AccessKeyRow } from '../../database.js';
 import { generateAccessKey } from './generate.js';
-import { hashAccessKey } from './hash.js';
+import { assertAccessKeyHashReady, hashAccessKey } from './hash.js';
 import { maskAccessKey } from './mask.js';
 
 // ─── Types ────────────────────────────────────────────────────────────
@@ -92,6 +92,7 @@ function tryParse<T>(val: string, fallback: T): T {
  * Returns safe record + raw key (shown only once).
  */
 export function createAccessKey(input: CreateAccessKeyInput): { accessKey: SafeAccessKey; rawKey: string } {
+  assertAccessKeyHashReady();
   const { rawKey, keyPrefix, keyHint } = generateAccessKey();
   const keyHash = hashAccessKey(rawKey);
   const id = randomUUID();
@@ -199,6 +200,7 @@ export function revokeAccessKey(id: string): boolean {
  * Rotate an access key: generate new key, store new hash, return raw key once.
  */
 export function rotateAccessKey(id: string): { accessKey: SafeAccessKey; rawKey: string } | null {
+  assertAccessKeyHashReady();
   const db = getDB();
   const existing = db.prepare('SELECT * FROM access_keys WHERE id = ?').get(id) as AccessKeyRow | undefined;
   if (!existing) return null;
