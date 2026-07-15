@@ -66,3 +66,17 @@ Counts:
 Phase 3A decision: BLOCKED_EXTERNAL
 
 Reason: engineering readiness still holds, but controlled live validation cannot proceed until application secrets and at least one real provider credential are loaded using official flows.
+
+
+## Phase 3A.5 Runtime Secret Enforcement Update
+
+Status: application secret gap remediated.
+
+- ACCESS_KEY_HASH_SECRET: PRESENT_AND_VALID
+- PROVIDER_KEY_ENCRYPTION_SECRET: PRESENT_AND_VALID
+- Missing/invalid access-key hash secret: fail-closed in production
+- Missing/invalid provider encryption secret: fail-closed in production
+- Temporary official access key generated, verified across restart, then deleted
+- Fingerprint only: sk-8router_****...5b15
+
+Provider-backed live traffic remains blocked because no provider credential is active.

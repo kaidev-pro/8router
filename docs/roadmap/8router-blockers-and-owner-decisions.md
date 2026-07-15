@@ -39,3 +39,15 @@
 | GENERATE_INTERNAL_SMOKE_KEY | REQUIRED_AFTER_SECRETS | temporary key was created, redacted, revoked, and deleted; regenerate after secrets load. |
 
 Risk: UNPUSHED_CANONICAL_HISTORY
+
+
+## Phase 3A.5 Status (2026-07-15)
+
+| Gate | Status | Note |
+|------|--------|------|
+| RUNTIME_SECRET_ENFORCEMENT | RESOLVED | fail-closed implemented and tested. |
+| LOAD_APPLICATION_SECRETS | RESOLVED | runtime reports both application secrets ready. |
+| ACTIVATE_ONE_PROVIDER | REQUIRED | no provider credentials active. |
+| GENERATE_INTERNAL_SMOKE_KEY | REQUIRED_AFTER_PROVIDER | temporary key deleted; generate fresh for provider smoke. |
+| APPROVE_PUSH_CANONICAL_MAIN | RECOMMENDED | local main remains ahead; no push performed. |
+| APPROVE_CREATE_PHASE3A_TAG | RECOMMENDED | recommended tag: phase3a-preflight-blocked-20260716. |
