@@ -63,7 +63,8 @@
     "doctor": "bash scripts/doctor.sh",
     "test:v050": "bash scripts/test-v050.sh",
     "test:i18n-regression": "tsx src/__tests__/run-i18n-regression.ts",
-    "test:typography-responsive": "tsx src/__tests__/run-typography-responsive.ts"
+    "test:typography-responsive": "tsx src/__tests__/run-typography-responsive.ts",
+    "test:doctor-hygiene": "tsx src/__tests__/run-doctor-hygiene.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",

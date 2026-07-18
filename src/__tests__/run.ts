@@ -230,6 +230,14 @@ index abc..def 100644
   failed += typographyResult.failed;
   console.log('');
 
+  // Test 28: Doctor Hygiene Semantics
+  console.log('28. Doctor Hygiene Semantics');
+  const { runDoctorHygieneTests } = await import('./doctor-hygiene.test.js');
+  const doctorResult = runDoctorHygieneTests();
+  passed += doctorResult.passed;
+  failed += doctorResult.failed;
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

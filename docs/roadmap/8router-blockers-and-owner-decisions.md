@@ -84,3 +84,13 @@ Fix summary:
 - Added production i18n regression tests.
 
 Phase 3A remains `BLOCKED_EXTERNAL` pending provider credential and live evidence. Do not activate providers automatically.
+
+## Doctor Hygiene and i18n Completion — 2026-07-18
+
+Status: RESOLVED.
+
+- Indonesian and Japanese translation dictionaries now match the canonical English key set.
+- Doctor no longer reports missing i18n keys.
+- Provider-backed `/v1/chat/completions` validation is honestly classified as `NOT_CONFIGURED` until provider credential and smoke access key are configured.
+
+Phase 3A remains `BLOCKED_EXTERNAL` for provider credential and live evidence. Do not mark Phase 3A ready from doctor hygiene alone.

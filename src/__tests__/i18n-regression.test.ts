@@ -103,6 +103,40 @@ export function runI18nRegressionTests(): { passed: number; failed: number } {
     assert(value === 'Translation unavailable', 'missing key did not return sanitized production fallback');
   });
 
+  test('English remains the canonical reference dictionary', () => {
+    const enKeys = new Set(Object.keys(JSON.parse(readFileSync(path.join(process.cwd(), 'src', 'i18n', 'en.json'), 'utf8')) as Record<string, string>));
+    assert(enKeys.has('hero.title1'), 'canonical English dictionary missing hero.title1');
+    assert(enKeys.has('db.cli.securityNote'), 'canonical English dictionary missing db.cli.securityNote');
+  });
+
+  test('Indonesian and Japanese have no missing active keys', () => {
+    const en = JSON.parse(readFileSync(path.join(process.cwd(), 'src', 'i18n', 'en.json'), 'utf8')) as Record<string, string>;
+    for (const locale of ['id', 'ja']) {
+      const dict = JSON.parse(readFileSync(path.join(process.cwd(), 'src', 'i18n', `${locale}.json`), 'utf8')) as Record<string, string>;
+      const missing = Object.keys(en).filter(key => !(key in dict));
+      assert(missing.length === 0, `${locale} missing keys: ${missing.join(', ')}`);
+    }
+  });
+
+  test('placeholder names match across locales', () => {
+    const placeholderRegex = /\{[a-zA-Z0-9_]+\}|\{\{[a-zA-Z0-9_]+\}\}|%[sd]/g;
+    const en = JSON.parse(readFileSync(path.join(process.cwd(), 'src', 'i18n', 'en.json'), 'utf8')) as Record<string, string>;
+    for (const locale of ['id', 'ja']) {
+      const dict = JSON.parse(readFileSync(path.join(process.cwd(), 'src', 'i18n', `${locale}.json`), 'utf8')) as Record<string, string>;
+      for (const [key, value] of Object.entries(en)) {
+        const expected = [...value.matchAll(placeholderRegex)].map(match => match[0]).sort().join('|');
+        const actual = [...(dict[key] ?? '').matchAll(placeholderRegex)].map(match => match[0]).sort().join('|');
+        assert(actual === expected, `${locale}:${key} placeholder mismatch`);
+      }
+    }
+  });
+
+  test('no unsupported wildcard exclusions exist', () => {
+    const content = readFileSync(path.join(process.cwd(), 'src', '__tests__', 'i18n-regression.test.ts'), 'utf8');
+    const marker = ['LOCALE','EXCLUSION','WILDCARD'].join('_');
+    assert(!content.includes(marker), 'unsupported locale exclusion wildcard present');
+  });
+
   test('Linux-sensitive import paths resolve correctly', () => {
     const exactPaths = [
       'src/i18n/index.ts',

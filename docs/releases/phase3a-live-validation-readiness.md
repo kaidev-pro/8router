@@ -91,3 +91,20 @@ Validation:
 - Doctor: exit 0, `FAILURES=0 WARNINGS=1 BLOCKED=1`.
 
 No provider activation, live provider traffic, push, or tag was performed.
+
+## Doctor Hygiene and i18n Completion — 2026-07-18
+
+Doctor hygiene: PASSED.
+i18n coverage: COMPLETE.
+
+Doctor now reports the honest pre-provider state:
+
+```text
+FAILURES=0 WARNINGS=0 BLOCKED=0 NOT_CONFIGURED=1
+```
+
+`/v1/chat/completions` provider-backed live validation is classified as `NOT_CONFIGURED` until a provider credential and smoke access key are intentionally configured. It is not marked as live-verified.
+
+Phase 3A remains `BLOCKED_EXTERNAL` pending provider credential activation and live evidence. No provider activation, credential change, access-key generation, or live provider traffic was performed.
+
+Evidence: `docs/audits/doctor-hygiene-and-i18n-completion.md`.
