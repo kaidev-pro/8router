@@ -159,8 +159,8 @@ No reset, rebase, force-push, provider activation, or credential changes.
 
 ## Deployment Evidence
 
-- Ending HEAD: `d674b6550015ef7c7536ae8f5cff6346340a2994`
-- Commit: `d674b65 fix(ui): improve typography and mobile readability`
+- Typography implementation commit: `d674b6550015ef7c7536ae8f5cff6346340a2994`
+- Implementation commit: `d674b65 fix(ui): improve typography and mobile readability`
 - Push status: not pushed; local `main` remains ahead of `origin/main`.
 - Service restart: PASS.
 - MainPID changed from `1222544` to `1252212`.
@@ -184,5 +184,7 @@ Headless Chrome screenshots captured and inspected at:
 Verified: no raw keys, readable hero and CTAs, no visible body-level horizontal overflow, no clipped heading, no button collision, no visible card overflow, mobile nav usable with logo plus dashboard CTA, desktop nav usable.
 
 ## Final Result
+
+Final documentation commit follows this implementation commit to avoid self-referential commit hashes. See final report for ending HEAD.
 
 Typography/readability phase complete. No provider activation, live provider traffic, credential edits, routing changes, push, reset, rebase, or tag were performed.
