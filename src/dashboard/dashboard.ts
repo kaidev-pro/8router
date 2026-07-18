@@ -1674,7 +1674,7 @@ var PROVIDER_LOGOS = {
 
 function provLogo(id, size) {
   var p = PROVIDER_LOGOS[id] || {logo: '', fallback: id.slice(0,2).toUpperCase(), color: '#94A3B8'};
-  return '<span class="prov-logo-box" style="width:'+(size+4)+'px;height:'+(size+4)+'px"><img src="'+p.logo+'" width="'+size+'" height="'+size+'" style="object-fit:contain" onerror="this.style.display=\\'none\\';this.nextElementSibling.style.display=\\'flex\\'"><span class="prov-logo-fb" style="display:none;background:'+p.color+'20;color:'+p.color+';font-size:'+Math.round(size*0.4)+'px">'+p.fallback+'</span></span>';
+  return '<span class="prov-logo-box" style="width:'+(size+4)+'px;height:'+(size+4)+'px"><img src="'+p.logo+'" width="'+size+'" height="'+size+'" style="object-fit:contain" onerror="this.style.display=&quot;none&quot;;this.nextElementSibling.style.display=&quot;flex&quot;"><span class="prov-logo-fb" style="display:none;background:'+p.color+'20;color:'+p.color+';font-size:'+Math.round(size*0.4)+'px">'+p.fallback+'</span></span>';
 }
 
 const pageIcons = {
@@ -1701,8 +1701,13 @@ function go(name, el) {
   curPage = name;
   document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active') });
   document.querySelectorAll('.sb-item').forEach(function(n){ n.classList.remove('active') });
-  document.getElementById('pg-' + name).classList.add('active');
-  el.classList.add('active');
+  var pageEl = document.getElementById('pg-' + name);
+  if (pageEl) pageEl.classList.add('active');
+  var navEl = el || Array.from(document.querySelectorAll('.sb-item')).find(function(n) {
+    var attr = n.getAttribute('onclick') || '';
+    return attr.indexOf("'" + name + "'") !== -1 || attr.indexOf('&quot;' + name + '&quot;') !== -1;
+  });
+  if (navEl) navEl.classList.add('active');
   if (window.innerWidth <= 768) {
     document.getElementById("sidebar").classList.remove("open");
     document.getElementById("sidebar-overlay").classList.remove("show");
@@ -1757,12 +1762,14 @@ async function refresh() {
     document.getElementById('u-rtk').textContent = (s.compressionSaved||0).toLocaleString();
     document.getElementById('prov-cnt').textContent = provs.length;
 
-    drawTopology(provs, health||[]);
-    loadTokenSaverStats();
     document.getElementById('conn-badge').className = 'badge on';
     document.getElementById('conn-badge').innerHTML = '<span class="dot"></span> ' + ct('db.status.connected');
     document.getElementById('conn-badge-text').textContent = ct('db.status.connected');
     document.getElementById('conn-badge-text').className = 'val green';
+    document.getElementById('conn-badge-text').style.color = 'var(--green)';
+
+    try { drawTopology(provs, health||[]); } catch(e) { console.warn('[8Router dashboard] topology render failed', e && e.message); }
+    try { loadTokenSaverStats(); } catch(e) { console.warn('[8Router dashboard] token saver stats failed', e && e.message); }
 
     // Fetch OAuth status
     try {
@@ -1935,8 +1942,8 @@ async function loadProv() {
       '<td>'+(p.totalTokens||0).toLocaleString()+'</td>' +
       '<td style="color:var(--red)">'+(p.errors||0)+'</td>' +
       '<td>'+lastErrorHtml+'</td>' +
-      '<td><button class="test-btn" onclick="testProvider(this,\\\\''+p.id+'\\\\')">Test</button>' +
-      (credKey ? ' <button class="test-btn" style="margin-left:4px;font-size:10px" onclick="resetHealth(\\\\''+credKey+'\\\\')">Reset</button>' : '') +
+      '<td><button class="test-btn" onclick="testProvider(this,&quot;'+p.id+'&quot;)">Test</button>' +
+      (credKey ? ' <button class="test-btn" style="margin-left:4px;font-size:10px" onclick="resetHealth(&quot;'+credKey+'&quot;)">Reset</button>' : '') +
       '</td></tr>';
     }).join('');
   } catch(e) {}
@@ -2129,7 +2136,7 @@ async function loadConns() {
       '<td style="font-family:JetBrains Mono,monospace;font-size:11px">'+nextRetry+'</td>' +
       '<td>'+(x.totalRequests||0)+'</td><td>'+(x.totalTokens||0).toLocaleString()+'</td>' +
       '<td style="color:var(--green)">$'+(x.totalCost||0).toFixed(4)+'</td>' +
-      '<td><button class="test-btn" onclick="testConnection(this,\\''+x.id+'\\')">Test</button></td></tr>';
+      '<td><button class="test-btn" onclick="testConnection(this,&quot;'+x.id+'&quot;)">Test</button></td></tr>';
     }).join('');
   } catch(e) {
     document.getElementById('conn-tbody').innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">' + ct('db.conn.loadFailed') + '</td></tr>';
@@ -2258,7 +2265,7 @@ async function loadCliTools() {
   grid.innerHTML = cliTools.map(function(tool) {
     var badgeColor = tool.status === 'supported' ? 'var(--green)' : tool.status === 'experimental' ? 'var(--accent)' : 'var(--text-muted)';
     var badgeText = tool.status === 'supported' ? ct('db.cli.supported') : tool.status === 'experimental' ? ct('db.cli.experimental') : ct('db.cli.comingSoon');
-    return '<div class="cli-card" onclick="handleCliClick(\\'' + tool.id + '\\')">' +
+    return '<div class="cli-card" onclick="handleCliClick(&quot;' + tool.id + '&quot;)">' +
       '<div class="cli-card-inner">' +
         '<div class="cli-logo" style="background:' + tool.color + '20;color:' + tool.color + '">' + tool.icon + '</div>' +
         '<div class="cli-info">' +
@@ -2318,7 +2325,7 @@ function renderSetupBuilder() {
   html += '<div style="display:flex;gap:8px">';
   [{v:'h',l:'Hosted'},{v:'l',l:'Local'},{v:'c',l:'Custom'}].forEach(function(e) {
     var active = (e.v === 'h' && cliSetupEnv==='hosted') || (e.v === 'l' && cliSetupEnv==='local') || (e.v === 'c' && cliSetupEnv==='custom');
-    html += '<button onclick="cliSetupEnv=\''+(e.v==='h'?'hosted':e.v==='l'?'local':'custom')+'\';loadCliTools()" style="padding:8px 16px;border-radius:8px;border:1px solid '+(active?'var(--accent)':'var(--border)')+';background:'+(active?'var(--accent)':'transparent')+';color:'+(active?'#fff':'var(--text)')+';cursor:pointer;font-size:12px">'+e.l+'</button>';
+    html += '<button onclick="cliSetupEnv=&quot;'+(e.v==='h'?'hosted':e.v==='l'?'local':'custom')+'&quot;;loadCliTools()" style="padding:8px 16px;border-radius:8px;border:1px solid '+(active?'var(--accent)':'var(--border)')+';background:'+(active?'var(--accent)':'transparent')+';color:'+(active?'#fff':'var(--text)')+';cursor:pointer;font-size:12px">'+e.l+'</button>';
   });
   html += '</div>';
   if (cliSetupEnv === 'custom') {
@@ -2380,14 +2387,39 @@ function renderSetupBuilder() {
 }
 
 function generateConfig(toolId, baseUrl, model) {
-  var configs = {
-    'curl': 'curl ' + baseUrl + '/chat/completions \\\n  -H \'Authorization: Bearer <YOUR_KEY>\' \\\n  -H \'Content-Type: application/json\' \\\n  -d \'{"model":"' + model + '","messages":[{"role":"user","content":"Hello from 8Router"}]}\'',
-    'openai-sdk': 'import OpenAI from \'openai\';\n\nconst client = new OpenAI({\n  baseURL: \''+baseUrl+'\',\n  apiKey: \'<YOUR_KEY>\',\n});\n\nconst r = await client.chat.completions.create({\n  model: \''+model+'\',\n  messages: [{role:\'user\', content:\'Hello from 8Router\'}],\n});\nconsole.log(r.choices[0].message.content);',
-    'continue': '{\n  "models": [{\n    "title": "8Router ' + model + '",\n    "provider": "openai",\n    "model": "' + model + '",\n    "apiBase": "' + baseUrl + '",\n    "apiKey": "<YOUR_KEY>"\n  }]\n}',
-    'env-file': 'EIGHTROUTER_BASE_URL=' + baseUrl + '\nEIGHTROUTER_API_KEY=<YOUR_KEY>\nEIGHTROUTER_MODEL=' + model,
-  };
-  if (configs[toolId]) return configs[toolId];
-  return ct('db.cli.configDesc') + '\n\nBase URL: ' + baseUrl + '\nAPI Key: <YOUR_KEY>\nModel: ' + model;
+  var nl = String.fromCharCode(10);
+  if (toolId === 'curl') {
+    var body = JSON.stringify({ model: model, messages: [{ role: 'user', content: 'Hello from 8Router' }] });
+    return [
+      'curl ' + baseUrl + '/chat/completions',
+      '  -H Authorization:Bearer_REDACTED',
+      '  -H Content-Type:application/json',
+      '  -d ' + JSON.stringify(body)
+    ].join(nl);
+  }
+  if (toolId === 'openai-sdk') {
+    return [
+      'import OpenAI from "openai";',
+      '',
+      'const client = new OpenAI({',
+      '  baseURL: "' + baseUrl + '",',
+      '  apiKey: "<YOUR_KEY>",',
+      '});',
+      '',
+      'const r = await client.chat.completions.create({',
+      '  model: "' + model + '",',
+      '  messages: [{ role: "user", content: "Hello from 8Router" }],',
+      '});',
+      'console.log(r.choices[0].message.content);'
+    ].join(nl);
+  }
+  if (toolId === 'continue') {
+    return '{' + nl + '  "models": [{' + nl + '    "title": "8Router ' + model + '",' + nl + '    "provider": "openai",' + nl + '    "model": "' + model + '",' + nl + '    "apiBase": "' + baseUrl + '",' + nl + '    "apiKey": "***"' + nl + '  }]' + nl + '}';
+  }
+  if (toolId === 'env-file') {
+    return 'EIGHTROUTER_BASE_URL=' + baseUrl + nl + 'EIGHTROUTER_API_KEY=***' + nl + 'EIGHTROUTER_MODEL=' + model;
+  }
+  return ct('db.cli.configDesc') + nl + nl + 'Base URL: ' + baseUrl + nl + 'API Key: <YOUR_KEY>' + nl + 'Model: ' + model;
 }
 
 function copyCliConfig() {
@@ -2445,7 +2477,7 @@ async function loadLogs() {
       var cost = log.estimatedTotalCost != null ? '$'+log.estimatedTotalCost.toFixed(6) : '-';
       var latency = log.latencyMs ? log.latencyMs+'ms' : '-';
       var fb = log.hadFallback ? '<span style="color:var(--yellow)">'+(log.fallbackCount||0)+'</span>' : '-';
-      html += '<tr style="cursor:pointer" onclick="showRequestDetail(\\\\''+log.id+'\\\\')"><td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+ts+'</td><td style="font-size:12px;padding:8px 12px;border-top:1px solid var(--border);font-weight:600;'+sc+'">'+log.status+'</td><td style="font-family:Inter,sans-serif;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+(log.actualProvider||'-')+'</td><td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border);color:var(--accent)">'+(log.actualModel||log.requestedModel||'-')+'</td><td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+tokens+'</td><td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+cost+'</td><td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+latency+'</td><td style="text-align:center;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+fb+'</td></tr>';
+      html += '<tr style="cursor:pointer" onclick="showRequestDetail(&quot;'+log.id+'&quot;)"><td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+ts+'</td><td style="font-size:12px;padding:8px 12px;border-top:1px solid var(--border);font-weight:600;'+sc+'">'+log.status+'</td><td style="font-family:Inter,sans-serif;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+(log.actualProvider||'-')+'</td><td style="font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border);color:var(--accent)">'+(log.actualModel||log.requestedModel||'-')+'</td><td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+tokens+'</td><td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+cost+'</td><td style="text-align:right;font-family:JetBrains Mono,monospace;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+latency+'</td><td style="text-align:center;font-size:12px;padding:8px 12px;border-top:1px solid var(--border)">'+fb+'</td></tr>';
     });
     html += '</tbody></table>';
     panel.innerHTML = html;
@@ -2517,7 +2549,7 @@ async function loadApiKeys() {
         '<td>'+lastUsed+'</td>' +
         '<td>'+(k.requests||0)+'</td>' +
         '<td><span class="badge '+(active?'healthy':'unhealthy')+'">'+(active?ct('db.keys.active'):ct('db.keys.revoked'))+'</span></td>' +
-        '<td>'+(active?'<button style="padding:4px 10px;border-radius:6px;border:1px solid var(--red);background:transparent;color:var(--red);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s" onclick="revokeApiKey(\\\''+(k.id||k.key)+'\\\')">'+ct('db.btn.revoke')+'</button>':'')+'</td></tr>';
+        '<td>'+(active?'<button style="padding:4px 10px;border-radius:6px;border:1px solid var(--red);background:transparent;color:var(--red);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s" onclick="revokeApiKey(&quot;'+(k.id||k.key)+'&quot;)">'+ct('db.btn.revoke')+'</button>':'')+'</td></tr>';
     }).join('');
   } catch(e) {
     document.getElementById('apikey-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:40px;font-family:Inter,sans-serif">' + ct('db.warn.apiUnreachable') + '</td></tr>';
@@ -2577,7 +2609,7 @@ async function loadAccessKeys() {
         '<td><span class="badge ' + statusCls + '">' + k.status + '</span></td>' +
         '<td style="font-size:12px">' + lastUsed + '</td>' +
         '<td style="display:flex;gap:4px">' +
-          '<button style="padding:4px 10px;border-radius:6px;border:1px solid var(--red);background:transparent;color:var(--red);font-size:11px;font-weight:600;cursor:pointer" onclick="revokeAccessKey(\'' + k.id + '\')">Revoke</button>' +
+          '<button style="padding:4px 10px;border-radius:6px;border:1px solid var(--red);background:transparent;color:var(--red);font-size:11px;font-weight:600;cursor:pointer" onclick="revokeAccessKey(&quot;' + k.id + '&quot;)">Revoke</button>' +
         '</td></tr>';
     }).join('');
   } catch(e) {
@@ -2597,7 +2629,7 @@ async function createAccessKey() {
     if (resp.ok) {
       var data = await resp.json();
       if (data.rawKey) {
-        alert('✅ Access key created!\n\n🔑 ' + data.rawKey + '\n\nCopy this key now. You will not be able to see it again.\n\nBase URL: ' + window.location.origin + '/v1');
+        alert(['✅ Access key created!', '', '🔑 ' + data.rawKey, '', 'Copy this key now. You will not be able to see it again.', '', 'Base URL: ' + window.location.origin + '/v1'].join(String.fromCharCode(10)));
       }
       loadAccessKeys();
     } else {
@@ -2793,8 +2825,8 @@ async function loadCanonicalExperiment() {
     var ctrlHtml = '<div class="card" style="margin-bottom:20px">' +
       '<div class="card-header"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> '+ct('db.canonical.controls')+'</div>' +
       '<div style="padding:16px;display:flex;flex-wrap:wrap;gap:10px">' +
-        '<button onclick="canonicalSetMode(\'shadow\')" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text-main);font-size:12px;cursor:pointer;'+(state.mode==='shadow'?'border-color:var(--green);background:var(--green);color:#fff':'')+'">Shadow</button>' +
-        '<button onclick="canonicalSetMode(\'off\')" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text-main);font-size:12px;cursor:pointer;'+(state.mode==='off'?'border-color:var(--accent);background:var(--accent);color:#fff':'')+'">Off</button>' +
+        '<button onclick="canonicalSetMode(&quot;shadow&quot;)" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text-main);font-size:12px;cursor:pointer;'+(state.mode==='shadow'?'border-color:var(--green);background:var(--green);color:#fff':'')+'">Shadow</button>' +
+        '<button onclick="canonicalSetMode(&quot;off&quot;)" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text-main);font-size:12px;cursor:pointer;'+(state.mode==='off'?'border-color:var(--accent);background:var(--accent);color:#fff':'')+'">Off</button>' +
         '<button onclick="canonicalManualDisable()" style="padding:8px 16px;border:1px solid var(--red);border-radius:8px;background:transparent;color:var(--red);font-size:12px;cursor:pointer">Kill Switch</button>' +
         '<button onclick="canonicalRetentionPolicy()" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text-main);font-size:12px;cursor:pointer">Retention Cleanup</button>' +
       '</div>' +
@@ -3021,7 +3053,7 @@ function renderBottomNav() {
       providers:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>',
       settings:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
     };
-    return '<div class="nav-item'+active+'" onclick="go(\\''+it.name+'\\',this)">'+(icons[it.name]||'')+'<span>'+it.label+'</span></div>';
+    return '<div class="nav-item'+active+'" onclick="go(&quot;'+it.name+'&quot;,this)">'+(icons[it.name]||'')+'<span>'+it.label+'</span></div>';
   }).join('');
   document.body.appendChild(nav);
   updateBottomNav();
