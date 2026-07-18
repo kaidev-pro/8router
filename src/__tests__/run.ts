@@ -214,6 +214,14 @@ index abc..def 100644
   runProviderActivationTests();
   console.log('');
 
+  // Test 26: Production i18n Regression
+  console.log('26. Production i18n Regression');
+  const { runI18nRegressionTests } = await import('./i18n-regression.test.js');
+  const i18nResult = runI18nRegressionTests();
+  passed += i18nResult.passed;
+  failed += i18nResult.failed;
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }

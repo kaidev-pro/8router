@@ -70,3 +70,17 @@ Key corrections:
 - Full-history redacted `gitleaks` scan completed with no `REAL_SECRET` findings; matches were classified as `TEST_FIXTURE` or `FALSE_POSITIVE`.
 
 Phase 3A remains `NOT_READY` until live validation prerequisites and runtime diagnostics are updated/validated end to end. Do not activate provider-backed traffic from this audit alone.
+
+## Production i18n Regression — 2026-07-18
+
+Status: RESOLVED_ENGINEERING_PENDING_PUBLIC_RECHECK.
+
+Root cause: invalid JSON in `src/i18n/en.json` and `src/i18n/ja.json` caused English/Japanese dictionary loading to fail and exposed raw translation keys on the landing page.
+
+Fix summary:
+- Restored valid dictionary JSON.
+- Added safe locale normalization for supported variants.
+- Added sanitized missing-key fallback.
+- Added production i18n regression tests.
+
+Phase 3A remains `BLOCKED_EXTERNAL` pending provider credential and live evidence. Do not activate providers automatically.

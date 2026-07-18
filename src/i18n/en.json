@@ -386,7 +386,7 @@
   "db.cli.copied": "Configuration copied to clipboard!",
   "db.cli.copyFailed": "Failed to copy — try selecting and copying manually",
   "db.cli.configDesc": "Use the values below to configure your tool:",
-  "db.cli.securityNote": "Use an 8Router access key in your tools. Never paste provider API keys directly into third-party tools when routing through 8Router. Provider credentials remain encrypted inside 8Router."
+  "db.cli.securityNote": "Use an 8Router access key in your tools. Never paste provider API keys directly into third-party tools when routing through 8Router. Provider credentials remain encrypted inside 8Router.",
   "db.warn.publicAccess": "Public access is enabled without authentication. This is unsafe for production.",
   "db.warn.apiUnreachable": "API unreachable",
   "db.warn.loadFailed": "Failed to load",

@@ -13,17 +13,19 @@ export const LOCALE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year in seconds
  * Detect locale from request with priority chain
  */
 export function getLocale(req: Request, defaultLocale: Locale = DEFAULT_LOCALE): Locale {
-  // 1. Query param ?lang=id
+  // 1. Query param ?lang=id or ?lang=id-ID
   const queryLang = req.query.lang as string;
-  if (queryLang && isValidLocale(queryLang)) {
-    return queryLang;
+  const normalizedQueryLang = normalizeLocale(queryLang);
+  if (normalizedQueryLang) {
+    return normalizedQueryLang;
   }
 
   // 2. Cookie: 8router_locale
   const cookies = parseCookies(req.headers.cookie || '');
   const cookieLang = cookies[LOCALE_COOKIE];
-  if (cookieLang && isValidLocale(cookieLang)) {
-    return cookieLang;
+  const normalizedCookieLang = normalizeLocale(cookieLang);
+  if (normalizedCookieLang) {
+    return normalizedCookieLang;
   }
 
   // 3. Accept-Language header
@@ -54,6 +56,19 @@ export function isValidLocale(lang: string): lang is Locale {
 }
 
 /**
+ * Normalize supported locale variants safely.
+ */
+export function normalizeLocale(lang: unknown): Locale | null {
+  if (typeof lang !== 'string') return null;
+  const normalized = lang.trim().toLowerCase();
+  if (!normalized) return null;
+  if (isValidLocale(normalized)) return normalized;
+  const prefix = normalized.split('-')[0];
+  if (prefix && isValidLocale(prefix)) return prefix;
+  return null;
+}
+
+/**
  * Parse Accept-Language header and find best match
  */
 function parseAcceptLanguage(header: string): Locale | null {
@@ -66,12 +81,8 @@ function parseAcceptLanguage(header: string): Locale | null {
     .sort((a, b) => b.q - a.q);
 
   for (const { lang } of languages) {
-    // Exact match: "id", "ja", "en"
-    if (isValidLocale(lang)) return lang;
-
-    // Prefix match: "id-ID" → "id", "ja-JP" → "ja"
-    const prefix = lang.split('-')[0];
-    if (prefix && isValidLocale(prefix)) return prefix;
+    const normalized = normalizeLocale(lang);
+    if (normalized) return normalized;
   }
 
   return null;

@@ -72,3 +72,22 @@ Key corrections:
 - Full-history redacted `gitleaks` scan completed with no `REAL_SECRET` findings; matches were classified as `TEST_FIXTURE` or `FALSE_POSITIVE`.
 
 Phase 3A remains `NOT_READY` until live validation prerequisites and runtime diagnostics are updated/validated end to end. Do not activate provider-backed traffic from this audit alone.
+
+## Production i18n Regression Update — 2026-07-18
+
+Decision remains: BLOCKED_EXTERNAL after UI regression fix.
+
+Resolved engineering regression:
+- Raw landing translation keys were caused by invalid JSON in `src/i18n/en.json` and `src/i18n/ja.json`.
+- Locale variants now normalize safely: `id-ID -> id`, `en-US -> en`, `ja-JP -> ja`.
+- Missing-key fallback no longer returns raw keys as public content.
+- Regression evidence: `docs/audits/production-i18n-regression-audit.md`.
+
+Validation:
+- TypeScript: PASS, exit 0.
+- Build: PASS, exit 0.
+- Test suite: PASS, exit 0, `20 passed, 0 failed`; i18n subtests `12 passed, 0 failed`.
+- Provider activation security tests: PASS, exit 0, `24 passed, 0 failed`.
+- Doctor: exit 0, `FAILURES=0 WARNINGS=1 BLOCKED=1`.
+
+No provider activation, live provider traffic, push, or tag was performed.

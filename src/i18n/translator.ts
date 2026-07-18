@@ -26,15 +26,15 @@ function loadTranslations(locale: Locale): TranslationMap {
     translations[locale] = JSON.parse(data);
     return translations[locale]!;
   } catch {
-    // If file missing, return empty (will fallback to en)
+    console.warn(`[i18n] failed to load locale ${locale}`);
     translations[locale] = {};
     return {};
   }
 }
 
 /**
- * Translate a key to the given locale with optional parameter substitution
- * Falls back to English if key missing, returns key itself if missing in English too
+ * Translate a key to the given locale with optional parameter substitution.
+ * Falls back to English if key missing; never exposes raw key as public content.
  */
 export function t(key: string, locale: Locale = DEFAULT_LOCALE, params?: Record<string, string | number>): string {
   // Try requested locale first
@@ -47,9 +47,10 @@ export function t(key: string, locale: Locale = DEFAULT_LOCALE, params?: Record<
     value = enMap[key];
   }
 
-  // Last resort: return the key itself
+  // Last resort: sanitized marker, not raw key.
   if (value === undefined) {
-    return key;
+    console.warn(`[i18n] missing translation for locale ${locale}`);
+    return process.env.NODE_ENV === 'production' ? 'Translation unavailable' : '[missing translation]';
   }
 
   // Parameter substitution: t('hello', 'en', { name: 'Kai' }) → "Hello, Kai!"
