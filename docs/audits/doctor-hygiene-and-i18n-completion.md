@@ -149,3 +149,29 @@ systemctl status 8router.service --no-pager
 ```
 
 If a separate documentation commit exists, revert in reverse chronological order.
+
+## Deployment Evidence
+
+- Implementation commit: `30749cfda831b2114df9a49c027e8dbef4f57465`
+- Old PID: `1252212`
+- New PID: `1391395`
+- Service restart: PASS
+- Service state: active/running
+- `health_http=200`
+- `landing_http=200`
+- Public/local raw translation key check: CLEAN
+- Locale runtime verification: default, `id`, `ja`, `id-ID`, `ja-JP`, `en-US` all clean
+- Final doctor summary: `FAILURES=0 WARNINGS=0 BLOCKED=0 NOT_CONFIGURED=1`
+- Final doctor exit: `0`
+- Push status: not pushed
+- Baseline tag `phase3a-ui-baseline-20260718`: unchanged
+
+## Final Phase Status
+
+```text
+Doctor hygiene: PASSED
+i18n coverage: COMPLETE
+Phase 3A: BLOCKED_EXTERNAL
+```
+
+Phase 3A remains `BLOCKED_EXTERNAL` because no provider credential has been activated, no provider-backed completion has been verified, and no canonical/shadow live provider evidence exists.
