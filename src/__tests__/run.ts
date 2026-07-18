@@ -222,6 +222,14 @@ index abc..def 100644
   failed += i18nResult.failed;
   console.log('');
 
+  // Test 27: Typography and Responsive UI
+  console.log('27. Typography and Responsive UI');
+  const { runTypographyResponsiveTests } = await import('./typography-responsive.test.js');
+  const typographyResult = runTypographyResponsiveTests();
+  passed += typographyResult.passed;
+  failed += typographyResult.failed;
+  console.log('');
+
   console.log(`=== Results: ${passed} passed, ${failed} failed ===`);
   process.exit(failed > 0 ? 1 : 0);
 }
