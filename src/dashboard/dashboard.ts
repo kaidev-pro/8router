@@ -1595,7 +1595,37 @@ tr:hover td { background:var(--bg-card-hover) }
 </div><!-- /main -->
 
 <script>window.__i18n = ${JSON.stringify(buildClientI18n(locale))};</script>
-<script>function ct(key) { return (window.__i18n && window.__i18n[key]) || key; }</script>
+<script>
+function ct(key) { return (window.__i18n && window.__i18n[key]) || key; }
+window.go = function(name, el) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active') });
+  document.querySelectorAll('.sb-item').forEach(function(n){ n.classList.remove('active') });
+  var page = document.getElementById('pg-' + name);
+  if (page) page.classList.add('active');
+  if (el) el.classList.add('active');
+  var title = document.getElementById('tb-title');
+  var sub = document.getElementById('tb-sub');
+  if (title) title.textContent = ct('db.page.' + (name === 'clitools' ? 'cli' : name));
+  if (sub) sub.textContent = ct('db.page.' + (name === 'clitools' ? 'cli' : name) + 'Desc');
+  if (name === 'providers') window.__loadProvidersFallback();
+};
+window.__loadProvidersFallback = async function() {
+  var tbody = document.getElementById('prov-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="10" style="padding:24px;color:var(--text-muted)">Loading...</td></tr>';
+  try {
+    var res = await fetch('/8router/providers');
+    var providers = await res.json();
+    tbody.innerHTML = providers.map(function(p) {
+      return '<tr><td><strong>' + (p.name || p.id) + '</strong><br><span style="color:var(--text-muted);font-size:11px">' + p.id + '</span></td>' +
+        '<td>' + (p.tier || '-') + '</td><td>available</td><td>-</td><td>' + ((p.apiKeys && p.apiKeys.length) || 1) + '</td>' +
+        '<td>' + (p.totalRequests || 0) + '</td><td>' + (p.totalTokens || 0) + '</td><td>' + (p.errors || 0) + '</td><td>-</td><td></td></tr>';
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="10" style="padding:24px;color:var(--red)">Providers failed to load</td></tr>';
+  }
+};
+</script>
 <script>
 const API = '';
 let curPage = 'endpoint';
