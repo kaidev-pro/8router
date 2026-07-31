@@ -231,6 +231,41 @@ function initSchema(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_ak_user ON access_keys(userId);
     CREATE INDEX IF NOT EXISTS idx_ak_status ON access_keys(status);
 
+
+    -- Phase 4B.1: Provider Connection Runtime foundation (not wired into routing)
+    CREATE TABLE IF NOT EXISTS provider_connections (
+      id TEXT PRIMARY KEY,
+      providerId TEXT NOT NULL,
+      label TEXT NOT NULL,
+      authType TEXT NOT NULL CHECK (authType IN ('api_key','oauth','cookie','custom')),
+      encryptedCredential TEXT NOT NULL,
+      credentialVersion TEXT NOT NULL DEFAULT 'enc:v1',
+      credentialHint TEXT NOT NULL DEFAULT '****',
+      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','disabled','degraded','cooldown','expired','error')),
+      priority INTEGER NOT NULL DEFAULT 100,
+      weight INTEGER NOT NULL DEFAULT 1,
+      accountRef TEXT,
+      expiresAt TEXT,
+      refreshable INTEGER NOT NULL DEFAULT 0,
+      cooldownUntil TEXT,
+      lastSuccessAt TEXT,
+      lastFailureAt TEXT,
+      failureCount INTEGER NOT NULL DEFAULT 0,
+      quotaRemaining INTEGER,
+      quotaLimit INTEGER,
+      quotaResetAt TEXT,
+      discoveredModels TEXT NOT NULL DEFAULT '[]',
+      metadata TEXT NOT NULL DEFAULT '{}',
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_pc_provider ON provider_connections(providerId);
+    CREATE INDEX IF NOT EXISTS idx_pc_status ON provider_connections(status);
+    CREATE INDEX IF NOT EXISTS idx_pc_priority ON provider_connections(priority);
+    CREATE INDEX IF NOT EXISTS idx_pc_cooldown ON provider_connections(cooldownUntil);
+    CREATE INDEX IF NOT EXISTS idx_pc_expires ON provider_connections(expiresAt);
+
     CREATE TABLE IF NOT EXISTS runtime_request_logs (
       id TEXT PRIMARY KEY,
       accessKeyId TEXT,

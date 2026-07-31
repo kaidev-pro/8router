@@ -65,7 +65,8 @@
     "test:i18n-regression": "tsx src/__tests__/run-i18n-regression.ts",
     "test:typography-responsive": "tsx src/__tests__/run-typography-responsive.ts",
     "test:doctor-hygiene": "tsx src/__tests__/run-doctor-hygiene.ts",
-    "audit:9router-parity": "node scripts/audit-9router-parity.mjs"
+    "audit:9router-parity": "node scripts/audit-9router-parity.mjs",
+    "test:provider-connections": "tsx src/__tests__/run-provider-connections.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
