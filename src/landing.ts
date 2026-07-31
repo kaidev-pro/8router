@@ -13,7 +13,7 @@ export function getLandingHTML(locale: Locale = 'en', donationUrl?: string): str
   const LOGO_FOOTER = 'https://8agents.xyz/assets/8router-logo-dashboard.png';
 
   return `<!DOCTYPE html>
-<!-- 8Router landing build: abfc0889752180565786734e7e936c7a40a4338c -->
+<!-- 8Router landing build: 696ea559b7295b4d22d4d0ac84b746f1150819e6 -->
 <html lang="${locale}">
 <head>
 <meta charset="UTF-8">
