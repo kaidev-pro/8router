@@ -2,13 +2,13 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { buildPreviewReport, reconcileConnections, type LegacySafeConnection } from '../providers/connection-reconciliation.js';
+import { buildPreviewReport, reconcileSnapshots, type LegacySafeConnection } from '../providers/connection-reconciliation.js';
 import type { ProviderConnectionMetadata } from '../providers/connections.js';
 
 let passed=0, failed=0; const failures:string[]=[];
 function assert(c:boolean,m:string){ if(!c) throw new Error(m); }
 function test(n:string,f:()=>void){ try{f();passed++;console.log(`   ✅ ${n}`)}catch(e){failed++;const m=e instanceof Error?e.message:String(e);failures.push(`${n}: ${m}`);console.log(`   ❌ ${n}: ${m}`)} }
-const legacy=(id:string,providerId='openai',label='Main'):LegacySafeConnection=>({id,providerId,label,authType:'apikey',isActive:true,testStatus:null,baseUrl:null,proxyUrl:null,region:null,credentialPresent:true});
+const legacy=(id:string,providerId='openai',label='Main'):LegacySafeConnection=>({id,providerId,label,authType:'apikey',isActive:true,testStatus:null,baseUrl:null,proxyUrl:null,region:null,accountRef:null,credentialPresent:true});
 const pc=(id:string,providerId='openai',label='Main',metadata:Record<string,unknown>={}):ProviderConnectionMetadata=>({id,providerId,label,authType:'api_key',credentialVersion:'enc:v1',credentialHint:'****',status:'active',priority:100,weight:1,accountRef:null,expiresAt:null,refreshable:false,cooldownUntil:null,lastSuccessAt:null,lastFailureAt:null,failureCount:0,quotaRemaining:null,quotaLimit:null,quotaResetAt:null,discoveredModels:[],metadata,createdAt:'2026-01-01T00:00:00.000Z',updatedAt:'2026-01-01T00:00:00.000Z'});
 const report=(l:LegacySafeConnection[],p:ProviderConnectionMetadata[])=>buildPreviewReport({readLegacy:()=>l,readProviderConnections:()=>p,now:()=> '2026-01-01T00:00:00.000Z'});
 const j=(x:unknown)=>JSON.stringify(x);
@@ -40,7 +40,7 @@ export async function runProviderConnectionPreviewTests(){
  test('JSON no encryptedCredential',()=>{assert(!j(report([legacy('l1')],[pc('p1')])).includes('encryptedCredential'),'no ciphertext')});
  test('JSON no credential plaintext',()=>{assert(!j(report([legacy('l1')],[pc('p1')])).includes('fixture-credential'),'no plain')});
  test('JSON no secret-like legacy columns',()=>{const s=j(report([legacy('l1')],[pc('p1')]));assert(!s.includes('apiKey')&&!s.includes('accessToken')&&!s.includes('refreshToken'),'no secret columns')});
- test('decrypt dependency would throw if invoked; preview succeeds',()=>{let called=false;reconcileConnections({readLegacy:()=>[legacy('l1')],readProviderConnections:()=>[pc('p1')],now:()=>{called=true;return 'x'}});assert(!called,'no decrypt seam')});
+ test('decrypt dependency would throw if invoked; preview succeeds',()=>{let called=false;reconcileSnapshots([legacy('l1')],[pc('p1')],'2026-01-01T00:00:00.000Z');assert(!called,'no decrypt seam')});
  test('reconciliation module does not import crypto decrypt/encrypt utilities',()=>{const src=readFileSync('src/providers/connection-reconciliation.ts','utf8');assert(!src.includes('decrypt')&&!src.includes('encrypt.js'),'no crypto import')});
  test('before/after in-memory snapshots unchanged',()=>{const l=[legacy('l1')],p=[pc('p1')];const a=j({l,p});report(l,p);assert(a===j({l,p}),'unchanged')});
  test('CLI default summary output',()=>{const o=execFileSync('npm',['--silent','run','provider-connections:preview'],{encoding:'utf8'});assert(o.includes('Provider connection preview'),'summary')});
@@ -53,6 +53,12 @@ export async function runProviderConnectionPreviewTests(){
  test('API no mutation routes',()=>{const src=readFileSync('src/api/server.ts','utf8');assert(!src.includes("app.post('/8router/api/provider-connections")&&!src.includes("app.patch('/8router/api/provider-connections")&&!src.includes("app.delete('/8router/api/provider-connections"),'no mutation')});
  test('feature flag false',()=>{assert(report([],[]).featureFlagEnabled===false,'flag')});
  test('active routing import graph unchanged',()=>{const out=spawnSync('grep',['-RIn','providers/connections','src/runtime','src/index.ts'],{encoding:'utf8'});assert(out.status!==0,'no routing import')});
+
+ test('genuine accountRef match exact',()=>{const l=legacy('l1');l.accountRef='acct-1';const p=pc('p1','openai','Other');p.accountRef='acct-1';const r=report([l],[p]).records[0];assert(r.matchStatus==='exact_match'&&r.reasons.includes('genuine accountRef match'),'acct match')});
+ test('duplicate accountRef ambiguous blocked',()=>{const l=legacy('l1');l.accountRef='acct-1';const a=pc('p1','openai','A'),b=pc('p2','openai','B');a.accountRef=b.accountRef='acct-1';const r=report([l],[a,b]).records[0];assert(r.matchStatus==='ambiguous'&&r.migrationEligibility==='blocked','acct dup')});
+ test('readers called exactly once',()=>{let lc=0,pcn=0;buildPreviewReport({readLegacy:()=>{lc++;return[legacy('l1')]},readProviderConnections:()=>{pcn++;return[pc('p1')]},now:()=> '2026-01-01T00:00:00.000Z'});assert(lc===1&&pcn===1,'once')});
+ test('source arrays retain original ordering',()=>{const l=[legacy('b','b'),legacy('a','a')],p=[pc('z','z'),pc('a','a')];const before=j({l,p});report(l,p);assert(j({l,p})===before,'not mutated')});
+ test('injected clock controls lifecycle states',()=>{const p1=pc('p1');p1.expiresAt='2026-01-01T00:00:00.000Z';const p2=pc('p2','b','B');p2.expiresAt='2026-01-02T00:00:00.000Z';const p3=pc('p3','c','C');p3.expiresAt='2025-12-31T00:00:00.000Z';const p4=pc('p4','d','D');p4.cooldownUntil='2026-01-01T00:00:00.000Z';const p5=pc('p5','e','E');p5.cooldownUntil='2026-01-02T00:00:00.000Z';const text=j(report([], [p1,p2,p3,p4,p5]).records);assert(text.includes('expired')&&text.includes('valid')&&text.includes('cooldown'),'clock')});
  if(failed) throw new Error(failures.join('; '));
  console.log(`\n   Provider connection preview results: ${passed} passed, ${failed} failed`);
 }

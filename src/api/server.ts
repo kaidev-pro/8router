@@ -38,7 +38,7 @@ import { getSetupGuideHTML } from '../setup-guide.js';
 import { getDashboardHTML } from '../dashboard/dashboard.js';
 import { getAllPoolStatuses } from '../providers/key-pool.js';
 import { listConnections, getConnectionMetadataById } from '../providers/connections.js';
-import { buildDefaultPreviewReport } from '../providers/connection-reconciliation.js';
+import { buildDefaultPreviewReport, filterPreviewReport } from '../providers/connection-reconciliation.js';
 import { pickBestModel } from '../providers/smart-picker.js';
 import { createAccessKey, listAccessKeys, getAccessKeyById, updateAccessKey, revokeAccessKey, rotateAccessKey, deleteAccessKey } from '../security/access-keys/manager.js';
 import { handleChatCompletions as runtimeChatCompletions, handleModels as runtimeModels, getUserHealthSummary, resetProviderHealth as resetHealth } from '../runtime/index.js';
@@ -1914,12 +1914,12 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
     try {
       noStore(res);
       const { page, limit, start } = pageLimit(req);
-      const report = await buildDefaultPreviewReport(true);
-      let records = report.records;
-      if (req.query.providerId) records = records.filter((r: any) => r.providerId === String(req.query.providerId));
-      if (req.query.matchStatus) records = records.filter((r: any) => r.matchStatus === String(req.query.matchStatus));
-      if (req.query.migrationEligibility) records = records.filter((r: any) => r.migrationEligibility === String(req.query.migrationEligibility));
-      res.json({ ...report, totalRecords: records.length, page, limit, records: records.slice(start, start + limit) });
+      const report = filterPreviewReport(await buildDefaultPreviewReport(true), {
+        providerId: req.query.providerId ? String(req.query.providerId) : undefined,
+        matchStatus: req.query.matchStatus ? String(req.query.matchStatus) : undefined,
+        migrationEligibility: req.query.migrationEligibility ? String(req.query.migrationEligibility) : undefined,
+      });
+      res.json({ ...report, page, limit, records: report.records.slice(start, start + limit) });
     } catch { res.status(500).json({ error: { message: 'Failed to build provider connection preview', type: 'internal' } }); }
   });
   app.get('/8router/api/provider-connections/:id', requireAuth(oauth, sessionManager), (req, res) => {

@@ -12,11 +12,8 @@ try {
   const provider = val('--provider');
   const out = val('--output');
   const strict = has('--strict');
-  const report = await mod.buildDefaultPreviewReport(includeRecords || json || !!out);
-  if (provider) {
-    report.records = report.records.filter(r => r.providerId === provider);
-    report.providers = report.providers.filter(p => p.providerId === provider);
-  }
+  let report = await mod.buildDefaultPreviewReport(includeRecords || json || !!out || !!provider);
+  if (provider) report = mod.filterPreviewReport(report, { providerId: provider });
   const blocked = report.summary.blocked || 0;
   const ambiguous = report.summary.ambiguous || 0;
   const body = JSON.stringify(report, null, 2) + '\n';
