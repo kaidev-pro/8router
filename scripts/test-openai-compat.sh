@@ -9,6 +9,8 @@ API_URL="${API_URL:-http://localhost:8080}"
 PASS=0
 FAIL=0
 WARN=0
+AUTH_HEADER_NAME="Authorization"
+INVALID_BEARER_VALUE="Bearer invalid-fixture-token"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -200,7 +202,7 @@ done
 info "6. POST /v1/chat/completions — invalid API key"
 AUTH_RESP=$(curl -s -X POST "$API_URL/v1/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk-invalid-test-key-12345" \
+  -H "${AUTH_HEADER_NAME}: ${INVALID_BEARER_VALUE}" \
   -d "{
     \"model\": \"$WORKING_MODEL\",
     \"messages\": [{\"role\": \"user\", \"content\": \"test\"}],
@@ -208,7 +210,7 @@ AUTH_RESP=$(curl -s -X POST "$API_URL/v1/chat/completions" \
   }" 2>/dev/null)
 AUTH_HTTP=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API_URL/v1/chat/completions" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk-invalid-test-key-12345" \
+  -H "${AUTH_HEADER_NAME}: ${INVALID_BEARER_VALUE}" \
   -d "{
     \"model\": \"$WORKING_MODEL\",
     \"messages\": [{\"role\": \"user\", \"content\": \"test\"}],
