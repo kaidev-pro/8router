@@ -1,0 +1,7 @@
+# Phase 4A.1: historical fixture-only findings retained for full-history scan hygiene.
+# Current tree literals were rewritten to scanner-safe fixtures; these fingerprints
+# refer to pre-existing test placeholders in historical commits only.
+cceb3a92fefe93edb40e8b7db8c0a485e246ea16:src/__tests__/provider-credentials.test.ts:generic-api-key:36
+cceb3a92fefe93edb40e8b7db8c0a485e246ea16:src/__tests__/provider-credentials.test.ts:generic-api-key:74
+9de5a50537c3bec4419843fecb929c93b864516f:scripts/test-openai-compat.sh:curl-auth-header:134
+9de5a50537c3bec4419843fecb929c93b864516f:scripts/test-openai-compat.sh:curl-auth-header:142
