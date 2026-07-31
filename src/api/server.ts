@@ -37,6 +37,8 @@ import { getOAuthConfig, getOAuthConfigForDisplay, validateOAuthConfig, SessionM
 import { getSetupGuideHTML } from '../setup-guide.js';
 import { getDashboardHTML } from '../dashboard/dashboard.js';
 import { getAllPoolStatuses } from '../providers/key-pool.js';
+import { listConnections, getConnectionMetadataById } from '../providers/connections.js';
+import { buildDefaultPreviewReport } from '../providers/connection-reconciliation.js';
 import { pickBestModel } from '../providers/smart-picker.js';
 import { createAccessKey, listAccessKeys, getAccessKeyById, updateAccessKey, revokeAccessKey, rotateAccessKey, deleteAccessKey } from '../security/access-keys/manager.js';
 import { handleChatCompletions as runtimeChatCompletions, handleModels as runtimeModels, getUserHealthSummary, resetProviderHealth as resetHealth } from '../runtime/index.js';
@@ -1888,6 +1890,45 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
     } else {
       res.status(404).json({ error: { message: 'No model matches the given criteria', type: 'not_found' } });
     }
+  });
+
+
+  // ── Provider Connection Runtime Preview API (read-only) ─────────────
+  const noStore = (res: Response) => res.set('Cache-Control', 'no-store');
+  const pageLimit = (req: Request) => {
+    const page = Math.max(1, parseInt(String(req.query.page || 1), 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit || 50), 10) || 50));
+    return { page, limit, start: (page - 1) * limit };
+  };
+  app.get('/8router/api/provider-connections', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      const { page, limit, start } = pageLimit(req);
+      let rows = listConnections();
+      if (req.query.providerId) rows = rows.filter((r: any) => r.providerId === String(req.query.providerId));
+      if (req.query.status) rows = rows.filter((r: any) => r.status === String(req.query.status));
+      res.json({ page, limit, total: rows.length, connections: rows.slice(start, start + limit) });
+    } catch { res.status(500).json({ error: { message: 'Failed to load provider connections', type: 'internal' } }); }
+  });
+  app.get('/8router/api/provider-connections/preview', requireAuth(oauth, sessionManager), async (req, res) => {
+    try {
+      noStore(res);
+      const { page, limit, start } = pageLimit(req);
+      const report = await buildDefaultPreviewReport(true);
+      let records = report.records;
+      if (req.query.providerId) records = records.filter((r: any) => r.providerId === String(req.query.providerId));
+      if (req.query.matchStatus) records = records.filter((r: any) => r.matchStatus === String(req.query.matchStatus));
+      if (req.query.migrationEligibility) records = records.filter((r: any) => r.migrationEligibility === String(req.query.migrationEligibility));
+      res.json({ ...report, totalRecords: records.length, page, limit, records: records.slice(start, start + limit) });
+    } catch { res.status(500).json({ error: { message: 'Failed to build provider connection preview', type: 'internal' } }); }
+  });
+  app.get('/8router/api/provider-connections/:id', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      const row = getConnectionMetadataById(req.params.id);
+      if (!row) return res.status(404).json({ error: { message: 'Provider connection not found', type: 'not_found' } });
+      res.json({ connection: row });
+    } catch { res.status(500).json({ error: { message: 'Failed to load provider connection', type: 'internal' } }); }
   });
 
   // ── Provider Credentials API ──────────────────────────────────────

@@ -154,6 +154,12 @@ index abc..def 100644
   runProviderCredentialsTests();
   console.log('');
 
+  // Test 16: Provider Connection Preview (Phase 4B.2)
+  console.log('16. Provider Connection Preview');
+  const { runProviderConnectionPreviewTests } = await import('./provider-connection-preview.test.js');
+  await runProviderConnectionPreviewTests();
+  console.log('');
+
   // Test 16: Access Keys (Phase 2B)
   console.log('16. Access Keys');
   const { runAccessKeyTests } = await import('./access-keys.test.js');
