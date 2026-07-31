@@ -47,8 +47,8 @@
   "status.local": "Lokal",
   "status.tested": "Tercoba",
   "status.compat": "Kompatibel",
-  "providers.title": "12 Provider. 3 Tier. Satu Endpoint.",
-  "providers.desc": "Tambahkan API key kamu sendiri atau local provider dari dashboard. 8Router hanya me-routing melalui provider yang kamu hubungkan, dengan health check, quota awareness, dan fallback chain.",
+  "providers.title": "Hubungkan provider yang sudah kamu pakai.",
+  "providers.desc": "Tambahkan API key atau provider lokal. 8Router hanya merutekan melalui provider yang kamu hubungkan, dengan health check, quota awareness, dan fallback chain.",
   "tier.premium": "Premium",
   "tier.efficient": "Efisien",
   "tier.local": "Lokal",
@@ -72,8 +72,8 @@
   "how.aliasesDesc": "Gunakan 8router/auto, 8router/cheap, 8router/coding, atau 8router/local.",
   "how.monitor": "Monitor",
   "how.monitorDesc": "Track kuota, health key, jalur fallback, dan latency dari dashboard.",
-  "features.title": "Dibangun untuk Produksi",
-  "features.desc": "Setiap fitur sudah diuji dan siap produksi.",
+  "features.title": "Routing yang bisa diinspeksi",
+  "features.desc": "Health check, keputusan fallback, dan riwayat request tetap terlihat di dashboard.",
   "feat.adapters": "Adapter Provider Nyata",
   "feat.adaptersDesc": "12 provider dengan adapter khusus untuk normalisasi request, parsing response, dan health check.",
   "feat.capability": "Peta Kemampuan Model",
@@ -449,5 +449,6 @@
   "support.desc": "8Router gratis digunakan dan dibangun secara sukarela untuk AI builder. Kamu memakai API key provider sendiri, dan donasi bersifat opsional untuk siapa saja yang ingin mendukung pengembangan, hosting, dan integrasi baru.",
   "support.donate": "Donasi",
   "support.continue": "Lanjutkan Gratis",
-  "support.dashboard": "Buka Dashboard"
+  "support.dashboard": "Buka Dashboard",
+  "footer.api": "API"
 }
