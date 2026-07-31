@@ -33,3 +33,5 @@ Live routing still uses `credential-manager.ts` and legacy selectors. Dashboard 
 ## Phase 4B.2 roadmap
 
 Add shadow read adapters, dashboard read-only views, migration preview CLI, and non-routing health/quota synchronizers.
+
+Patch hardening: metadata updates use a strict field allowlist; schema initialization is tracked per DB instance; wrong-key testing is documented as blocked because the current encryption module does not expose safe key injection.
