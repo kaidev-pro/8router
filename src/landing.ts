@@ -1,4 +1,5 @@
-// 8Router — Landing Page (i18n) — Redesigned per Brief
+// 8Router — Landing Page V2 (i18n)
+// Asymmetric hero, circuit-loop identity, real product evidence
 import { VERSION_STRING } from './version.js';
 import { t, getLocale, type Locale, SUPPORTED_LOCALES } from './i18n/index.js';
 
@@ -6,22 +7,10 @@ export function getLandingHTML(locale: Locale = 'en', donationUrl?: string): str
   const _ = (key: string) => t(key, locale);
   const donateHref = donationUrl || '';
 
-  // SVG icons — 20x20 viewBox, stroke-based, 1.5px
-  const icons: Record<string, string> = {
-    route: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>`,
-    zap: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
-    shield: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
-    terminal: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`,
-    layoutDashboard: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>`,
-    key: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>`,
-    check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
-    alertTriangle: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
-    activity: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
-    gitBranch: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>`,
-    github: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>`,
-  };
-
-  const icon = (name: string) => `<span class="icon">${icons[name] || ''}</span>`;
+  // Logo assets
+  const LOGO_NAV = 'https://8agents.xyz/assets/8router-logo-dark.png';
+  const LOGO_HERO = 'https://8agents.xyz/assets/8router-logo-transparent.png';
+  const LOGO_FOOTER = 'https://8agents.xyz/assets/8router-logo-dashboard.png';
 
   return `<!DOCTYPE html>
 <html lang="${locale}">
@@ -29,169 +18,186 @@ export function getLandingHTML(locale: Locale = 'en', donationUrl?: string): str
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${_('meta.title')}</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #020309;
-  --bg-card: #060a14;
-  --bg-surface: #0c111f;
-  --border: #141d30;
-  --border-hover: #1e2d4a;
-  --accent: #84abff;
-  --accent-dim: rgba(132,171,255,0.1);
-  --green: #00d294;
-  --green-dim: rgba(0,210,148,0.1);
-  --red: #ff6568;
-  --red-dim: rgba(255,101,104,0.1);
-  --orange: #e18528;
-  --orange-dim: rgba(225,133,40,0.1);
+  --bg: #06080e;
+  --bg-card: #0c1018;
+  --bg-surface: #10141e;
+  --border: #1a2030;
+  --accent: #5b8def;
+  --accent-bright: #7eaaff;
+  --green: #34d399;
+  --red: #f87171;
+  --text: #e8ecf4;
+  --text-2: #94a3b8;
+  --text-3: #64748b;
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --text: #f5f7fb;
-  --text-2: #b4bdcc;
-  --text-3: #8994a7;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
   --text-lg: 1.125rem;
   --text-xl: 1.25rem;
   --text-2xl: 1.75rem;
-  --text-3xl: 2.25rem;
-  --text-hero: clamp(2.25rem, 6vw, 4rem);
+  --text-3xl: 2.5rem;
+  --text-hero: clamp(2.5rem, 5vw, 3.5rem);
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth;font-size:16px;overflow-x:hidden}
-body{font-family:var(--font-sans);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(20,29,48,0.3) 59px,rgba(20,29,48,0.3) 60px),repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(20,29,48,0.3) 59px,rgba(20,29,48,0.3) 60px)}
-.wrap{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
-a{color:var(--accent);text-decoration:none}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:var(--accent-bright);text-decoration:none}
 a:hover{text-decoration:underline}
-code{font-family:var(--font-mono);font-size:0.9em}
-img,svg{max-width:100%;height:auto}
+code{font-family:var(--font-mono);font-size:0.88em}
+img{max-width:100%;height:auto}
+.container{max-width:1080px;margin:0 auto;padding:0 24px}
 
-/* Nav */
-nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(2,3,9,0.7);backdrop-filter:blur(20px);border-bottom:1px solid rgba(20,29,48,0.5)}
-.nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
-.nav-brand{font-weight:700;font-size:1.1rem;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:8px}
-.nav-brand span{color:var(--accent)}
-.nav-links{display:flex;gap:24px;align-items:center}
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(6,8,14,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1080px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo img{height:28px;width:auto}
+.nav-logo span{font-weight:700;font-size:1.05rem;color:var(--text)}
+.nav-links{display:flex;gap:20px;align-items:center}
 .nav-links a{color:var(--text-3);font-size:var(--text-sm);font-weight:500;transition:color 0.15s}
 .nav-links a:hover{color:var(--text);text-decoration:none}
-.nav-cta{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:var(--accent);color:#000;border-radius:8px;font-weight:600;font-size:var(--text-sm);transition:opacity 0.15s}
+.nav-cta{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:var(--accent);color:#fff;border-radius:6px;font-weight:600;font-size:var(--text-sm);transition:opacity 0.15s}
 .nav-cta:hover{opacity:0.85;text-decoration:none}
+.mobile-nav-cta { display:none }
 
-/* Sections */
-section{padding:80px 0;position:relative;z-index:1}
-.s-label{display:inline-flex;align-items:center;gap:6px;font-size:var(--text-xs);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
-.s-title{font-size:var(--text-2xl);font-weight:700;letter-spacing:-0.02em;margin-bottom:12px}
-.s-desc{color:var(--text-2);max-width:56ch;line-height:1.6;margin-bottom:40px}
+/* ── HERO ── */
+.hero{padding:120px 0 80px;min-height:85vh;display:flex;align-items:center}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.hero-content{position:relative}
+.hero h1{font-size:var(--text-hero);font-weight:800;letter-spacing:-0.03em;line-height:1.1;margin-bottom:16px}
+.hero h1 .accent{color:var(--accent-bright)}
+.hero-sub{font-size:var(--text-lg);color:var(--text-2);max-width:44ch;line-height:1.6;margin-bottom:32px}
+.hero-actions{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--accent);color:#fff;border-radius:6px;font-weight:600;font-size:var(--text-sm);border:none;cursor:pointer;transition:background 0.15s;text-decoration:none}
+.btn-primary:hover{background:var(--accent-bright);text-decoration:none}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:6px;font-weight:600;font-size:var(--text-sm);text-decoration:none;transition:border-color 0.15s}
+.btn-secondary:hover{border-color:var(--text-3);text-decoration:none}
 
-/* Hero */
-.hero{padding:140px 0 80px;min-height:90vh;display:flex;align-items:center;position:relative;overflow:hidden}
-.hero-glow{position:absolute;top:-20%;left:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(132,171,255,0.07) 0%,transparent 70%);pointer-events:none;animation:pulse 8s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:0.6}50%{opacity:1}}
-.hero h1{font-size:var(--text-hero);font-weight:800;letter-spacing:-0.04em;line-height:1.05;margin-bottom:20px}
-.hero-accent{color:var(--accent)}
-.hero-sub{font-size:clamp(15px,1.6vw,18px);color:var(--text-2);max-width:52ch;line-height:1.65;margin-bottom:36px}
-.hero-actions{display:flex;gap:12px;margin-bottom:48px;flex-wrap:wrap}
-.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--accent);color:#000;border-radius:8px;font-weight:700;font-size:14px;border:none;cursor:pointer;transition:all 0.2s;text-decoration:none}
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(132,171,255,0.25);text-decoration:none}
-.btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;transition:border-color 0.15s}
-.btn-secondary:hover{border-color:var(--border-hover);text-decoration:none}
+/* ── ROUTING VISUAL ── */
+.routing-visual{position:relative;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:32px 24px;font-family:var(--font-mono);font-size:12px;overflow:hidden}
+.routing-visual::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.rv-header{display:flex;align-items:center;gap:8px;margin-bottom:20px;color:var(--text-3);font-size:12px;text-transform:uppercase;letter-spacing:0.05em}
+.rv-header .dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.rv-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+.rv-row .arrow{color:var(--text-3);font-size:14px}
+.rv-row .provider{color:var(--accent-bright);min-width:80px}
+.rv-row .model{color:var(--text-3);font-size:12px}
+.rv-row .status-ok{color:var(--green)}
+.rv-row .status-fail{color:var(--red);text-decoration:line-through;opacity:0.7}
+.rv-row .status-fallback{color:var(--accent)}
+.rv-divider{height:1px;background:var(--border);margin:4px 0}
+.rv-node{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px}
+.rv-node.active{border-color:var(--accent);box-shadow:0 0 8px rgba(91,141,239,0.15)}
+.rv-node.failed{border-color:var(--red);opacity:0.5}
 
-/* Route visualization */
-.route-viz{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;font-family:var(--font-mono);font-size:13px;line-height:1.8;overflow-x:auto}
-.route-viz .label{color:var(--text-3);font-size:12px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
-.route-viz .step{display:flex;align-items:center;gap:8px;padding:4px 0}
-.route-viz .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.route-viz .dot-green{background:var(--green)}
-.route-viz .dot-red{background:var(--red)}
-.route-viz .dot-orange{background:var(--orange)}
-.route-viz .line{width:1px;height:16px;background:var(--border);margin-left:3px}
-.route-viz .strike{text-decoration:line-through;color:var(--text-3)}
-.route-viz .ok{color:var(--green)}
-.route-viz .fail{color:var(--red)}
-.route-viz .recover{color:var(--orange)}
+/* ── SECTIONS ── */
+section{padding:72px 0}
+section.s-surface{background:var(--bg-surface)}
+.s-label{font-size:var(--text-xs);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.s-title{font-size:var(--text-2xl);font-weight:700;letter-spacing:-0.02em;margin-bottom:8px;line-height:1.2}
+.s-desc{color:var(--text-2);max-width:52ch;line-height:1.6;margin-bottom:32px}
+.s-desc-wide{max-width:64ch}
 
-/* Problem cards */
-.problem-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
-.problem-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:20px;display:flex;gap:12px;align-items:flex-start}
-.problem-card .icon{color:var(--red);flex-shrink:0;margin-top:2px}
-.problem-card h3{font-size:var(--text-sm);font-weight:600;margin-bottom:4px}
-.problem-card p{font-size:var(--text-sm);color:var(--text-3);line-height:1.5}
+/* ── WHY ── */
+.why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.why-item{padding:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px}
+.why-item h3{font-size:var(--text-base);font-weight:600;margin-bottom:6px}
+.why-item p{font-size:var(--text-sm);color:var(--text-3);line-height:1.55}
 
-/* Steps */
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;counter-reset:step}
-.step{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:24px;counter-increment:step;position:relative}
-.step::before{content:counter(step);display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--accent-dim);color:var(--accent);font-weight:700;font-size:13px;margin-bottom:14px}
-.step h3{font-size:var(--text-base);font-weight:600;margin-bottom:8px}
-.step p{font-size:var(--text-sm);color:var(--text-3);line-height:1.5}
-.step code{display:block;margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:6px;font-size:12px;color:var(--accent);border:1px solid var(--border)}
+/* ── ROUTING FLOW ── */
+.flow-path{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin:32px 0;font-family:var(--font-mono);font-size:13px}
+.flow-node{display:flex;align-items:center;gap:6px;padding:10px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px}
+.flow-node.active{border-color:var(--accent)}
+.flow-node.failed{border-color:var(--red);opacity:0.6;text-decoration:line-through}
+.flow-arrow{padding:0 8px;color:var(--text-3);font-size:16px}
+.flow-label{display:block;font-size:12px;color:var(--text-3);font-family:var(--font-sans)}
 
-/* Aliases */
-.alias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-.alias-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-family:var(--font-mono);font-size:13px}
-.alias-card .name{color:var(--accent);font-weight:600;margin-bottom:4px}
-.alias-card .desc{color:var(--text-3);font-size:12px;font-family:var(--font-sans)}
+/* ── ALIASES ── */
+.alias-table{width:100%;border-collapse:collapse;font-size:var(--text-sm)}
+.alias-table th{text-align:left;padding:10px 16px;color:var(--text-3);font-weight:500;font-size:var(--text-xs);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--border)}
+.alias-table td{padding:10px 16px;border-bottom:1px solid var(--border)}
+.alias-table .name{font-family:var(--font-mono);color:var(--accent-bright);font-weight:500}
+.alias-table .desc{color:var(--text-3)}
 
-/* Providers */
-.provider-list{display:flex;flex-wrap:wrap;gap:10px}
-.provider-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:var(--text-sm);color:var(--text-2);font-weight:500}
+/* ── PROVIDERS STRIP ── */
+.providers-strip{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+.provider-tag{padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;font-size:var(--text-sm);color:var(--text-2)}
 
-/* Integrations */
-.integr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
-.integr-chip{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;font-size:var(--text-sm);color:var(--text-2)}
+/* ── DASHBOARD ── */
+.dash-window{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.dash-titlebar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg-surface);border-bottom:1px solid var(--border);font-size:var(--text-xs);color:var(--text-3)}
+.dash-titlebar .dots{display:flex;gap:5px}
+.dash-titlebar .dots span{width:8px;height:8px;border-radius:50%}
+.dash-titlebar .dots .r{background:#ff5f57}.dash-titlebar .dots .y{background:#febc2e}.dash-titlebar .dots .g{background:#28c840}
+.dash-titlebar .title{margin-left:8px;font-family:var(--font-mono)}
+.dash-body{padding:16px;font-family:var(--font-mono);font-size:12px;line-height:1.8}
+.dash-body .row{display:flex;gap:12px;flex-wrap:wrap}
+.dash-body .ts{color:var(--text-3);opacity:0.5;min-width:60px}
+.dash-body .provider{color:var(--accent-bright)}
+.dash-body .model{color:var(--text-3)}
+.dash-body .ok{color:var(--green)}
+.dash-body .fail{color:var(--red)}
+.dash-body .fallback{color:var(--accent)}
+.dash-body .label-example{display:inline-block;padding:2px 8px;background:var(--bg);border:1px solid var(--border);border-radius:3px;font-size:12px;color:var(--text-3);margin-bottom:8px}
+.dash-side{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.dash-card{padding:16px;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px}
+.dash-card h4{font-size:var(--text-xs);color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
+.dash-card .val{font-size:var(--text-2xl);font-weight:700;color:var(--text)}
+.dash-card .sub{font-size:var(--text-xs);color:var(--text-3);margin-top:4px}
 
-/* Dashboard preview */
-.dash-preview{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;overflow:hidden}
-.dash-bar{display:flex;gap:6px;margin-bottom:16px}
-.dash-bar span{width:10px;height:10px;border-radius:50%}
-.dash-bar .r{background:var(--red)}.dash-bar .y{background:var(--orange)}.dash-bar .g{background:var(--green)}
-.dash-log{font-family:var(--font-mono);font-size:12px;line-height:1.7;color:var(--text-3)}
-.dash-log .ts{color:var(--text-3);opacity:0.6}.dash-log .provider{color:var(--accent)}.dash-log .model{color:var(--green)}.dash-log .fail{color:var(--red)}.dash-log .ok{color:var(--green)}.dash-log .fallback{color:var(--orange)}
+/* ── SETUP ── */
+.setup-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.setup-step{counter-increment:step}
+.setup-step .num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(91,141,239,0.12);color:var(--accent);font-size:var(--text-xs);font-weight:700;margin-bottom:8px}
+.setup-step h3{font-size:var(--text-sm);font-weight:600;margin-bottom:6px}
+.setup-step code{display:block;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:12px;color:var(--accent-bright);margin-top:8px;word-break:break-all}
 
-/* Setup */
-.setup-code{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;overflow-x:auto}
-.setup-code .comment{color:var(--text-3)}.setup-code .key{color:var(--accent)}.setup-code .val{color:var(--green)}
+/* ── CLOSE ── */
+.close{text-align:center;padding:64px 0}
+.close p{color:var(--text-2);max-width:48ch;margin:0 auto 24px}
+.close-badges{display:flex;justify-content:center;gap:24px;margin-bottom:24px;flex-wrap:wrap;font-size:var(--text-sm);color:var(--text-3)}
 
-/* Close */
-.close{background:var(--bg-surface);text-align:center}
-.close-icons{display:flex;justify-content:center;gap:32px;margin-bottom:24px;flex-wrap:wrap}
-.close-item{display:flex;align-items:center;gap:8px;color:var(--text-2);font-size:var(--text-sm);font-weight:500}
-.close-item .icon{color:var(--accent)}
-
-/* Footer */
-footer{padding:48px 0;border-top:1px solid var(--border);position:relative;z-index:1}
-.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:32px;margin-bottom:32px}
-.footer-col h4{font-size:var(--text-xs);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);margin-bottom:12px}
-.footer-col a{display:block;color:var(--text-3);font-size:var(--text-sm);margin-bottom:8px;transition:color 0.15s}
-.footer-col a:hover{color:var(--text)}
-.footer-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:var(--text-xs);color:var(--text-3)}
-.footer-locales{display:flex;gap:12px;flex-wrap:wrap}
+/* ── FOOTER ── */
+footer{padding:40px 0;border-top:1px solid var(--border)}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.footer-brand{display:flex;align-items:center;gap:8px}
+.footer-brand img{height:20px;opacity:0.5}
+.footer-brand span{font-size:var(--text-xs);color:var(--text-3)}
+.footer-links{display:flex;gap:16px;flex-wrap:wrap}
+.footer-links a{color:var(--text-3);font-size:var(--text-xs);transition:color 0.15s}
+.footer-links a:hover{color:var(--text)}
+.footer-locales{display:flex;gap:10px}
 .footer-locales a{color:var(--text-3);font-size:var(--text-xs)}
 .footer-locales a.active{color:var(--accent);font-weight:600}
 
-/* Responsive */
+/* ── RESPONSIVE ── */
 @media(max-width:640px){
-  section{padding:56px 0}
-  .hero{padding:120px 0 60px;min-height:auto}
-  .hero h1{font-size:clamp(1.8rem,8vw,2.5rem)}
   .nav-links { display:none }
   .mobile-nav-cta { display:inline-flex }
-  .wrap{padding:0 16px}
-  .problem-grid,.steps{grid-template-columns:1fr}
-  .alias-grid{grid-template-columns:repeat(2,1fr)}
+  .hero{padding:100px 0 60px;min-height:auto}
+  .hero-grid{grid-template-columns:1fr;gap:32px}
+  .hero h1{font-size:clamp(1.8rem,7vw,2.5rem)}
+  .nav-links{display:none}
+  .mobile-nav-cta{display:inline-flex}
+  .why-grid{grid-template-columns:1fr}
+  .setup-steps{grid-template-columns:1fr}
+  .flow-path{flex-direction:column;align-items:flex-start}
+  .flow-arrow{transform:rotate(90deg);padding:4px 0}
+  .dash-side{grid-template-columns:1fr}
+  section{padding:56px 0}
 }
 
-/* svc-card / feat-card (test compatibility) */
 .svc-card p { font-size:var(--text-sm); color:var(--text-2); line-height:1.6 }
 .feat-card p { font-size:var(--text-sm); color:var(--text-2); line-height:1.5 }
 
-/* hero-stat */
 .hero-stat-label { font-size:var(--text-xs); line-height:1.35 }
 .hero-stat-val { font-size:clamp(1.5rem,4vw,2.25rem) }
 
-/* overflow guards */
 html, body { overflow-x:hidden; max-width:100vw }
 pre { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100% }
 .wrap { padding:0 20px; width:100%; max-width:100vw; overflow:hidden }
@@ -201,302 +207,258 @@ pre { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100% }
 
 <nav>
 <div class="nav-inner">
-  <a class="nav-brand" href="/"><span>8</span>Router</a>
+  <a class="nav-logo" href="/"><img src="${LOGO_NAV}" alt="8Router" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span style="display:none">8Router</span></a>
   <div class="nav-links">
-    <a href="#problem">Problem</a>
-    <a href="#how">How It Works</a>
-    <a href="#aliases">Aliases</a>
-    <a href="#providers">Providers</a>
-    <a href="#setup">Setup</a>
-    <a href="/8router/dashboard" class="nav-cta">${_('nav.dashboard')}</a>
+    <a href="#why">${_('nav.features')}</a>
+    <a href="#aliases">${_('nav.aliases')}</a>
+    <a href="#dashboard">${_('dashboard.title')}</a>
+    <a href="#setup">${_('nav.getStarted')}</a>
+    <a href="https://github.com/kaidev-pro/8router" class="nav-cta" target="_blank" rel="noopener">GitHub</a>
   </div>
+  <a href="https://github.com/kaidev-pro/8router" class="nav-cta mobile-nav-cta" target="_blank" rel="noopener">GitHub</a>
 </div>
 </nav>
 
 <!-- ═══ HERO ═══ -->
 <section class="hero">
-<div class="hero-glow"></div>
-<div class="wrap">
-  <h1>${_('hero.title1')}<br><span class="hero-accent">${_('hero.title2')}</span></h1>
-  <p class="hero-sub">Keys expire. Quotas reset. Providers go down. 8Router keeps your tools connected through one local endpoint &mdash; with inspectable fallback routing.</p>
-  <div class="hero-actions">
-    <a href="#setup" class="btn-primary">${_('hero.getStarted')}</a>
-    <a href="/8router/dashboard" class="btn-secondary">${_('hero.openDashboard')}</a>
-  </div>
-  <div class="route-viz">
-    <div class="label">Live routing example</div>
-    <div class="step"><span class="dot dot-green"></span> <span class="provider">openai</span> &rarr; <span class="fail">429 rate limit</span></div>
-    <div class="line"></div>
-    <div class="step"><span class="dot dot-orange"></span> <span class="fallback">fallback</span> &rarr; <span class="provider">groq</span> &rarr; <span class="ok">200 OK</span> <span style="color:var(--text-3);font-size:12px;margin-left:8px">llama-3.1-8b-instant</span></div>
-    <div class="line"></div>
-    <div class="step"><span class="dot dot-green"></span> <span style="color:var(--text-3)">logged to dashboard &amp; request history</span></div>
-  </div>
-</div>
-</section>
-
-<!-- ═══ PROBLEM ═══ -->
-<section id="problem" style="background:var(--bg-surface)">
-<div class="wrap">
-  <div class="s-label">${icon('alertTriangle')} Problem</div>
-  <h2 class="s-title">Provider failures interrupt your workflow.</h2>
-  <p class="s-desc">When you depend on a single API key or provider, any outage, rate limit, or quota exhaustion stops everything.</p>
-  <div class="problem-grid">
-    <div class="problem-card">
-      ${icon('alertTriangle')}
-      <div><h3>Rate limits</h3><p>API keys hit per-minute and per-day quotas without warning.</p></div>
+<div class="container">
+  <div class="hero-grid">
+    <div class="hero-content">
+      <h1>${_('hero.title1')} <span class="accent">${_('hero.title2')}</span></h1>
+      <p class="hero-sub">${_('hero.sub')}</p>
+      <div class="hero-actions">
+        <a href="#setup" class="btn-primary">${_('hero.getStarted')}</a>
+        <a href="https://github.com/kaidev-pro/8router" class="btn-secondary" target="_blank" rel="noopener">GitHub</a>
+      </div>
     </div>
-    <div class="problem-card">
-      ${icon('alertTriangle')}
-      <div><h3>Provider outages</h3><p>Cloud APIs have maintenance windows and regional failures.</p></div>
-    </div>
-    <div class="problem-card">
-      ${icon('alertTriangle')}
-      <div><h3>Key expiration</h3><p>Credentials rotate, expire, or get revoked mid-session.</p></div>
-    </div>
-    <div class="problem-card">
-      ${icon('alertTriangle')}
-      <div><h3>Model unavailability</h3><p>Specific models go down while others on the same provider stay up.</p></div>
+    <div class="routing-visual">
+      <div class="rv-header"><span class="dot"></span> <span>Example route</span></div>
+      <div class="rv-row"><span class="rv-node active">Client</span> <span class="arrow">→</span> <span class="rv-node active">8Router</span></div>
+      <div class="rv-divider"></div>
+      <div class="rv-row"><span class="arrow">→</span> <span class="rv-node failed">openai</span> <span class="status-fail">429</span> <span class="model">gpt-4o</span></div>
+      <div class="rv-row"><span class="arrow">→</span> <span class="rv-node active">groq</span> <span class="status-ok">200</span> <span class="model">llama-3.1-8b</span></div>
+      <div class="rv-divider"></div>
+      <div class="rv-row"><span class="arrow">→</span> <span class="rv-node active">Client</span> <span class="status-fallback">fallback</span></div>
     </div>
   </div>
 </div>
 </section>
 
-
-<!-- ═══ REAL WORKFLOWS ═══ -->
-<section id="workflows">
-<div class="wrap">
-  <div class="s-label">${icon('activity')} Real Workflows</div>
+<!-- ═══ WHY ═══ -->
+<section id="why" class="s-surface">
+<div class="container">
+  <div class="s-label">${_('services.title')}</div>
   <h2 class="s-title">${_('services.title')}</h2>
-  <p class="s-desc">${_('services.sub')}</p>
-</div>
-</section>
-
-<!-- ═══ HOW IT WORKS ═══ -->
-<section id="how">
-<div class="wrap">
-  <div class="s-label">${icon('route')} How It Works</div>
-  <h2 class="s-title">Connect. Point. Route.</h2>
-  <p class="s-desc">8Router sits between your tools and providers. When one path fails, it routes to the next.</p>
-  <div class="steps">
-    <div class="step">
-      <h3>Install &amp; configure</h3>
-      <p>Add your provider API keys to the environment. You control your own credentials.</p>
-      <code>PROVIDER_KEY_ENCRYPTION_SECRET=...<br>OPENAI_API_KEY=sk-...<br>GROQ_API_KEY=gsk-...</code>
+  <p class="s-desc s-desc-wide">${_('services.sub')}</p>
+  <div class="why-grid">
+    <div class="why-item">
+      <h3>${_('svc.routing')}</h3>
+      <p>${_('svc.routingDesc')}</p>
     </div>
-    <div class="step">
-      <h3>Point your tools</h3>
-      <p>Set any OpenAI-compatible tool to use 8Router as its base URL.</p>
-      <code>Base URL: http://localhost:8080/v1<br>Model: 8router/auto</code>
+    <div class="why-item">
+      <h3>${_('svc.quota')}</h3>
+      <p>${_('svc.quotaDesc')}</p>
     </div>
-    <div class="step">
-      <h3>It routes &amp; recovers</h3>
-      <p>8Router tries providers in order. Failures trigger automatic fallback. Every decision is logged.</p>
+    <div class="why-item">
+      <h3>${_('svc.smart')}</h3>
+      <p>${_('svc.smartDesc')}</p>
     </div>
   </div>
 </div>
 </section>
 
-<!-- ═══ ROUTING ALIASES ═══ -->
-<section id="aliases" style="background:var(--bg-surface)">
-<div class="wrap">
-  <div class="s-label">${icon('gitBranch')} Routing Aliases</div>
-  <h2 class="s-title">One model name. Multiple providers.</h2>
-  <p class="s-desc">Aliases define provider priority order. Use them as your model name and 8Router handles the rest.</p>
-  <div class="alias-grid">
-    <div class="alias-card"><div class="name">8router/auto</div><div class="desc">Best available provider, auto-selected</div></div>
-    <div class="alias-card"><div class="name">8router/cheap</div><div class="desc">Cheapest available, cost-first</div></div>
-    <div class="alias-card"><div class="name">8router/fast</div><div class="desc">Lowest latency, speed-first</div></div>
-    <div class="alias-card"><div class="name">8router/smart</div><div class="desc">Highest capability model</div></div>
-    <div class="alias-card"><div class="name">8router/coding</div><div class="desc">Optimized for code generation</div></div>
-    <div class="alias-card"><div class="name">8router/local</div><div class="desc">Local providers only (Ollama)</div></div>
+<!-- ═══ ROUTING FLOW ═══ -->
+<section id="flow">
+<div class="container">
+  <div class="s-label">${_('how.title')}</div>
+  <h2 class="s-title">${_('how.title')}</h2>
+  <p class="s-desc">${_('how.desc')}</p>
+  <div class="flow-path">
+    <div class="flow-node active">${_('how.install')}<span class="flow-label">npm i -g @kaidev18/eight-router</span></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node active">${_('how.connect')}<span class="flow-label">${_('how.connectDesc')}</span></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node active">${_('how.point')}<span class="flow-label">http://localhost:8080/v1</span></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node active">${_('how.monitor')}<span class="flow-label">${_('how.monitorDesc')}</span></div>
   </div>
 </div>
 </section>
 
-
-<!-- ═══ FEATURES ═══ -->
-<section id="features" style="background:var(--bg-surface)">
-<div class="wrap">
-  <div class="s-label">${icon('shield')} Features</div>
-  <h2 class="s-title">${_('features.title')}</h2>
-  <p class="s-desc">${_('features.desc')}</p>
+<!-- ═══ ALIASES ═══ -->
+<section id="aliases" class="s-surface">
+<div class="container">
+  <div class="s-label">${_('aliases.title')}</div>
+  <h2 class="s-title">${_('aliases.title')}</h2>
+  <p class="s-desc">${_('aliases.desc')}</p>
+  <table class="alias-table">
+    <thead><tr><th>Alias</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td class="name">8router/auto</td><td class="desc">${_('alias.autoDesc')}</td></tr>
+      <tr><td class="name">8router/cheap</td><td class="desc">${_('alias.cheapDesc')}</td></tr>
+      <tr><td class="name">8router/fast</td><td class="desc">${_('alias.fastDesc')}</td></tr>
+      <tr><td class="name">8router/smart</td><td class="desc">${_('alias.smartDesc')}</td></tr>
+      <tr><td class="name">8router/coding</td><td class="desc">${_('alias.codingDesc')}</td></tr>
+      <tr><td class="name">8router/local</td><td class="desc">${_('alias.localDesc')}</td></tr>
+    </tbody>
+  </table>
 </div>
 </section>
-
-<!-- ═══ PROVIDERS DETAIL ═══ -->
-<section id="providers-detail">
-<div class="wrap">
-  <div class="s-label">${icon('key')} Providers</div>
-  <h2 class="s-title">${_('providers.title')}</h2>
-  <p class="s-desc">${_('providers.desc')}</p>
-</div>
-</section>
-
 
 <!-- ═══ DASHBOARD ═══ -->
-<section id="dashboard-section" style="background:var(--bg-surface)">
-<div class="wrap">
-  <div class="s-label">${icon('layoutDashboard')} Dashboard</div>
-  <h2 class="s-title">${_('dashboard.title')}</h2>
-  <p class="s-desc">${_('dashboard.desc')}</p>
-</div>
-</section>
-
-<!-- ═══ PRODUCT PROOF ═══ -->
 <section id="dashboard">
-<div class="wrap">
-  <div class="s-label">${icon('layoutDashboard')} Inspectable Routing</div>
-  <h2 class="s-title">Every decision is logged.</h2>
-  <p class="s-desc">The dashboard shows what happened, which provider was used, and why fallbacks triggered. No black boxes.</p>
-  <div class="dash-preview">
-    <div class="dash-bar"><span class="r"></span><span class="y"></span><span class="g"></span></div>
-    <div class="dash-log">
-      <div><span class="ts">10:42:01</span> <span class="provider">openai</span> <span class="model">gpt-4o-mini</span> <span class="fail">&#x2717; 429</span></div>
-      <div><span class="ts">10:42:01</span> <span class="fallback">fallback</span> &rarr; <span class="provider">groq</span> <span class="model">llama-3.1-8b-instant</span> <span class="ok">&#x2713; 200</span> <span style="color:var(--text-3)">142ms</span></div>
-      <div><span class="ts">10:42:03</span> <span class="provider">openai</span> <span class="model">gpt-4o</span> <span class="ok">&#x2713; 200</span> <span style="color:var(--text-3)">890ms</span></div>
-      <div><span class="ts">10:42:05</span> <span class="provider">deepseek</span> <span class="model">deepseek-chat</span> <span class="fail">&#x2717; 503</span></div>
-      <div><span class="ts">10:42:05</span> <span class="fallback">fallback</span> &rarr; <span class="provider">together</span> <span class="model">llama-3.1-70b</span> <span class="ok">&#x2713; 200</span> <span style="color:var(--text-3)">310ms</span></div>
+<div class="container">
+  <div class="s-label">${_('dashboard.title')}</div>
+  <h2 class="s-title">${_('features.title')}</h2>
+  <p class="s-desc s-desc-wide">${_('features.desc')}</p>
+  <div class="dash-window">
+    <div class="dash-titlebar">
+      <div class="dots"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+      <span class="title">8Router Dashboard — Request Log</span>
     </div>
-  </div>
-</div>
-</section>
-
-<!-- ═══ PROVIDERS ═══ -->
-<section id="providers" style="background:var(--bg-surface)">
-<div class="wrap">
-  <div class="s-label">${icon('key')} Provider Coverage</div>
-  <h2 class="s-title">Bring your own keys.</h2>
-  <p class="s-desc">8Router routes to providers you configure. You own and control all credentials.</p>
-  <div class="provider-list">
-    <div class="provider-chip">OpenAI</div>
-    <div class="provider-chip">Groq</div>
-    <div class="provider-chip">DeepSeek</div>
-    <div class="provider-chip">Mistral</div>
-    <div class="provider-chip">Together</div>
-    <div class="provider-chip">xAI</div>
-    <div class="provider-chip">OpenRouter</div>
-    <div class="provider-chip">Ollama</div>
-    <div class="provider-chip">Anthropic</div>
-    <div class="provider-chip">Google</div>
-    <div class="provider-chip">Cerebras</div>
-    <div class="provider-chip">SambaNova</div>
+    <div class="dash-body">
+      <div class="label-example">Example route</div>
+      <div class="row"><span class="ts">10:42:01</span><span class="provider">openai</span><span class="model">gpt-4o</span><span class="fail">429</span></div>
+      <div class="row"><span class="ts">10:42:01</span><span class="fallback">fallback</span> → <span class="provider">groq</span><span class="model">llama-3.1-8b</span><span class="ok">200</span><span style="color:var(--text-3)">142ms</span></div>
+      <div class="row"><span class="ts">10:42:03</span><span class="provider">deepseek</span><span class="model">deepseek-chat</span><span class="fail">503</span></div>
+      <div class="row"><span class="ts">10:42:03</span><span class="fallback">fallback</span> → <span class="provider">together</span><span class="model">llama-3.1-70b</span><span class="ok">200</span><span style="color:var(--text-3)">310ms</span></div>
+      <div class="dash-side">
+        <div class="dash-card">
+          <h4>${_('feat.circuit')}</h4>
+          <div class="val" style="color:var(--green)">● ${_('status.active')}</div>
+          <div class="sub">${_('feat.circuitDesc')}</div>
+        </div>
+        <div class="dash-card">
+          <h4>${_('feat.keyPool')}</h4>
+          <div class="val">3 / 4</div>
+          <div class="sub">${_('feat.keyPoolDesc')}</div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 </section>
 
 <!-- ═══ INTEGRATIONS ═══ -->
-<section id="integrations">
-<div class="wrap">
-  <div class="s-label">${icon('zap')} Compatible Tools</div>
-  <h2 class="s-title">Drop-in compatible.</h2>
-  <p class="s-desc">Any tool that supports custom OpenAI base URLs works with 8Router.</p>
-  <div class="integr-grid">
-    <div class="integr-chip">Cursor</div>
-    <div class="integr-chip">Cline</div>
-    <div class="integr-chip">Continue</div>
-    <div class="integr-chip">Roo Code</div>
-    <div class="integr-chip">Open WebUI</div>
-    <div class="integr-chip">Claude Code</div>
-    <div class="integr-chip">Codex CLI</div>
-    <div class="integr-chip">Hermes Agent</div>
+<section>
+<div class="container">
+  <div class="s-label">${_('integrations.title')}</div>
+  <h2 class="s-title">${_('integrations.title')}</h2>
+  <p class="s-desc">${_('integrations.desc')}</p>
+</div>
+</section>
+
+<!-- ═══ PROVIDERS + TOOLS ═══ -->
+<section class="s-surface">
+<div class="container">
+  <div class="s-label">${_('providers.title')}</div>
+  <h2 class="s-title">${_('providers.title')}</h2>
+  <p class="s-desc">${_('providers.desc')}</p>
+  <div class="providers-strip">
+    <span class="provider-tag">OpenAI</span>
+    <span class="provider-tag">Groq</span>
+    <span class="provider-tag">DeepSeek</span>
+    <span class="provider-tag">Mistral</span>
+    <span class="provider-tag">Together</span>
+    <span class="provider-tag">xAI</span>
+    <span class="provider-tag">OpenRouter</span>
+    <span class="provider-tag">Ollama</span>
+    <span class="provider-tag">Anthropic</span>
+    <span class="provider-tag">Google</span>
+  </div>
+  <div class="providers-strip" style="margin-top:12px">
+    <span class="provider-tag">Cursor</span>
+    <span class="provider-tag">Cline</span>
+    <span class="provider-tag">Continue</span>
+    <span class="provider-tag">Roo Code</span>
+    <span class="provider-tag">Open WebUI</span>
+    <span class="provider-tag">Claude Code</span>
+    <span class="provider-tag">Codex CLI</span>
+    <span class="provider-tag">Hermes Agent</span>
+  </div>
+</div>
+</section>
+
+<!-- ═══ SETUP ═══ -->
+<section id="setup">
+<div class="container">
+  <div class="s-label">${_('start.title')}</div>
+  <h2 class="s-title">${_('start.title')}</h2>
+  <div class="setup-steps">
+    <div class="setup-step">
+      <div class="num">1</div>
+      <h3>${_('start.install')}</h3>
+      <code>npm install -g @kaidev18/eight-router</code>
+    </div>
+    <div class="setup-step">
+      <div class="num">2</div>
+      <h3>${_('start.run')}</h3>
+      <code>8router</code>
+    </div>
+    <div class="setup-step">
+      <div class="num">3</div>
+      <h3>${_('start.configure')}</h3>
+      <code>Base URL: http://localhost:8080/v1<br>Model: 8router/auto</code>
+    </div>
   </div>
 </div>
 </section>
 
 
 <!-- ═══ SECURITY ═══ -->
-<section id="security" style="background:var(--bg-surface)">
-<div class="wrap">
-  <div class="s-label">${icon('shield')} Security</div>
+<section class="s-surface">
+<div class="container">
+  <div class="s-label">${_('security.title')}</div>
   <h2 class="s-title">${_('security.title')}</h2>
   <p class="s-desc">${_('security.warning')}</p>
 </div>
 </section>
 
 <!-- ═══ TESTS ═══ -->
-<section id="tests">
-<div class="wrap">
-  <div class="s-label">${icon('check')} Testing</div>
+<section>
+<div class="container">
+  <div class="s-label">${_('tests.title')}</div>
   <h2 class="s-title">${_('tests.title')}</h2>
   <p class="s-desc">${_('tests.desc')}</p>
 </div>
 </section>
 
-<!-- ═══ SETUP ═══ -->
-<section id="setup" style="background:var(--bg-surface)">
-<div class="wrap">
-  <div class="s-label">${icon('terminal')} Setup</div>
-  <h2 class="s-title">Start routing in under a minute.</h2>
-  <div class="steps">
-    <div class="step">
-      <h3>Install</h3>
-      <code>npm install -g @kaidev18/eight-router</code>
-    </div>
-    <div class="step">
-      <h3>Run</h3>
-      <code>8router</code>
-    </div>
-    <div class="step">
-      <h3>Configure your tool</h3>
-      <code>Base URL: http://localhost:8080/v1<br>Model: 8router/auto</code>
-    </div>
-  </div>
-</div>
-</section>
-
 <!-- ═══ CLOSE ═══ -->
-<section class="close" id="open-source">
-<div class="wrap">
-  <h2 class="s-title">Your keys. Your routes. Your infrastructure.</h2>
-  <p class="s-desc" style="margin:0 auto 32px;text-align:center">8Router is open source under the MIT license. No token resale. No credential collection. Everything runs locally.</p>
-  <div class="close-icons">
-    <div class="close-item">${icon('key')} Your credentials</div>
-    <div class="close-item">${icon('route')} Your routing rules</div>
-    <div class="close-item">${icon('shield')} Local-first</div>
-    <div class="close-item">${icon('github')} Open source</div>
+<section class="close">
+<div class="container">
+  <h2 class="s-title">${_('hero.title1')} — ${_('hero.title2')}</h2>
+  <p>${_('footer.builtFor')}</p>
+  <div class="close-badges">
+    <span>MIT License</span>
+    <span>Your keys</span>
+    <span>Your routes</span>
+    <span>Local-first</span>
   </div>
   <div class="hero-actions" style="justify-content:center">
     <a href="#setup" class="btn-primary">${_('hero.getStarted')}</a>
-    <a href="/8router/dashboard" class="btn-secondary">${_('hero.openDashboard')}</a>
+    <a href="https://github.com/kaidev-pro/8router" class="btn-secondary" target="_blank" rel="noopener">GitHub</a>
   </div>
 </div>
 </section>
 
-<!-- ═══ SUPPORT ═══ -->
-${donateHref ? `
-<section style="background:var(--bg-surface);padding:48px 0;text-align:center">
-<div class="wrap">
-  <p style="color:var(--text-2);margin-bottom:16px">Support 8Router development</p>
-  <a href="${donateHref}" class="btn-primary" target="_blank" rel="noopener">${_('support.donate')}</a>
-</div>
-</section>
-` : ''}
+<!-- ═══ DONATE ═══ -->
+${donateHref ? `<section style="background:var(--bg-surface);padding:40px 0;text-align:center"><div class="container"><a href="${donateHref}" class="btn-primary" target="_blank" rel="noopener">${_('support.donate')}</a></div></section>` : ''}
 
 <!-- ═══ FOOTER ═══ -->
 <footer>
-<div class="wrap">
-  <div class="footer-grid">
-    <div class="footer-col">
-      <h4>${_('footer.product')}</h4>
+<div class="container">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="${LOGO_FOOTER}" alt="8Router" onerror="this.style.display='none'">
+      <span>8Router ${VERSION_STRING} · MIT</span>
+    </div>
+    <div class="footer-links">
       <a href="/8router/dashboard">${_('nav.dashboard')}</a>
-      <a href="#setup">${_('footer.getStarted')}</a>
-      <a href="/8router/api">${_('footer.api')}</a>
-    </div>
-    <div class="footer-col">
-      <h4>${_('footer.resources')}</h4>
-      <a href="#aliases">${_('footer.modelAliases')}</a>
-      <a href="#providers">${_('nav.providers')}</a>
       <a href="https://github.com/kaidev-pro/8router/blob/main/CHANGELOG.md">${_('footer.changelog')}</a>
+      <a href="https://github.com/kaidev-pro/8router">${_('footer.8agents')}</a>
     </div>
-    <div class="footer-col">
-      <h4>${_('footer.ecosystem')}</h4>
-      <a href="https://8agents.xyz">8Agents</a>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <span>8Router ${VERSION_STRING} &middot; MIT License</span>
     <div class="footer-locales">
-      ${SUPPORTED_LOCALES.map(l => `<a href="?locale=${l}" class="${l === locale ? 'active' : ''}">${l.toUpperCase()}</a>`).join(' ')}
+      ${SUPPORTED_LOCALES.map(l => `<a href="?lang=${l}" class="${l === locale ? 'active' : ''}">${l.toUpperCase()}</a>`).join(' ')}
     </div>
   </div>
 </div>
