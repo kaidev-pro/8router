@@ -47,8 +47,8 @@
   "status.local": "Local",
   "status.tested": "Tested",
   "status.compat": "Compat",
-  "providers.title": "12 Providers. 3 Tiers. One Endpoint.",
-  "providers.desc": "Add your own API keys or local providers from the dashboard. 8Router only routes through providers you connect, with health checks, quota awareness, and fallback chains.",
+  "providers.title": "Connect the providers you already use.",
+  "providers.desc": "Add your own API keys or local providers. 8Router only routes through providers you connect, with health checks, quota awareness, and fallback chains.",
   "tier.premium": "Premium",
   "tier.efficient": "Efficient",
   "tier.local": "Local",
@@ -72,8 +72,8 @@
   "how.aliasesDesc": "Use 8router/auto, 8router/cheap, 8router/coding, or 8router/local.",
   "how.monitor": "Monitor",
   "how.monitorDesc": "Track quota, key health, fallback paths, and latency from the dashboard.",
-  "features.title": "Built for Production",
-  "features.desc": "Every feature is tested and production-ready.",
+  "features.title": "Routing you can inspect",
+  "features.desc": "Health checks, fallback decisions, and request history stay visible in the dashboard.",
   "feat.adapters": "Real Provider Adapters",
   "feat.adaptersDesc": "12 providers with dedicated adapters for request normalization, response parsing, and health checks.",
   "feat.capability": "Model Capability Map",
@@ -165,7 +165,7 @@
   "db.canonical.enable": "Enable",
   "db.canonical.disable": "Disable",
   "db.canonical.disconnected": "Connection lost",
-  "db.canonical.canaryWarn": "Canary mode is experimental. Start at 1% or lower and monitor mismatch and failure rates." ,
+  "db.canonical.canaryWarn": "Canary mode is experimental. Start at 1% or lower and monitor mismatch and failure rates.",
   "db.sidebar.cli": "CLI Tools",
   "db.sidebar.keys": "API Keys",
   "db.sidebar.accessKeys": "Access Keys",
@@ -449,5 +449,6 @@
   "support.desc": "8Router is free to use and built voluntarily for AI builders. You connect your own provider keys, and donations are optional for anyone who wants to support development, hosting, and new integrations.",
   "support.donate": "Donate",
   "support.continue": "Continue for Free",
-  "support.dashboard": "Open Dashboard"
+  "support.dashboard": "Open Dashboard",
+  "footer.api": "API"
 }

@@ -47,8 +47,8 @@
   "status.local": "ローカル",
   "status.tested": "テスト済み",
   "status.compat": "互換",
-  "providers.title": "12プロバイダー。3ティア。ひとつのエンドポイント。",
-  "providers.desc": "ダッシュボードから自前のAPIキーやローカルプロバイダーを追加。8Routerは接続したプロバイダーのみルーティングし、ヘルスチェック、クォータアウェアネス、フォールバックチェーンを提供。",
+  "providers.title": "すでに使っているプロバイダーを接続",
+  "providers.desc": "APIキーやローカルプロバイダーを追加するだけ。8Routerは接続したプロバイダーのみにルーティングし、ヘルスチェック・クォータ認識・フォールバックチェーンを提供します。",
   "tier.premium": "プレミアム",
   "tier.efficient": "エフィシェント",
   "tier.local": "ローカル",
@@ -72,8 +72,8 @@
   "how.aliasesDesc": "8router/auto、8router/cheap、8router/coding、または8router/localを使用します。",
   "how.monitor": "モニター",
   "how.monitorDesc": "ダッシュボードからクォータ、キーヘルス、フォールバックパス、レイテンシを追跡します。",
-  "features.title": "本畠用に構築",
-  "features.desc": "すべての機能はテスト済みで本畠用対応です。",
+  "features.title": "インスペクト可能なルーティング",
+  "features.desc": "ヘルスチェック、フォールバック判定、リクエスト履歴はダッシュボードで確認できます。",
   "feat.adapters": "実のプロバイダーアダプター",
   "feat.adaptersDesc": "リクエスト正規化、レスポンスパーシング、ヘルスチェックの専用アダプターを備えた12プロバイダー。",
   "feat.capability": "モデルカパビリティマップ",
@@ -449,5 +449,6 @@
   "support.desc": "8Routerは無料で使用でき、AIビルダーのためにボランティアで構築されています。自前のプロバイダーキーを使用し、開発・ホスティング・新インテグレーションをサポートしたい方への任意の寄付です。",
   "support.donate": "寄付する",
   "support.continue": "無料で続ける",
-  "support.dashboard": "ダッシュボードを開く"
+  "support.dashboard": "ダッシュボードを開く",
+  "footer.api": "API"
 }

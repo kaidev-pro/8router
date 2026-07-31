@@ -39,6 +39,7 @@ import { getDashboardHTML } from '../dashboard/dashboard.js';
 import { getAllPoolStatuses } from '../providers/key-pool.js';
 import { listConnections, getConnectionMetadataById } from '../providers/connections.js';
 import { buildDefaultPreviewReport, filterPreviewReport } from '../providers/connection-reconciliation.js';
+import { listMigrationPlans, getMigrationStatus, buildMigrationPlan, isMigrationEnabled } from '../providers/connection-migration.js';
 import { pickBestModel } from '../providers/smart-picker.js';
 import { createAccessKey, listAccessKeys, getAccessKeyById, updateAccessKey, revokeAccessKey, rotateAccessKey, deleteAccessKey } from '../security/access-keys/manager.js';
 import { handleChatCompletions as runtimeChatCompletions, handleModels as runtimeModels, getUserHealthSummary, resetProviderHealth as resetHealth } from '../runtime/index.js';

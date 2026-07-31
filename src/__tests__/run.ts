@@ -160,6 +160,12 @@ index abc..def 100644
   await runProviderConnectionPreviewTests();
   console.log('');
 
+  // Test 16: Provider Connection Migration (Phase 4B.3)
+  console.log('16. Provider Connection Migration');
+  const { runProviderConnectionMigrationTests } = await import('./provider-connection-migration.test.js');
+  await runProviderConnectionMigrationTests();
+  console.log('');
+
   // Test 16: Access Keys (Phase 2B)
   console.log('16. Access Keys');
   const { runAccessKeyTests } = await import('./access-keys.test.js');

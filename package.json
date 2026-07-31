@@ -68,7 +68,12 @@
     "audit:9router-parity": "node scripts/audit-9router-parity.mjs",
     "test:provider-connections": "tsx src/__tests__/run-provider-connections.ts",
     "provider-connections:preview": "node scripts/provider-connections-preview.mjs",
-    "test:provider-connection-preview": "tsx src/__tests__/run-provider-connection-preview.ts"
+    "test:provider-connection-preview": "tsx src/__tests__/run-provider-connection-preview.ts",
+    "provider-connections:migration-plan": "node scripts/migration-plan.mjs",
+    "provider-connections:migrate": "node scripts/migrate.mjs",
+    "provider-connections:rollback": "node scripts/rollback.mjs",
+    "provider-connections:shadow-sync": "node scripts/shadow-sync-cli.mjs",
+    "test:provider-connection-migration": "tsx src/__tests__/run-provider-connection-migration.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
