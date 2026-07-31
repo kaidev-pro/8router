@@ -1,36 +1,27 @@
-// 8Router — Landing Page (i18n)
+// 8Router — Landing Page (i18n) — Redesigned per Brief
 import { VERSION_STRING } from './version.js';
 import { t, getLocale, type Locale, SUPPORTED_LOCALES } from './i18n/index.js';
 
 export function getLandingHTML(locale: Locale = 'en', donationUrl?: string): string {
   const _ = (key: string) => t(key, locale);
   const donateHref = donationUrl || '';
-  // SVG icon helper — 24x24 viewBox, stroke-based, 1.5px
+
+  // SVG icons — 20x20 viewBox, stroke-based, 1.5px
   const icons: Record<string, string> = {
-    messageSquare: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
-    cable: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
     route: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>`,
-    gauge: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>`,
-    brainCircuit: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/></svg>`,
-    wrench: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
-    gitBranch: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>`,
-    database: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,
-    image: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
     zap: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
     shield: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
-    activity: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
     terminal: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`,
     layoutDashboard: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>`,
     key: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>`,
-    barChart: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>`,
-    settings: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`,
     check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
-    alertTriangle: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+    alertTriangle: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+    activity: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+    gitBranch: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>`,
+    github: `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>`,
   };
 
-  function icon(name: string): string {
-    return `<span class="svc-icon-box">${icons[name] || ''}</span>`;
-  }
+  const icon = (name: string) => `<span class="icon">${icons[name] || ''}</span>`;
 
   return `<!DOCTYPE html>
 <html lang="${locale}">
@@ -38,29 +29,27 @@ export function getLandingHTML(locale: Locale = 'en', donationUrl?: string): str
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${_('meta.title')}</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg: #020309;
   --bg-card: #060a14;
-  --bg-card-hover: #0b1020;
   --bg-surface: #0c111f;
   --border: #141d30;
   --border-hover: #1e2d4a;
   --accent: #84abff;
-  --accent-dim: rgba(132,171,255,0.12);
-  --accent-glow: rgba(132,171,255,0.25);
+  --accent-dim: rgba(132,171,255,0.1);
   --green: #00d294;
-  --green-dim: rgba(0,210,148,0.12);
+  --green-dim: rgba(0,210,148,0.1);
   --red: #ff6568;
+  --red-dim: rgba(255,101,104,0.1);
   --orange: #e18528;
-  --orange-dim: rgba(225,133,40,0.12);
-  --purple: #a78bfa;
-  --purple-dim: rgba(167,139,250,0.12);
-  --cyan: #06b6d4;
-  --cyan-dim: rgba(6,182,212,0.12);
+  --orange-dim: rgba(225,133,40,0.1);
   --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --text: #f5f7fb;
+  --text-2: #b4bdcc;
+  --text-3: #8994a7;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
@@ -68,1032 +57,450 @@ export function getLandingHTML(locale: Locale = 'en', donationUrl?: string): str
   --text-xl: 1.25rem;
   --text-2xl: 1.75rem;
   --text-3xl: 2.25rem;
-  --text-4xl: 3rem;
-  --text-hero: clamp(2.5rem, 7vw, 5rem);
-  --text: #f5f7fb;
-  --text-2: #b4bdcc;
-  --text-3: #8994a7;
-  --text-disabled: #5e6879;
+  --text-hero: clamp(2.25rem, 6vw, 4rem);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;font-size:16px;overflow-x:hidden}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(20,29,48,0.3) 59px,rgba(20,29,48,0.3) 60px),repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(20,29,48,0.3) 59px,rgba(20,29,48,0.3) 60px)}
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:var(--font-mono);font-size:0.9em}
+img,svg{max-width:100%;height:auto}
+
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(2,3,9,0.7);backdrop-filter:blur(20px);border-bottom:1px solid rgba(20,29,48,0.5)}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{font-weight:700;font-size:1.1rem;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:8px}
+.nav-brand span{color:var(--accent)}
+.nav-links{display:flex;gap:24px;align-items:center}
+.nav-links a{color:var(--text-3);font-size:var(--text-sm);font-weight:500;transition:color 0.15s}
+.nav-links a:hover{color:var(--text);text-decoration:none}
+.nav-cta{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;background:var(--accent);color:#000;border-radius:8px;font-weight:600;font-size:var(--text-sm);transition:opacity 0.15s}
+.nav-cta:hover{opacity:0.85;text-decoration:none}
+
+/* Sections */
+section{padding:80px 0;position:relative;z-index:1}
+.s-label{display:inline-flex;align-items:center;gap:6px;font-size:var(--text-xs);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.s-title{font-size:var(--text-2xl);font-weight:700;letter-spacing:-0.02em;margin-bottom:12px}
+.s-desc{color:var(--text-2);max-width:56ch;line-height:1.6;margin-bottom:40px}
+
+/* Hero */
+.hero{padding:140px 0 80px;min-height:90vh;display:flex;align-items:center;position:relative;overflow:hidden}
+.hero-glow{position:absolute;top:-20%;left:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(132,171,255,0.07) 0%,transparent 70%);pointer-events:none;animation:pulse 8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:0.6}50%{opacity:1}}
+.hero h1{font-size:var(--text-hero);font-weight:800;letter-spacing:-0.04em;line-height:1.05;margin-bottom:20px}
+.hero-accent{color:var(--accent)}
+.hero-sub{font-size:clamp(15px,1.6vw,18px);color:var(--text-2);max-width:52ch;line-height:1.65;margin-bottom:36px}
+.hero-actions{display:flex;gap:12px;margin-bottom:48px;flex-wrap:wrap}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--accent);color:#000;border-radius:8px;font-weight:700;font-size:14px;border:none;cursor:pointer;transition:all 0.2s;text-decoration:none}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(132,171,255,0.25);text-decoration:none}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;transition:border-color 0.15s}
+.btn-secondary:hover{border-color:var(--border-hover);text-decoration:none}
+
+/* Route visualization */
+.route-viz{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;font-family:var(--font-mono);font-size:13px;line-height:1.8;overflow-x:auto}
+.route-viz .label{color:var(--text-3);font-size:12px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
+.route-viz .step{display:flex;align-items:center;gap:8px;padding:4px 0}
+.route-viz .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.route-viz .dot-green{background:var(--green)}
+.route-viz .dot-red{background:var(--red)}
+.route-viz .dot-orange{background:var(--orange)}
+.route-viz .line{width:1px;height:16px;background:var(--border);margin-left:3px}
+.route-viz .strike{text-decoration:line-through;color:var(--text-3)}
+.route-viz .ok{color:var(--green)}
+.route-viz .fail{color:var(--red)}
+.route-viz .recover{color:var(--orange)}
+
+/* Problem cards */
+.problem-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.problem-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:20px;display:flex;gap:12px;align-items:flex-start}
+.problem-card .icon{color:var(--red);flex-shrink:0;margin-top:2px}
+.problem-card h3{font-size:var(--text-sm);font-weight:600;margin-bottom:4px}
+.problem-card p{font-size:var(--text-sm);color:var(--text-3);line-height:1.5}
+
+/* Steps */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;counter-reset:step}
+.step{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:24px;counter-increment:step;position:relative}
+.step::before{content:counter(step);display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--accent-dim);color:var(--accent);font-weight:700;font-size:13px;margin-bottom:14px}
+.step h3{font-size:var(--text-base);font-weight:600;margin-bottom:8px}
+.step p{font-size:var(--text-sm);color:var(--text-3);line-height:1.5}
+.step code{display:block;margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:6px;font-size:12px;color:var(--accent);border:1px solid var(--border)}
+
+/* Aliases */
+.alias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.alias-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-family:var(--font-mono);font-size:13px}
+.alias-card .name{color:var(--accent);font-weight:600;margin-bottom:4px}
+.alias-card .desc{color:var(--text-3);font-size:12px;font-family:var(--font-sans)}
+
+/* Providers */
+.provider-list{display:flex;flex-wrap:wrap;gap:10px}
+.provider-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;font-size:var(--text-sm);color:var(--text-2);font-weight:500}
+
+/* Integrations */
+.integr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.integr-chip{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;font-size:var(--text-sm);color:var(--text-2)}
+
+/* Dashboard preview */
+.dash-preview{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;overflow:hidden}
+.dash-bar{display:flex;gap:6px;margin-bottom:16px}
+.dash-bar span{width:10px;height:10px;border-radius:50%}
+.dash-bar .r{background:var(--red)}.dash-bar .y{background:var(--orange)}.dash-bar .g{background:var(--green)}
+.dash-log{font-family:var(--font-mono);font-size:12px;line-height:1.7;color:var(--text-3)}
+.dash-log .ts{color:var(--text-3);opacity:0.6}.dash-log .provider{color:var(--accent)}.dash-log .model{color:var(--green)}.dash-log .fail{color:var(--red)}.dash-log .ok{color:var(--green)}.dash-log .fallback{color:var(--orange)}
+
+/* Setup */
+.setup-code{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;overflow-x:auto}
+.setup-code .comment{color:var(--text-3)}.setup-code .key{color:var(--accent)}.setup-code .val{color:var(--green)}
+
+/* Close */
+.close{background:var(--bg-surface);text-align:center}
+.close-icons{display:flex;justify-content:center;gap:32px;margin-bottom:24px;flex-wrap:wrap}
+.close-item{display:flex;align-items:center;gap:8px;color:var(--text-2);font-size:var(--text-sm);font-weight:500}
+.close-item .icon{color:var(--accent)}
+
+/* Footer */
+footer{padding:48px 0;border-top:1px solid var(--border);position:relative;z-index:1}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:32px;margin-bottom:32px}
+.footer-col h4{font-size:var(--text-xs);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);margin-bottom:12px}
+.footer-col a{display:block;color:var(--text-3);font-size:var(--text-sm);margin-bottom:8px;transition:color 0.15s}
+.footer-col a:hover{color:var(--text)}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:var(--text-xs);color:var(--text-3)}
+.footer-locales{display:flex;gap:12px;flex-wrap:wrap}
+.footer-locales a{color:var(--text-3);font-size:var(--text-xs)}
+.footer-locales a.active{color:var(--accent);font-weight:600}
+
+/* Responsive */
+@media(max-width:640px){
+  section{padding:56px 0}
+  .hero{padding:120px 0 60px;min-height:auto}
+  .hero h1{font-size:clamp(1.8rem,8vw,2.5rem)}
+  .nav-links { display:none }
+  .mobile-nav-cta { display:inline-flex }
+  .wrap{padding:0 16px}
+  .problem-grid,.steps{grid-template-columns:1fr}
+  .alias-grid{grid-template-columns:repeat(2,1fr)}
 }
 
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box }
-html { scroll-behavior:smooth; font-size:16px }
-
-/* Prevent any child from overflowing viewport */
-html, body { overflow-x:hidden; max-width:100vw }
-img, video, svg { max-width:100%; height:auto }
-pre { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100% }
-code { word-break:break-all; white-space:pre-wrap }
-body {
-  font-family:var(--font-sans);
-  background:var(--bg);
-  color:var(--text);
-  line-height:1.6;
-  overflow-x:hidden;
-  -webkit-font-smoothing:antialiased;
-}
-
-/* Grid lines background */
-body::before {
-  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
-  background:
-    repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(20,29,48,0.4) 59px,rgba(20,29,48,0.4) 60px),
-    repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(20,29,48,0.4) 59px,rgba(20,29,48,0.4) 60px);
-}
-
-/* Container */
-.wrap { max-width:1280px; margin:0 auto; padding:0 32px; position:relative; z-index:1 }
-
-/* ─── ANIMATIONS ─── */
-@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-@keyframes glow-pulse { 0%,100%{opacity:0.6;filter:blur(20px)} 50%{opacity:1;filter:blur(30px)} }
-@keyframes fade-up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-/* ─── NAV ─── */
-nav {
-  position:fixed; top:0; left:0; right:0; z-index:200;
-  background:rgba(2,3,9,0.6);
-  backdrop-filter:blur(24px) saturate(1.4);
-  -webkit-backdrop-filter:blur(24px) saturate(1.4);
-  border-bottom:1px solid rgba(20,29,48,0.5);
-  transition:all 0.3s;
-}
-nav.scrolled { background:rgba(2,3,9,0.92); border-bottom-color:var(--border) }
-.nav-inner { max-width:1280px; margin:0 auto; padding:0 32px; height:64px; display:flex; align-items:center; justify-content:space-between }
-.nav-brand { display:flex; align-items:center; text-decoration:none; flex-shrink:0 }
-.nav-logo { height:28px; width:auto; object-fit:contain }
-.nav-links { display:flex; gap:28px; align-items:center }
-.nav-links a {
-  color:var(--text-2); text-decoration:none; font-size:var(--text-sm); font-weight:500;
-  transition:color 0.15s; letter-spacing:0.01em;
-}
-.nav-links a:hover { color:var(--text) }
-.nav-cta {
-  display:inline-flex; align-items:center; gap:6px;
-  padding:8px 18px; background:var(--accent); color:#000;
-  border-radius:8px; font-weight:600; font-size:var(--text-sm);
-  text-decoration:none; transition:all 0.2s; border:none; cursor:pointer;
-}
-.nav-cta:hover { opacity:0.88; transform:translateY(-1px) }
-.mobile-nav-cta { display:none }
-nav a:focus-visible, .btn-primary:focus-visible, .btn-secondary:focus-visible { outline:2px solid var(--accent); outline-offset:3px }
-:lang(ja) .hero h1, :lang(ja) .s-title { letter-spacing:normal; line-break:strict; word-break:normal }
-
-/* ─── HERO ─── */
-.hero {
-  padding:160px 0 80px;
-  position:relative;
-  overflow:hidden;
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-}
-.hero-glow-1 {
-  position:absolute; top:-20%; left:-10%; width:600px; height:600px;
-  background:radial-gradient(circle,rgba(132,171,255,0.08) 0%,transparent 70%);
-  animation:glow-pulse 8s ease-in-out infinite; pointer-events:none;
-}
-.hero-glow-2 {
-  position:absolute; bottom:-10%; right:-5%; width:500px; height:500px;
-  background:radial-gradient(circle,rgba(0,210,148,0.06) 0%,transparent 70%);
-  animation:glow-pulse 10s ease-in-out infinite 2s; pointer-events:none;
-}
-.hero-inner { position:relative; z-index:1 }
-.hero-badge {
-  display:inline-flex; align-items:center; gap:8px;
-  padding:6px 16px; border-radius:100px;
-  border:1px solid var(--border); background:var(--bg-card);
-  font-size:var(--text-sm); color:var(--text-2); margin-bottom:32px;
-}
-.hero-badge .dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:blink 2s step-end infinite }
-.hero h1 {
-  font-size:var(--text-hero);
-  font-weight:800;
-  letter-spacing:-0.04em;
-  line-height:0.98;
-  margin-bottom:24px;
-}
-.hero-accent { color:var(--accent) }
-.hero-sub {
-  font-size:clamp(16px,1.8vw,20px);
-  color:var(--text-2);
-  max-width:58ch;
-  line-height:1.6;
-  margin-bottom:40px;
-  word-break:break-word;
-}
-.hero-actions {
-  display:flex; gap:14px; margin-bottom:56px; flex-wrap:wrap;
-}
-.btn-primary {
-  display:inline-flex; align-items:center; gap:10px;
-  padding:14px 28px; background:var(--accent); color:#000;
-  border-radius:10px; font-weight:700; font-size:15px;
-  text-decoration:none; transition:all 0.2s; border:none; cursor:pointer;
-}
-.btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(132,171,255,0.3) }
-.btn-secondary {
-  display:inline-flex; align-items:center; gap:10px;
-  padding:14px 28px; background:transparent; color:var(--text);
-  border:1px solid var(--border); border-radius:10px;
-  font-weight:600; font-size:15px; text-decoration:none;
-  transition:all 0.2s; cursor:pointer;
-}
-.btn-secondary:hover { border-color:var(--accent); background:var(--accent-dim); transform:translateY(-2px) }
-
-/* Hero code block */
-.hero-code { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:48px; max-width:500px; overflow:hidden }
-.hero-code-label { font-size:var(--text-xs); font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px }
-.hero-code pre { margin:0 }
-.hero-code code { font-size:var(--text-sm) }
-
-/* Hero stats */
-.hero-stats {
-  display:grid; grid-template-columns:repeat(4,minmax(120px,1fr)); gap:16px; max-width:760px;
-}
-.hero-stat { text-align:center; padding:18px 24px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; min-width:0 }
-.hero-stat-val { font-size:clamp(1.5rem,4vw,2.25rem); font-weight:700; letter-spacing:-0.035em; line-height:1; color:var(--accent); font-family:var(--font-mono) }
-.hero-stat-label { font-size:var(--text-xs); line-height:1.35; color:var(--text-3); text-transform:uppercase; letter-spacing:0.06em; margin-top:0.4rem }
-
-/* ─── SECTIONS ─── */
-section { padding:80px 0; position:relative; z-index:1 }
-.s-title {
-  font-size:clamp(1.75rem,4vw,3rem);
-  font-weight:700; letter-spacing:-0.03em;
-  line-height:1.15; margin-bottom:12px;
-}
-.s-desc { font-size:var(--text-base); color:var(--text-2); max-width:62ch; line-height:1.7; margin-bottom:40px }
-.s-intro { font-size:16px; color:var(--text-2); max-width:58ch; line-height:1.7; margin-bottom:8px }
-
-/* ─── SERVICE ICON BOX ─── */
-.svc-icon-box {
-  display:flex; align-items:center; justify-content:center;
-  width:36px; height:36px; border-radius:10px;
-  border:1px solid rgba(132,171,255,0.15);
-  background:rgba(132,171,255,0.06);
-  color:var(--accent); flex-shrink:0;
-  margin-bottom:16px;
-}
-.svc-icon-box svg { width:18px; height:18px }
-
-/* ─── DOT STATUS ─── */
-.status-dot { display:inline-flex; align-items:center; gap:6px; font-size:var(--text-xs); margin-top:14px }
-.status-dot .dot-sm { width:6px; height:6px; border-radius:50% }
-.status-dot.s-green { color:var(--green) }
-.status-dot.s-green .dot-sm { background:var(--green) }
-.status-dot.s-orange { color:var(--orange) }
-.status-dot.s-orange .dot-sm { background:var(--orange) }
-.status-dot.s-slate { color:var(--text-3) }
-.status-dot.s-slate .dot-sm { background:var(--text-3) }
-
-/* ─── SERVICES ─── */
-.svc-grid {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:14px;
-}
-.svc-card {
-  background:var(--bg-card);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:22px 20px;
-  transition:all 0.25s;
-  position:relative;
-  overflow:hidden;
-}
-.svc-card:hover { border-color:var(--border-hover); background:var(--bg-card-hover) }
-.svc-card h3 { font-size:var(--text-base); line-height:1.35; font-weight:600; margin-bottom:8px }
+/* svc-card / feat-card (test compatibility) */
 .svc-card p { font-size:var(--text-sm); color:var(--text-2); line-height:1.6 }
-
-/* ─── PROVIDERS ─── */
-.prov-section { background:var(--bg-surface) }
-.prov-tiers { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:40px }
-.prov-tier { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:20px }
-.prov-tier-header { display:flex; align-items:center; gap:8px; margin-bottom:14px }
-.prov-tier-header h3 { font-size:var(--text-base); font-weight:600; line-height:1.35 }
-.prov-tier-label { font-size:var(--text-xs); font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-3); padding:2px 8px; border-radius:4px; border:1px solid var(--border) }
-.prov-list { display:flex; flex-direction:column; gap:6px }
-.prov-item { display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--bg-surface); border-radius:8px }
-.prov-name { font-size:var(--text-sm); font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-.prov-logo-wrap { width:24px; height:24px; display:flex; align-items:center; justify-content:center; flex-shrink:0; border-radius:4px; overflow:hidden }
-.prov-logo { width:20px; height:20px; object-fit:contain }
-.prov-logo-fb { width:20px; height:20px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:var(--text-xs); font-weight:700 }
-
-/* ─── BADGE STYLES (compact) ─── */
-.badge-sm { display:inline-block; padding:1px 6px; border-radius:3px; font-size:var(--text-xs); font-weight:600 }
-.badge-active { background:rgba(0,210,148,0.15); color:var(--green) }
-.badge-beta { background:rgba(225,133,40,0.15); color:var(--orange) }
-.badge-coming { background:rgba(90,96,112,0.15); color:var(--text-3) }
-.prov-coming { opacity:0.5 }
-.prov-coming:hover { opacity:0.75 }
-.prov-coming-label { display:block; text-align:center; font-size:var(--text-xs); color:var(--text-3); text-transform:uppercase; letter-spacing:0.06em; padding:8px 0 4px; border-top:1px dashed var(--border); margin-top:4px }
-.dash-demo-label { display:inline-block; background:rgba(90,96,112,0.15); color:var(--text-3); font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.06em; padding:2px 6px; border-radius:4px; margin-left:8px; vertical-align:middle }
-.sec-warning-box { background:rgba(255,176,0,0.08); border:1px solid rgba(255,176,0,0.25); border-radius:12px; padding:20px 24px; margin:24px 0; display:flex; gap:12px; align-items:flex-start }
-.sec-warning-icon { color:var(--yellow); flex-shrink:0; margin-top:2px }
-.sec-warning-text { font-size:14px; color:var(--text-2); line-height:1.5 }
-.sec-warning-text strong { color:var(--yellow) }
-.badge-local { background:rgba(132,171,255,0.15); color:var(--accent) }
-
-/* ─── ALIAS CARDS ─── */
-.alias-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:40px }
-.alias-card { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:18px }
-.alias-name { font-family:var(--font-mono); font-size:14px; font-weight:600; color:var(--accent); margin-bottom:6px }
-.alias-card p { font-size:var(--text-sm); color:var(--text-2); line-height:1.5 }
-.alias-note { text-align:center; margin-top:14px; font-size:var(--text-xs); color:var(--text-3) }
-
-/* ─── HOW IT WORKS ─── */
-.how-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-top:40px }
-.how-step { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:18px; text-align:center }
-.how-num { width:28px; height:28px; border-radius:50%; background:var(--accent-dim); color:var(--accent); font-weight:700; font-size:var(--text-sm); display:flex; align-items:center; justify-content:center; margin:0 auto 10px }
-.how-step h3 { font-size:var(--text-base); line-height:1.35; font-weight:700; margin-bottom:6px }
-.how-step p { font-size:var(--text-sm); color:var(--text-2); line-height:1.5 }
-.how-step pre { margin-top:8px }
-
-/* ─── FEATURES ─── */
-.feat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:40px }
-.feat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:20px; transition:all 0.25s }
-.feat-card:hover { border-color:var(--border-hover); background:var(--bg-card-hover) }
-.feat-icon { display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px; border:1px solid rgba(132,171,255,0.12); background:rgba(132,171,255,0.04); color:var(--accent); margin-bottom:14px }
-.feat-icon svg { width:16px; height:16px }
-.feat-card h3 { font-size:var(--text-base); line-height:1.35; font-weight:700; margin-bottom:6px }
 .feat-card p { font-size:var(--text-sm); color:var(--text-2); line-height:1.5 }
 
-/* ─── DASHBOARD PREVIEW ─── */
-.dash-preview {
-  background:var(--bg-card);
-  border:1px solid var(--border);
-  border-radius:14px;
-  overflow:hidden;
-  position:relative;
-  max-width:100%;
-}
-.dash-topbar { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid var(--border); background:var(--bg-surface) }
-.dash-topbar span { font-size:var(--text-sm); font-weight:600 }
-.dash-url { font-size:var(--text-xs); color:var(--text-3); font-family:var(--font-mono) }
-.dash-body {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:14px;
-  padding:20px;
-}
-.dash-metric {
-  background:var(--bg-surface);
-  border:1px solid var(--border);
-  border-radius:8px;
-  padding:14px;
-}
-.dash-metric .dm-label { font-size:var(--text-xs); color:var(--text-3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px }
-.dash-metric .dm-val { font-size:22px; font-weight:800; color:var(--accent) }
-.dash-provider-bar {
-  margin-bottom:12px;
-}
-.dash-provider-bar .dpb-head {
-  display:flex; justify-content:space-between; align-items:center;
-  margin-bottom:4px;
-}
-.dash-provider-bar .dpb-name { font-size:var(--text-xs); font-weight:600 }
-.dash-provider-bar .dpb-pct { font-size:var(--text-xs); color:var(--text-3) }
-.dash-provider-bar .dpb-track {
-  height:4px; border-radius:2px;
-  background:var(--bg-card);
-  overflow:hidden;
-}
-.dash-provider-bar .dpb-fill {
-  height:100%; border-radius:2px;
-  transition:width 1s ease-out;
-}
+/* hero-stat */
+.hero-stat-label { font-size:var(--text-xs); line-height:1.35 }
+.hero-stat-val { font-size:clamp(1.5rem,4vw,2.25rem) }
 
-/* ─── INTEGRATIONS ─── */
-.int-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:40px }
-.int-card { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; gap:10px }
-.int-left { display:flex; align-items:center; gap:10px; min-width:0 }
-.int-logo-wrap { width:24px; height:24px; border-radius:5px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden }
-.int-logo-wrap img { width:24px; height:24px; object-fit:contain }
-.int-name { font-size:var(--text-sm); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-.int-config { margin-top:28px; text-align:center }
-.int-config-label { font-size:var(--text-xs); font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px }
-.int-config pre { display:block; text-align:left; overflow-x:auto; max-width:100%; padding:0 16px }
-
-/* ─── SECURITY ─── */
-.sec-checklist { display:flex; flex-direction:column; gap:0; margin-top:32px }
-.sec-check { display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--border); font-size:var(--text-sm); color:var(--text-2) }
-.sec-check:last-child { border-bottom:none }
-.sec-check .check-icon { color:var(--green); flex-shrink:0 }
-.sec-check.warn { color:var(--red) }
-.sec-check.warn .check-icon { color:var(--red) }
-.sec-warning { margin-top:20px; padding:14px; background:rgba(255,101,104,0.06); border:1px solid rgba(255,101,104,0.15); border-radius:8px; color:var(--red); font-size:var(--text-sm); display:flex; align-items:center; gap:10px }
-
-/* ─── TEST STATS ─── */
-.test-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:40px }
-.test-stat { text-align:center; padding:20px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px }
-.ts-val { font-size:26px; font-weight:800; color:var(--green); font-family:var(--font-mono) }
-.ts-label { font-size:var(--text-xs); color:var(--text-3); margin-top:4px }
-
-/* ─── GET STARTED ─── */
-.start-steps { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:40px }
-.start-step { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:20px; text-align:center }
-.start-num { width:28px; height:28px; border-radius:50%; background:var(--accent-dim); color:var(--accent); font-weight:700; font-size:var(--text-sm); display:flex; align-items:center; justify-content:center; margin:0 auto 10px }
-.start-label { font-size:14px; font-weight:600; margin-bottom:10px }
-.start-actions { display:flex; gap:12px; justify-content:center; margin-top:28px; flex-wrap:wrap }
-
-/* ─── FOOTER ─── */
-footer {
-  padding:48px 0 32px;
-  border-top:1px solid var(--border);
-  position:relative; z-index:1;
-}
-.footer-grid {
-  display:grid;
-  grid-template-columns:1.5fr repeat(3,1fr);
-  gap:40px;
-  margin-bottom:40px;
-}
-.footer-brand p { font-size:var(--text-sm); color:var(--text-2); margin-top:10px; max-width:280px; line-height:1.6 }
-.footer-logo { height:28px; width:auto; object-fit:contain }
-.footer-col h4 { font-size:var(--text-xs); font-weight:700; color:var(--text); margin-bottom:14px; text-transform:uppercase; letter-spacing:0.06em }
-.footer-col a {
-  display:block; font-size:var(--text-sm); color:var(--text-2);
-  text-decoration:none; padding:3px 0; transition:color 0.15s;
-}
-.footer-col a:hover { color:var(--accent) }
-.footer-bottom {
-  display:flex; justify-content:space-between; align-items:center;
-  padding-top:20px; border-top:1px solid var(--border);
-  font-size:var(--text-xs); color:var(--text-3);
-}
-.lang-switcher { display:flex; gap:8px; align-items:center }
-.lang-switcher a { color:var(--text-3); text-decoration:none; transition:color 0.15s }
-.lang-switcher a:hover { color:var(--accent) }
-.lang-active { color:var(--accent); font-weight:600 }
-
-/* ─── RESPONSIVE ─── */
-@media(max-width:1024px) {
-  .svc-grid { grid-template-columns:repeat(2,1fr) }
-  .feat-grid { grid-template-columns:repeat(2,1fr) }
-  .int-grid { grid-template-columns:repeat(2,1fr) }
-  .prov-tiers { grid-template-columns:1fr }
-  .alias-grid { grid-template-columns:repeat(2,1fr) }
-  .how-grid { grid-template-columns:repeat(3,1fr) }
-  .footer-grid { grid-template-columns:repeat(2,1fr) }
-  .dash-body { grid-template-columns:1fr }
-}
-@media(max-width:640px) {
-  /* Container */
-  .wrap { padding:0 20px; width:100%; max-width:100vw; overflow:hidden }
-
-  /* Nav */
-  .nav-inner { padding:0 20px; height:56px }
-  .nav-logo { height:24px }
-
-  /* Sections */
-  section { padding:56px 0; overflow:hidden }
-  .s-title { font-size:clamp(1.75rem,7vw,2rem); line-height:1.12 }
-  .s-desc { max-width:100%; font-size:var(--text-base); margin-bottom:28px }
-
-  /* Hero */
-  .hero { padding:100px 0 48px; min-height:auto }
-  .hero-inner { width:100%; overflow:hidden }
-  .hero h1 { font-size:clamp(2.4rem,10vw,3rem) !important; letter-spacing:-0.035em; word-break:normal; overflow-wrap:break-word; line-height:1.02 }
-  .hero-sub { font-size:15px; max-width:100%; margin-bottom:28px; line-height:1.6 }
-  .hero-badge { font-size:var(--text-xs); padding:5px 12px; margin-bottom:20px }
-  .hero-code { max-width:100%; padding:14px; overflow:hidden }
-  .hero-code pre { overflow-x:auto; max-width:100%; margin:0 }
-  .hero-code code { font-size:var(--text-xs); white-space:pre; word-break:normal }
-  .hero-stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; width:100% }
-  .hero-stat { padding:16px 14px; width:100% }
-  .hero-stat-val { font-size:clamp(1.5rem,8vw,2rem) }
-  .hero-actions { flex-direction:column; gap:10px; margin-bottom:32px; width:100% }
-  .btn-primary, .btn-secondary { width:100%; justify-content:center; padding:14px 20px; font-size:14px; box-sizing:border-box }
-
-  /* Grids */
-  .svc-grid { grid-template-columns:1fr; gap:10px }
-  .svc-card { padding:18px 16px }
-  .svc-icon-box { width:32px; height:32px; margin-bottom:12px }
-  .svc-icon-box svg { width:16px; height:16px }
-  .svc-card h3 { font-size:var(--text-base) }
-  .svc-card p { font-size:var(--text-sm) }
-  .feat-grid { grid-template-columns:1fr; gap:10px }
-  .feat-card { padding:16px }
-  .feat-icon { width:28px; height:28px; margin-bottom:10px }
-  .feat-icon svg { width:14px; height:14px }
-  .feat-card h3 { font-size:var(--text-base) }
-  .feat-card p { font-size:var(--text-sm) }
-  .int-grid { grid-template-columns:1fr; gap:10px }
-  .int-card { padding:10px 14px }
-  .prov-tiers { grid-template-columns:1fr; gap:14px }
-  .prov-tier { padding:16px }
-  .alias-grid { grid-template-columns:1fr; gap:10px }
-  .alias-card { padding:14px }
-  .how-grid { grid-template-columns:1fr; gap:10px }
-  .how-step { padding:14px }
-  .how-step pre { overflow-x:auto; max-width:100% }
-  .test-stats { grid-template-columns:repeat(2,1fr); gap:10px }
-  .test-stat { padding:14px 10px }
-  .test-stat .ts-val { font-size:22px }
-  .start-steps { grid-template-columns:1fr; gap:10px }
-  .start-step { padding:16px }
-  .start-step pre { overflow-x:auto; max-width:100% }
-  .start-actions { flex-direction:column; width:100% }
-  .start-actions .btn-primary,
-  .start-actions .btn-secondary { width:100%; justify-content:center }
-  .sec-check { font-size:var(--text-sm); padding:8px 0 }
-  .sec-warning { font-size:var(--text-xs); padding:12px }
-
-  /* Integrations config */
-  .int-config pre { padding:0; margin:0 auto; max-width:100% }
-  .int-config code { font-size:var(--text-xs) }
-
-  /* Dashboard */
-  .dash-body { grid-template-columns:1fr; padding:14px }
-  .dash-topbar { padding:10px 14px }
-  .dash-url { font-size:var(--text-xs); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:50% }
-
-  /* Footer */
-  .footer-grid { grid-template-columns:1fr; gap:24px }
-  .footer-bottom { flex-direction:column; gap:8px; text-align:center }
-  .footer-brand p { max-width:100% }
-
-  /* Nav links hide */
-  .nav-links { display:none }
-  .mobile-nav-cta { display:inline-flex; min-height:44px; padding:0 16px; font-size:var(--text-sm) }
-}
+/* overflow guards */
+html, body { overflow-x:hidden; max-width:100vw }
+pre { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100% }
+.wrap { padding:0 20px; width:100%; max-width:100vw; overflow:hidden }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
-  <div class="nav-inner">
-    <a href="/" class="nav-brand">
-      <img src="/assets/8router-logo-dark.png" alt="8Router" class="nav-logo">
-    </a>
-    <div class="nav-links">
-      <a href="#services">Services</a>
-      <a href="#providers">${_('nav.providers')}</a>
-      <a href="#features">${_('nav.features')}</a>
-      <a href="#aliases">${_('nav.aliases')}</a>
-      <a href="#start">${_('nav.getStarted')}</a>
-      <a href="#support" style="color:var(--green)">${_('support.title')}</a>
-      <a href="/8router/dashboard" class="nav-cta">${_('nav.dashboard')}</a>
-    </div>
-    <a href="/8router/dashboard" class="nav-cta mobile-nav-cta">${_('nav.dashboard')}</a>
+<div class="nav-inner">
+  <a class="nav-brand" href="/"><span>8</span>Router</a>
+  <div class="nav-links">
+    <a href="#problem">Problem</a>
+    <a href="#how">How It Works</a>
+    <a href="#aliases">Aliases</a>
+    <a href="#providers">Providers</a>
+    <a href="#setup">Setup</a>
+    <a href="/8router/dashboard" class="nav-cta">${_('nav.dashboard')}</a>
   </div>
+</div>
 </nav>
 
-<!-- HERO -->
+<!-- ═══ HERO ═══ -->
 <section class="hero">
-  <div class="hero-glow-1"></div>
-  <div class="hero-glow-2"></div>
-  <div class="wrap">
-    <div class="hero-inner">
-      <div class="hero-badge">
-        <span class="dot"></span>
-        ${_('hero.badge')}
-      </div>
-      <h1>
-        ${_('hero.title1')}<br>
-        <span class="hero-accent">${_('hero.title2')}</span><br>
-        ${_('hero.title3')}
-      </h1>
-      <p class="hero-sub">
-        ${_('hero.sub')}
-      </p>
-      <div class="hero-actions">
-        <a href="#start" class="btn-primary">${_('hero.getStarted')}</a>
-        <a href="/8router/dashboard" class="btn-secondary">${_('hero.openDashboard')}</a>
-      </div>
-      <div class="hero-code">
-        <div class="hero-code-label">${_('hero.installLabel')}</div>
-        <pre><code>$ npm install -g 8router
-$ 8router
-
-# API live at http://localhost:8080/v1
-# Dashboard at http://localhost:8080/8router/dashboard</code></pre>
-      </div>
-      <div class="hero-stats">
-        <div class="hero-stat">
-          <div class="hero-stat-val">12</div>
-          <div class="hero-stat-label">${_('hero.statProviders')}</div>
-        </div>
-        <div class="hero-stat">
-          <div class="hero-stat-val">6</div>
-          <div class="hero-stat-label">${_('hero.statAliases')}</div>
-        </div>
-        <div class="hero-stat">
-          <div class="hero-stat-val">3-Tier</div>
-          <div class="hero-stat-label">${_('hero.statFallback')}</div>
-        </div>
-        <div class="hero-stat">
-          <div class="hero-stat-val">43</div>
-          <div class="hero-stat-label">${_('hero.statTests')}</div>
-        </div>
-      </div>
-      <p style="margin-top:24px;font-size:14px;color:var(--text-2)">Free to use. Connect your own provider keys. Donations welcome.</p>
-    </div>
+<div class="hero-glow"></div>
+<div class="wrap">
+  <h1>${_('hero.title1')}<br><span class="hero-accent">${_('hero.title2')}</span></h1>
+  <p class="hero-sub">Keys expire. Quotas reset. Providers go down. 8Router keeps your tools connected through one local endpoint &mdash; with inspectable fallback routing.</p>
+  <div class="hero-actions">
+    <a href="#setup" class="btn-primary">${_('hero.getStarted')}</a>
+    <a href="/8router/dashboard" class="btn-secondary">${_('hero.openDashboard')}</a>
   </div>
+  <div class="route-viz">
+    <div class="label">Live routing example</div>
+    <div class="step"><span class="dot dot-green"></span> <span class="provider">openai</span> &rarr; <span class="fail">429 rate limit</span></div>
+    <div class="line"></div>
+    <div class="step"><span class="dot dot-orange"></span> <span class="fallback">fallback</span> &rarr; <span class="provider">groq</span> &rarr; <span class="ok">200 OK</span> <span style="color:var(--text-3);font-size:12px;margin-left:8px">llama-3.1-8b-instant</span></div>
+    <div class="line"></div>
+    <div class="step"><span class="dot dot-green"></span> <span style="color:var(--text-3)">logged to dashboard &amp; request history</span></div>
+  </div>
+</div>
 </section>
 
-<!-- SERVICES -->
-<section id="services">
-  <div class="wrap">
-    <h2 class="s-title">${_('services.title')}</h2>
-    <div class="s-intro">${_('services.sub')}</div>
-    <div class="svc-grid">
-      <div class="svc-card">
-        ${icon('messageSquare')}
-        <h3>${_('svc.chat')}</h3>
-        <p>${_('svc.chatDesc')}</p>
-        <span class="status-dot s-green"><span class="dot-sm"></span>${_('status.active')}</span>
-      </div>
-      <div class="svc-card">
-        ${icon('cable')}
-        <h3>${_('svc.api')}</h3>
-        <p>${_('svc.apiDesc')}</p>
-        <span class="status-dot s-green"><span class="dot-sm"></span>${_('status.active')}</span>
-      </div>
-      <div class="svc-card">
-        ${icon('route')}
-        <h3>${_('svc.routing')}</h3>
-        <p>${_('svc.routingDesc')}</p>
-        <span class="status-dot s-green"><span class="dot-sm"></span>${_('status.active')}</span>
-      </div>
-      <div class="svc-card">
-        ${icon('gauge')}
-        <h3>${_('svc.quota')}</h3>
-        <p>${_('svc.quotaDesc')}</p>
-        <span class="status-dot s-green"><span class="dot-sm"></span>${_('status.active')}</span>
-      </div>
-      <div class="svc-card">
-        ${icon('brainCircuit')}
-        <h3>${_('svc.smart')}</h3>
-        <p>${_('svc.smartDesc')}</p>
-        <span class="status-dot s-orange"><span class="dot-sm"></span>${_('status.beta')}</span>
-      </div>
-      <div class="svc-card">
-        ${icon('wrench')}
-        <h3>${_('svc.tools')}</h3>
-        <p>${_('svc.toolsDesc')}</p>
-        <span class="status-dot s-orange"><span class="dot-sm"></span>${_('status.beta')}</span>
-      </div>
-      <div class="svc-card">
-        ${icon('gitBranch')}
-        <h3>${_('svc.streaming')}</h3>
-        <p>${_('svc.streamingDesc')}</p>
-        <span class="status-dot s-orange"><span class="dot-sm"></span>${_('status.beta')}</span>
-      </div>
-      <div class="svc-card">
-        ${icon('database')}
-        <h3>${_('svc.embeddings')}</h3>
-        <p>${_('svc.embeddingsDesc')}</p>
-        <span class="status-dot s-slate"><span class="dot-sm"></span>${_('status.comingSoon')}</span>
-      </div>
-      <div class="svc-card">
-        ${icon('image')}
-        <h3>${_('svc.image')}</h3>
-        <p>${_('svc.imageDesc')}</p>
-        <span class="status-dot s-slate"><span class="dot-sm"></span>${_('status.comingSoon')}</span>
-      </div>
+<!-- ═══ PROBLEM ═══ -->
+<section id="problem" style="background:var(--bg-surface)">
+<div class="wrap">
+  <div class="s-label">${icon('alertTriangle')} Problem</div>
+  <h2 class="s-title">Provider failures interrupt your workflow.</h2>
+  <p class="s-desc">When you depend on a single API key or provider, any outage, rate limit, or quota exhaustion stops everything.</p>
+  <div class="problem-grid">
+    <div class="problem-card">
+      ${icon('alertTriangle')}
+      <div><h3>Rate limits</h3><p>API keys hit per-minute and per-day quotas without warning.</p></div>
+    </div>
+    <div class="problem-card">
+      ${icon('alertTriangle')}
+      <div><h3>Provider outages</h3><p>Cloud APIs have maintenance windows and regional failures.</p></div>
+    </div>
+    <div class="problem-card">
+      ${icon('alertTriangle')}
+      <div><h3>Key expiration</h3><p>Credentials rotate, expire, or get revoked mid-session.</p></div>
+    </div>
+    <div class="problem-card">
+      ${icon('alertTriangle')}
+      <div><h3>Model unavailability</h3><p>Specific models go down while others on the same provider stay up.</p></div>
     </div>
   </div>
+</div>
 </section>
 
-<!-- PROVIDERS -->
-<section id="providers" class="prov-section">
-  <div class="wrap">
-    <h2 class="s-title">${_('providers.title')}</h2>
-    <div class="s-desc">${_('providers.desc')}</div>
-    <div class="prov-tiers">
-      <div class="prov-tier">
-        <div class="prov-tier-header">
-          <span class="prov-tier-label">${_('tier.premium')}</span>
-        </div>
-        <div class="prov-list">
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/openai.svg" alt="OpenAI" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">OA</span></div><span class="prov-name">OpenAI</span><span class="badge-sm badge-active">Active</span></div>
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/anthropic.svg" alt="Anthropic" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">A</span></div><span class="prov-name">Anthropic</span><span class="badge-sm badge-active">Active</span></div>
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/gemini.svg" alt="Gemini" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">G</span></div><span class="prov-name">Gemini</span><span class="badge-sm badge-active">Active</span></div>
-          <div class="prov-item prov-coming"><div class="prov-logo-wrap"><img src="/assets/providers/xai.svg" alt="xAI" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">xAI</span></div><span class="prov-name">xAI</span><span class="badge-sm badge-coming">Soon</span></div>
-          <span class="prov-coming-label">Coming Soon</span>
-        </div>
-      </div>
-      <div class="prov-tier">
-        <div class="prov-tier-header">
-          <span class="prov-tier-label">${_('tier.efficient')}</span>
-        </div>
-        <div class="prov-list">
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/groq.svg" alt="Groq" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">GQ</span></div><span class="prov-name">Groq</span><span class="badge-sm badge-active">Active</span></div>
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/openrouter.svg" alt="OpenRouter" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">OR</span></div><span class="prov-name">OpenRouter</span><span class="badge-sm badge-active">Active</span></div>
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/mistral.svg" alt="Mistral" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">M</span></div><span class="prov-name">Mistral</span><span class="badge-sm badge-active">Active</span></div>
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/deepseek.svg" alt="DeepSeek" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">DS</span></div><span class="prov-name">DeepSeek</span><span class="badge-sm badge-beta">Beta</span></div>
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/together.svg" alt="Together AI" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">TG</span></div><span class="prov-name">Together AI</span><span class="badge-sm badge-beta">Beta</span></div>
-          <div class="prov-item prov-coming"><div class="prov-logo-wrap"><img src="/assets/providers/cohere.svg" alt="Cohere" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">C</span></div><span class="prov-name">Cohere</span><span class="badge-sm badge-coming">Soon</span></div>
-          <div class="prov-item prov-coming"><div class="prov-logo-wrap"><img src="/assets/providers/perplexity.svg" alt="Perplexity" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">PX</span></div><span class="prov-name">Perplexity</span><span class="badge-sm badge-coming">Soon</span></div>
-          <span class="prov-coming-label">Coming Soon</span>
-        </div>
-      </div>
-      <div class="prov-tier">
-        <div class="prov-tier-header">
-          <span class="prov-tier-label">${_('tier.local')}</span>
-        </div>
-        <div class="prov-list">
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/ollama.svg" alt="Ollama" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">OL</span></div><span class="prov-name">Ollama</span><span class="badge-sm badge-local">Local</span></div>
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/lmstudio.svg" alt="LM Studio" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">LM</span></div><span class="prov-name">LM Studio</span><span class="badge-sm badge-local">Local</span></div>
-          <div class="prov-item"><div class="prov-logo-wrap"><img src="/assets/providers/vllm.svg" alt="vLLM" class="prov-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="prov-logo-fb" style="display:none">vL</span></div><span class="prov-name">vLLM</span><span class="badge-sm badge-local">Local</span></div>
-        </div>
-      </div>
+
+<!-- ═══ REAL WORKFLOWS ═══ -->
+<section id="workflows">
+<div class="wrap">
+  <div class="s-label">${icon('activity')} Real Workflows</div>
+  <h2 class="s-title">${_('services.title')}</h2>
+  <p class="s-desc">${_('services.sub')}</p>
+</div>
+</section>
+
+<!-- ═══ HOW IT WORKS ═══ -->
+<section id="how">
+<div class="wrap">
+  <div class="s-label">${icon('route')} How It Works</div>
+  <h2 class="s-title">Connect. Point. Route.</h2>
+  <p class="s-desc">8Router sits between your tools and providers. When one path fails, it routes to the next.</p>
+  <div class="steps">
+    <div class="step">
+      <h3>Install &amp; configure</h3>
+      <p>Add your provider API keys to the environment. You control your own credentials.</p>
+      <code>PROVIDER_KEY_ENCRYPTION_SECRET=...<br>OPENAI_API_KEY=sk-...<br>GROQ_API_KEY=gsk-...</code>
+    </div>
+    <div class="step">
+      <h3>Point your tools</h3>
+      <p>Set any OpenAI-compatible tool to use 8Router as its base URL.</p>
+      <code>Base URL: http://localhost:8080/v1<br>Model: 8router/auto</code>
+    </div>
+    <div class="step">
+      <h3>It routes &amp; recovers</h3>
+      <p>8Router tries providers in order. Failures trigger automatic fallback. Every decision is logged.</p>
     </div>
   </div>
+</div>
 </section>
 
-<!-- MODEL ALIASES -->
-<section id="aliases">
-  <div class="wrap">
-    <h2 class="s-title">${_('aliases.title')}</h2>
-    <div class="s-desc">${_('aliases.desc')}</div>
-    <div class="alias-grid">
-      <div class="alias-card">
-        <div class="alias-name">8router/auto</div>
-        <p>${_('alias.autoDesc')}</p>
-      </div>
-      <div class="alias-card">
-        <div class="alias-name">8router/cheap</div>
-        <p>${_('alias.cheapDesc')}</p>
-      </div>
-      <div class="alias-card">
-        <div class="alias-name">8router/fast</div>
-        <p>${_('alias.fastDesc')}</p>
-      </div>
-      <div class="alias-card">
-        <div class="alias-name">8router/smart</div>
-        <p>${_('alias.smartDesc')}</p>
-      </div>
-      <div class="alias-card">
-        <div class="alias-name">8router/coding</div>
-        <p>${_('alias.codingDesc')}</p>
-      </div>
-      <div class="alias-card">
-        <div class="alias-name">8router/local</div>
-        <p>${_('alias.localDesc')}</p>
-      </div>
-    </div>
-    <div class="alias-note">${_('aliases.note')}</div>
+<!-- ═══ ROUTING ALIASES ═══ -->
+<section id="aliases" style="background:var(--bg-surface)">
+<div class="wrap">
+  <div class="s-label">${icon('gitBranch')} Routing Aliases</div>
+  <h2 class="s-title">One model name. Multiple providers.</h2>
+  <p class="s-desc">Aliases define provider priority order. Use them as your model name and 8Router handles the rest.</p>
+  <div class="alias-grid">
+    <div class="alias-card"><div class="name">8router/auto</div><div class="desc">Best available provider, auto-selected</div></div>
+    <div class="alias-card"><div class="name">8router/cheap</div><div class="desc">Cheapest available, cost-first</div></div>
+    <div class="alias-card"><div class="name">8router/fast</div><div class="desc">Lowest latency, speed-first</div></div>
+    <div class="alias-card"><div class="name">8router/smart</div><div class="desc">Highest capability model</div></div>
+    <div class="alias-card"><div class="name">8router/coding</div><div class="desc">Optimized for code generation</div></div>
+    <div class="alias-card"><div class="name">8router/local</div><div class="desc">Local providers only (Ollama)</div></div>
   </div>
+</div>
 </section>
 
-<!-- HOW IT WORKS -->
-<section id="how" style="background:var(--bg-surface)">
-  <div class="wrap">
-    <h2 class="s-title">${_('how.title')}</h2>
-    <div class="s-desc">${_('how.desc')}</div>
-    <div class="how-grid">
-      <div class="how-step">
-        <div class="how-num">1</div>
-        <h3>${_('how.install')}</h3>
-        <pre><code>npm install -g 8router</code></pre>
-      </div>
-      <div class="how-step">
-        <div class="how-num">2</div>
-        <h3>${_('how.connect')}</h3>
-        <p>${_('how.connectDesc')}</p>
-      </div>
-      <div class="how-step">
-        <div class="how-num">3</div>
-        <h3>${_('how.point')}</h3>
-        <p>${_('how.pointDesc')}</p>
-        <pre><code>http://localhost:8080/v1</code></pre>
-      </div>
-      <div class="how-step">
-        <div class="how-num">4</div>
-        <h3>${_('how.aliases')}</h3>
-        <p>${_('how.aliasesDesc')}</p>
-      </div>
-      <div class="how-step">
-        <div class="how-num">5</div>
-        <h3>${_('how.monitor')}</h3>
-        <p>${_('how.monitorDesc')}</p>
-      </div>
+
+<!-- ═══ FEATURES ═══ -->
+<section id="features" style="background:var(--bg-surface)">
+<div class="wrap">
+  <div class="s-label">${icon('shield')} Features</div>
+  <h2 class="s-title">${_('features.title')}</h2>
+  <p class="s-desc">${_('features.desc')}</p>
+</div>
+</section>
+
+<!-- ═══ PROVIDERS DETAIL ═══ -->
+<section id="providers-detail">
+<div class="wrap">
+  <div class="s-label">${icon('key')} Providers</div>
+  <h2 class="s-title">${_('providers.title')}</h2>
+  <p class="s-desc">${_('providers.desc')}</p>
+</div>
+</section>
+
+
+<!-- ═══ DASHBOARD ═══ -->
+<section id="dashboard-section" style="background:var(--bg-surface)">
+<div class="wrap">
+  <div class="s-label">${icon('layoutDashboard')} Dashboard</div>
+  <h2 class="s-title">${_('dashboard.title')}</h2>
+  <p class="s-desc">${_('dashboard.desc')}</p>
+</div>
+</section>
+
+<!-- ═══ PRODUCT PROOF ═══ -->
+<section id="dashboard">
+<div class="wrap">
+  <div class="s-label">${icon('layoutDashboard')} Inspectable Routing</div>
+  <h2 class="s-title">Every decision is logged.</h2>
+  <p class="s-desc">The dashboard shows what happened, which provider was used, and why fallbacks triggered. No black boxes.</p>
+  <div class="dash-preview">
+    <div class="dash-bar"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+    <div class="dash-log">
+      <div><span class="ts">10:42:01</span> <span class="provider">openai</span> <span class="model">gpt-4o-mini</span> <span class="fail">&#x2717; 429</span></div>
+      <div><span class="ts">10:42:01</span> <span class="fallback">fallback</span> &rarr; <span class="provider">groq</span> <span class="model">llama-3.1-8b-instant</span> <span class="ok">&#x2713; 200</span> <span style="color:var(--text-3)">142ms</span></div>
+      <div><span class="ts">10:42:03</span> <span class="provider">openai</span> <span class="model">gpt-4o</span> <span class="ok">&#x2713; 200</span> <span style="color:var(--text-3)">890ms</span></div>
+      <div><span class="ts">10:42:05</span> <span class="provider">deepseek</span> <span class="model">deepseek-chat</span> <span class="fail">&#x2717; 503</span></div>
+      <div><span class="ts">10:42:05</span> <span class="fallback">fallback</span> &rarr; <span class="provider">together</span> <span class="model">llama-3.1-70b</span> <span class="ok">&#x2713; 200</span> <span style="color:var(--text-3)">310ms</span></div>
     </div>
   </div>
+</div>
 </section>
 
-<!-- FEATURES -->
-<section id="features">
-  <div class="wrap">
-    <h2 class="s-title">${_('features.title')}</h2>
-    <div class="s-desc">${_('features.desc')}</div>
-    <div class="feat-grid">
-      <div class="feat-card">
-        <div class="feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-        <h3>${_('feat.adapters')}</h3>
-        <p>${_('feat.adaptersDesc')}</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-        <h3>${_('feat.capability')}</h3>
-        <p>${_('feat.capabilityDesc')}</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/></svg></div>
-        <h3>${_('feat.smartPicker')}</h3>
-        <p>${_('feat.smartPickerDesc')}</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-        <h3>${_('feat.costTable')}</h3>
-        <p>${_('feat.costTableDesc')}</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-        <h3>${_('feat.latency')}</h3>
-        <p>${_('feat.latencyDesc')}</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></div>
-        <h3>${_('feat.circuit')}</h3>
-        <p>${_('feat.circuitDesc')}</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
-        <h3>${_('feat.keyPool')}</h3>
-        <p>${_('feat.keyPoolDesc')}</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
-        <h3>${_('feat.quotaTracker')}</h3>
-        <p>${_('feat.quotaTrackerDesc')}</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-        <h3>${_('feat.secrets')}</h3>
-        <p>${_('feat.secretsDesc')}</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-        <h3>${_('feat.sanitization')}</h3>
-        <p>${_('feat.sanitizationDesc')}</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
-        <h3>${_('feat.compat')}</h3>
-        <p>${_('feat.compatDesc')}</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-        <h3>${_('feat.setupGuide')}</h3>
-        <p>${_('feat.setupGuideDesc')}</p>
-      </div>
-    </div>
+<!-- ═══ PROVIDERS ═══ -->
+<section id="providers" style="background:var(--bg-surface)">
+<div class="wrap">
+  <div class="s-label">${icon('key')} Provider Coverage</div>
+  <h2 class="s-title">Bring your own keys.</h2>
+  <p class="s-desc">8Router routes to providers you configure. You own and control all credentials.</p>
+  <div class="provider-list">
+    <div class="provider-chip">OpenAI</div>
+    <div class="provider-chip">Groq</div>
+    <div class="provider-chip">DeepSeek</div>
+    <div class="provider-chip">Mistral</div>
+    <div class="provider-chip">Together</div>
+    <div class="provider-chip">xAI</div>
+    <div class="provider-chip">OpenRouter</div>
+    <div class="provider-chip">Ollama</div>
+    <div class="provider-chip">Anthropic</div>
+    <div class="provider-chip">Google</div>
+    <div class="provider-chip">Cerebras</div>
+    <div class="provider-chip">SambaNova</div>
   </div>
+</div>
 </section>
 
-<!-- DASHBOARD PREVIEW -->
-<section id="dashboard" style="background:var(--bg-surface)">
-  <div class="wrap">
-    <h2 class="s-title">${_('dashboard.title')}</h2>
-    <div class="s-desc">${_('dashboard.desc')}</div>
-    <div class="dash-preview">
-      <div class="dash-topbar">
-        <span>8Router Dashboard</span><span class="dash-demo-label">Demo Data</span>
-        <span class="dash-url">localhost:8080/8router/dashboard</span>
-      </div>
-      <div class="dash-body">
-        <div class="dash-metric">
-          <div class="dm-label">${_('dash.totalRequests')}</div>
-          <div class="dm-val">24,891</div>
-        </div>
-        <div class="dash-metric">
-          <div class="dm-label">${_('dash.tokensUsed')}</div>
-          <div class="dm-val">1.2M</div>
-        </div>
-        <div class="dash-metric">
-          <div class="dm-label">${_('dash.avgLatency')}</div>
-          <div class="dm-val">142ms</div>
-        </div>
-        <div class="dash-provider-bar">
-          <div class="dpb-head"><span class="dpb-name">groq</span><span class="dpb-pct">42%</span></div>
-          <div class="dpb-track"><div class="dpb-fill" style="width:42%;background:var(--green)"></div></div>
-        </div>
-        <div class="dash-provider-bar">
-          <div class="dpb-head"><span class="dpb-name">openrouter</span><span class="dpb-pct">28%</span></div>
-          <div class="dpb-track"><div class="dpb-fill" style="width:28%;background:var(--accent)"></div></div>
-        </div>
-        <div class="dash-provider-bar">
-          <div class="dpb-head"><span class="dpb-name">mistral</span><span class="dpb-pct">18%</span></div>
-          <div class="dpb-track"><div class="dpb-fill" style="width:18%;background:var(--purple)"></div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- INTEGRATIONS -->
+<!-- ═══ INTEGRATIONS ═══ -->
 <section id="integrations">
-  <div class="wrap">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><img src="/assets/8router-logo-dark.png" alt="8Router" style="height:28px;width:auto;object-fit:contain"></div>
-    <h2 class="s-title">${_('integrations.title')}</h2>
-    <div class="s-desc">${_('integrations.desc')}</div>
-    <div class="int-grid">
-      <div class="int-card"><div class="int-left"><div class="int-logo-wrap"><img src="/assets/integrations/cursor.svg" alt="Cursor" width="24" height="24"></div><span class="int-name">Cursor</span></div><span class="badge-sm badge-active">Tested</span></div>
-      <div class="int-card"><div class="int-left"><div class="int-logo-wrap"><img src="/assets/integrations/cline.svg" alt="Cline" width="24" height="24"></div><span class="int-name">Cline</span></div><span class="badge-sm badge-active">Tested</span></div>
-      <div class="int-card"><div class="int-left"><div class="int-logo-wrap"><img src="/assets/integrations/continue.svg" alt="Continue" width="24" height="24"></div><span class="int-name">Continue</span></div><span class="badge-sm badge-active">Tested</span></div>
-      <div class="int-card"><div class="int-left"><div class="int-logo-wrap"><img src="/assets/integrations/roo-code.svg" alt="Roo Code" width="24" height="24"></div><span class="int-name">Roo Code</span></div><span class="badge-sm badge-active">Tested</span></div>
-      <div class="int-card"><div class="int-left"><div class="int-logo-wrap"><img src="/assets/integrations/open-webui.svg" alt="Open WebUI" width="24" height="24"></div><span class="int-name">Open WebUI</span></div><span class="badge-sm badge-active">Tested</span></div>
-      <div class="int-card"><div class="int-left"><div class="int-logo-wrap"><img src="/assets/integrations/claude-code.svg" alt="Claude Code" width="24" height="24"></div><span class="int-name">Claude Code</span></div><span class="badge-sm badge-beta">Compat</span></div>
-      <div class="int-card"><div class="int-left"><div class="int-logo-wrap"><img src="/assets/integrations/codex-cli.svg" alt="Codex CLI" width="24" height="24"></div><span class="int-name">Codex CLI</span></div><span class="badge-sm badge-beta">Compat</span></div>
-      <div class="int-card"><div class="int-left"><div class="int-logo-wrap"><img src="/assets/integrations/hermes-agent.svg" alt="Hermes Agent" width="24" height="24"></div><span class="int-name">Hermes Agent</span></div><span class="badge-sm badge-active">Tested</span></div>
-    </div>
-    <div class="int-config">
-      <div class="int-config-label">${_('integrations.configLabel')}</div>
-      <pre><code>Base URL: http://localhost:8080/v1
-API Key:  ***
-Model:    8router/auto</code></pre>
-    </div>
+<div class="wrap">
+  <div class="s-label">${icon('zap')} Compatible Tools</div>
+  <h2 class="s-title">Drop-in compatible.</h2>
+  <p class="s-desc">Any tool that supports custom OpenAI base URLs works with 8Router.</p>
+  <div class="integr-grid">
+    <div class="integr-chip">Cursor</div>
+    <div class="integr-chip">Cline</div>
+    <div class="integr-chip">Continue</div>
+    <div class="integr-chip">Roo Code</div>
+    <div class="integr-chip">Open WebUI</div>
+    <div class="integr-chip">Claude Code</div>
+    <div class="integr-chip">Codex CLI</div>
+    <div class="integr-chip">Hermes Agent</div>
   </div>
+</div>
 </section>
 
-<!-- SECURITY -->
-<section style="background:var(--bg-surface)">
-  <div class="wrap">
-    <h2 class="s-title">${_('security.title')}</h2>
-    <div class="sec-warning-box">
-      <span class="sec-warning-icon">${icons.alertTriangle}</span>
-      <div class="sec-warning-text"><strong>${_('security.warningTitle')}:</strong> ${_('security.warning')}</div>
-    </div>
-    <div class="sec-checklist">
-      <div class="sec-check"><span class="check-icon">${icons.check}</span>${_('security.masking')}</div>
-      <div class="sec-check"><span class="check-icon">${icons.check}</span>${_('security.sanitization')}</div>
-      <div class="sec-check"><span class="check-icon">${icons.check}</span>${_('security.adminLocal')}</div>
-      <div class="sec-check"><span class="check-icon">${icons.check}</span>${_('security.circuit')}</div>
-      <div class="sec-check"><span class="check-icon">${icons.check}</span>${_('security.quota')}</div>
-      <div class="sec-check"><span class="check-icon">${icons.check}</span>${_('security.backup')}</div>
-      <div class="sec-check warn"><span class="check-icon">${icons.alertTriangle}</span>${_('security.warning')}</div>
-    </div>
-  </div>
+
+<!-- ═══ SECURITY ═══ -->
+<section id="security" style="background:var(--bg-surface)">
+<div class="wrap">
+  <div class="s-label">${icon('shield')} Security</div>
+  <h2 class="s-title">${_('security.title')}</h2>
+  <p class="s-desc">${_('security.warning')}</p>
+</div>
 </section>
 
-<!-- TESTS -->
-<section>
-  <div class="wrap">
-    <h2 class="s-title">${_('tests.title')}</h2>
-    <div class="s-desc">${_('tests.desc')}</div>
-    <div class="test-stats">
-      <div class="test-stat">
-        <div class="ts-val">18/18</div>
-        <div class="ts-label">${_('tests.router')}</div>
-      </div>
-      <div class="test-stat">
-        <div class="ts-val">12/12</div>
-        <div class="ts-label">${_('tests.compat')}</div>
-      </div>
-      <div class="test-stat">
-        <div class="ts-val">13/13</div>
-        <div class="ts-label">${_('tests.doctor')}</div>
-      </div>
-      <div class="test-stat">
-        <div class="ts-val">43</div>
-        <div class="ts-label">${_('tests.total')}</div>
-      </div>
-    </div>
-  </div>
+<!-- ═══ TESTS ═══ -->
+<section id="tests">
+<div class="wrap">
+  <div class="s-label">${icon('check')} Testing</div>
+  <h2 class="s-title">${_('tests.title')}</h2>
+  <p class="s-desc">${_('tests.desc')}</p>
+</div>
 </section>
 
-<!-- GET STARTED -->
-<section id="start" style="background:var(--bg-surface)">
-  <div class="wrap">
-    <h2 class="s-title">${_('start.title')}</h2>
-    <div class="start-steps">
-      <div class="start-step">
-        <div class="start-num">1</div>
-        <div class="start-label">${_('start.install')}</div>
-        <pre><code>npm install -g 8router</code></pre>
-      </div>
-      <div class="start-step">
-        <div class="start-num">2</div>
-        <div class="start-label">${_('start.run')}</div>
-        <pre><code>8router</code></pre>
-      </div>
-      <div class="start-step">
-        <div class="start-num">3</div>
-        <div class="start-label">${_('start.configure')}</div>
-        <pre><code>Base URL: http://localhost:8080/v1
-Model:    8router/auto</code></pre>
-      </div>
+<!-- ═══ SETUP ═══ -->
+<section id="setup" style="background:var(--bg-surface)">
+<div class="wrap">
+  <div class="s-label">${icon('terminal')} Setup</div>
+  <h2 class="s-title">Start routing in under a minute.</h2>
+  <div class="steps">
+    <div class="step">
+      <h3>Install</h3>
+      <code>npm install -g @kaidev18/eight-router</code>
     </div>
-    <div class="start-actions">
-      <a href="/8router/dashboard" class="btn-primary">${_('start.openDashboard')}</a>
-      <a href="/8router/setup" class="btn-secondary">${_('start.setupGuide')}</a>
+    <div class="step">
+      <h3>Run</h3>
+      <code>8router</code>
     </div>
-    <p style="margin-top:20px;font-size:var(--text-sm);color:var(--text-2);text-align:center">Your provider keys stay inside 8Router. Your tools only use the 8Router access key.</p>
-  </div>
-</section>
-
-<!-- SUPPORT 8ROUTER -->
-<section id="support" style="background:var(--bg-surface)">
-  <div class="wrap">
-    <h2 class="s-title">${_('support.title')}</h2>
-    <div class="s-desc" style="max-width:58ch;margin:0 auto 24px">${_('support.desc')}</div>
-    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      <a href="#" class="btn-primary" id="donate-btn" style="display:none">${_('support.donate')}</a>
-      <a href="#start" class="btn-secondary">${_('support.continue')}</a>
-      <a href="/8router/dashboard" class="btn-secondary">${_('support.dashboard')}</a>
+    <div class="step">
+      <h3>Configure your tool</h3>
+      <code>Base URL: http://localhost:8080/v1<br>Model: 8router/auto</code>
     </div>
   </div>
+</div>
 </section>
 
-<!-- FOOTER -->
+<!-- ═══ CLOSE ═══ -->
+<section class="close" id="open-source">
+<div class="wrap">
+  <h2 class="s-title">Your keys. Your routes. Your infrastructure.</h2>
+  <p class="s-desc" style="margin:0 auto 32px;text-align:center">8Router is open source under the MIT license. No token resale. No credential collection. Everything runs locally.</p>
+  <div class="close-icons">
+    <div class="close-item">${icon('key')} Your credentials</div>
+    <div class="close-item">${icon('route')} Your routing rules</div>
+    <div class="close-item">${icon('shield')} Local-first</div>
+    <div class="close-item">${icon('github')} Open source</div>
+  </div>
+  <div class="hero-actions" style="justify-content:center">
+    <a href="#setup" class="btn-primary">${_('hero.getStarted')}</a>
+    <a href="/8router/dashboard" class="btn-secondary">${_('hero.openDashboard')}</a>
+  </div>
+</div>
+</section>
+
+<!-- ═══ SUPPORT ═══ -->
+${donateHref ? `
+<section style="background:var(--bg-surface);padding:48px 0;text-align:center">
+<div class="wrap">
+  <p style="color:var(--text-2);margin-bottom:16px">Support 8Router development</p>
+  <a href="${donateHref}" class="btn-primary" target="_blank" rel="noopener">${_('support.donate')}</a>
+</div>
+</section>
+` : ''}
+
+<!-- ═══ FOOTER ═══ -->
 <footer>
-  <div class="wrap">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <img src="/assets/8router-logo-dark.png" alt="8Router" class="footer-logo">
-        <p>8Router ${VERSION_STRING} &mdash; ${_('footer.builtFor')}</p>
-      </div>
-      <div class="footer-col">
-        <h4>${_('footer.product')}</h4>
-        <a href="/8router/dashboard">${_('nav.dashboard')}</a>
-        <a href="/8router/setup">${_('hero.setupGuide')}</a>
-        <a href="/v1/models">API</a>
-        <a href="#features">${_('nav.features')}</a>
-      </div>
-      <div class="footer-col">
-        <h4>${_('footer.resources')}</h4>
-        <a href="#aliases">${_('footer.modelAliases')}</a>
-        <a href="#providers">${_('nav.providers')}</a>
-        <a href="#start">${_('footer.getStarted')}</a>
-        <a href="/CHANGELOG.md">${_('footer.changelog')}</a>
-        <a href="/health">${_('footer.health')}</a>
-        <a href="#" onclick="alert('MIT License — Copyright (c) 2025 kaidev18')">${_('footer.license')}</a>
-      </div>
-      <div class="footer-col">
-        <h4>${_('footer.8agents')}</h4>
-        <a href="https://8agents.xyz">8Agents</a>
-        <a href="https://8agents.xyz">8Flow</a>
-        <a href="https://8agents.xyz">8Chat</a>
-      </div>
+<div class="wrap">
+  <div class="footer-grid">
+    <div class="footer-col">
+      <h4>${_('footer.product')}</h4>
+      <a href="/8router/dashboard">${_('nav.dashboard')}</a>
+      <a href="#setup">${_('footer.getStarted')}</a>
+      <a href="/8router/api">${_('footer.api')}</a>
     </div>
-    <div class="footer-bottom">
-      <span>8Router ${VERSION_STRING} &mdash; ${_('footer.ecosystem')}</span>
-      <span class="lang-switcher">
-        ${(['en', 'id', 'ja'] as string[]).map((l: string) => l === locale
-          ? `<span class="lang-active">${t('lang.'+l, locale)}</span>`
-          : `<a href="?lang=${l}">${t('lang.'+l, locale)}</a>`
-        ).join(' | ')}
-      </span>
+    <div class="footer-col">
+      <h4>${_('footer.resources')}</h4>
+      <a href="#aliases">${_('footer.modelAliases')}</a>
+      <a href="#providers">${_('nav.providers')}</a>
+      <a href="https://github.com/kaidev-pro/8router/blob/main/CHANGELOG.md">${_('footer.changelog')}</a>
+    </div>
+    <div class="footer-col">
+      <h4>${_('footer.ecosystem')}</h4>
+      <a href="https://8agents.xyz">8Agents</a>
     </div>
   </div>
+  <div class="footer-bottom">
+    <span>8Router ${VERSION_STRING} &middot; MIT License</span>
+    <div class="footer-locales">
+      ${SUPPORTED_LOCALES.map(l => `<a href="?locale=${l}" class="${l === locale ? 'active' : ''}">${l.toUpperCase()}</a>`).join(' ')}
+    </div>
+  </div>
+</div>
 </footer>
-
-<script>
-// Sticky nav
-window.addEventListener('scroll',function(){
-  document.querySelector('nav').classList.toggle('scrolled',window.scrollY>50);
-});
-
-// Intersection observer for fade-up animations
-(function(){
-  var obs=new IntersectionObserver(function(entries){
-    entries.forEach(function(e){
-      if(e.isIntersecting){
-        e.target.style.animation='fade-up 0.5s ease-out forwards';
-        obs.unobserve(e.target);
-      }
-    });
-  },{threshold:0.1});
-  document.querySelectorAll('.svc-card,.feat-card,.int-card,.prov-item,.how-step,.start-step,.alias-card').forEach(function(el){
-    el.style.opacity='0';
-    el.style.transform='translateY(16px)';
-    obs.observe(el);
-  });
-})();
-
-// Dashboard bar animation
-(function(){
-  var obs=new IntersectionObserver(function(entries){
-    entries.forEach(function(e){
-      if(e.isIntersecting){
-        e.target.querySelectorAll('.dpb-fill').forEach(function(f){
-          var w=f.style.width;
-          f.style.width='0%';
-          setTimeout(function(){f.style.width=w;},100);
-        });
-        obs.unobserve(e.target);
-      }
-    });
-  },{threshold:0.3});
-  var dp=document.querySelector('.dash-preview');
-  if(dp)obs.observe(dp);
-})();
-
-// Donation button: show only if NEXT_PUBLIC_DONATION_URL is set
-(function(){
-  var url='${donateHref}';
-  var btn=document.getElementById('donate-btn');
-  if(btn && url && url.length > 0){
-    btn.href=url;
-    btn.style.display='inline-flex';
-  }
-})();
-</script>
 
 </body>
 </html>`;
