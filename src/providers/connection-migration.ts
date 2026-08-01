@@ -22,6 +22,7 @@ export interface MigrationPlan{
  sourceMainSha:string; legacySchemaVersion:string; targetSchemaVersion:string;
  mode:'dry_run'|'execute'; totalCandidates:number; eligible:number;
  requiresReview:number; blocked:number; entries:MigrationPlanEntry[];
+ checksum:string;
 }
 
 export interface MigrationEntryResult{
@@ -43,6 +44,9 @@ export interface MigrationStatus{
 export function isMigrationEnabled():boolean{return process.env.PROVIDER_CONNECTION_MIGRATION_ENABLED==='true'}
 export function isShadowSyncEnabled():boolean{return process.env.PROVIDER_CONNECTION_SHADOW_SYNC_ENABLED==='true'}
 
+const MIGRATION_ALGORITHM_VERSION='phase4b3-algo-v1';
+const ELIGIBILITY_RULES_VERSION='phase4b3-rules-v1';
+
 let schemaInit=false;
 export function ensureMigrationSchema(){ const db=getDB();
  if(schemaInit)return;
@@ -50,7 +54,7 @@ export function ensureMigrationSchema(){ const db=getDB();
   CREATE TABLE IF NOT EXISTS provider_connection_migration_plans(
    planId TEXT PRIMARY KEY, schemaVersion TEXT NOT NULL, generatedAt TEXT NOT NULL,
    sourceMainSha TEXT NOT NULL, legacySchemaVersion TEXT NOT NULL, targetSchemaVersion TEXT NOT NULL,
-   planJson TEXT NOT NULL, validatedAt TEXT, executedAt TEXT, rolledBackAt TEXT, createdAt TEXT NOT NULL
+   planJson TEXT NOT NULL, checksum TEXT NOT NULL, validatedAt TEXT, executedAt TEXT, rolledBackAt TEXT, createdAt TEXT NOT NULL
   );
   CREATE TABLE IF NOT EXISTS provider_connection_migration_entries(
    planId TEXT NOT NULL, legacyId TEXT NOT NULL, providerConnectionId TEXT,
@@ -81,7 +85,89 @@ export function ensureMigrationSchema(){ const db=getDB();
   CREATE INDEX IF NOT EXISTS idx_pcsd_legacy ON provider_connection_shadow_diagnostics(legacyId);
   CREATE INDEX IF NOT EXISTS idx_pcsd_pc ON provider_connection_shadow_diagnostics(providerConnectionId);
  `))();
+ // Add checksum column if missing (schema migration)
+ try{getDB().prepare('SELECT checksum FROM provider_connection_migration_plans LIMIT 1').get()}catch{
+  try{getDB().exec('ALTER TABLE provider_connection_migration_plans ADD COLUMN checksum TEXT')}catch{}
+ }
  schemaInit=true;
+}
+
+/** Canonical stable serialization: sorted keys, no undefined, entries sorted by legacyId */
+function canonicalStringify(obj:unknown):string{
+ if(obj===null||obj===undefined)return'null';
+ if(typeof obj==='string')return JSON.stringify(obj);
+ if(typeof obj==='number'||typeof obj==='boolean')return String(obj);
+ if(Array.isArray(obj)){
+  const items=obj.map(i=>canonicalStringify(i)).sort();
+  return'['+items.join(',')+']';
+ }
+ if(typeof obj==='object'){
+  const keys=Object.keys(obj as Record<string,unknown>).sort();
+  const pairs=keys.map(k=>{
+   const v=(obj as Record<string,unknown>)[k];
+   if(v===undefined)return null;
+   return JSON.stringify(k)+':'+canonicalStringify(v);
+  }).filter(Boolean);
+  return'{'+pairs.join(',')+'}';
+ }
+ return String(obj);
+}
+
+/** Build canonical fingerprint for plan identity (deterministic, no secrets) */
+function canonicalFingerprint(entries:MigrationPlanEntry[]):string{
+ const fingerprint=entries.map(e=>({
+  legacyId:e.legacyId,
+  providerId:e.providerId,
+  label:e.label.toLowerCase().trim(),
+  authType:e.authType,
+  credentialPresent:e.credentialPresent,
+  migrationEligibility:e.migrationEligibility,
+  action:e.action,
+  targetAuthType:e.targetAuthType,
+  targetConnectionId:e.targetConnectionId,
+  expectedCredentialVersion:e.expectedCredentialVersion,
+  reasonCode:e.reason.split(';').map(r=>r.trim().toLowerCase()).sort().join(';')
+ })).sort((a,b)=>a.legacyId.localeCompare(b.legacyId));
+ const canonical={
+  schemaVersion:'phase4b3-migration-plan-v1',
+  algorithmVersion:MIGRATION_ALGORITHM_VERSION,
+  eligibilityRulesVersion:ELIGIBILITY_RULES_VERSION,
+  legacySchemaVersion:'connections-v1',
+  targetSchemaVersion:'provider_connections-v1',
+  entries:fingerprint
+ };
+ return crypto.createHash('sha256').update(canonicalStringify(canonical)).digest('hex');
+}
+
+/** Build canonical snapshot fingerprint for stale detection */
+function snapshotFingerprint(records:ReconciliationRecord[],pcs:ProviderConnectionMetadata[]):string{
+ const pcMap=new Map(pcs.map(p=>[p.id,p]));
+ const fingerprint=records.filter(r=>r.legacyId).map(r=>{
+  const pc=r.providerConnectionId?pcMap.get(r.providerConnectionId):undefined;
+  return{
+   legacyId:r.legacyId,
+   providerId:r.providerId,
+   label:r.label.toLowerCase().trim(),
+   legacyAuthType:r.legacyAuthType,
+   legacyActive:r.legacyActive,
+   credentialPresent:r.credentialPresent,
+   matchStatus:r.matchStatus,
+   migrationEligibility:r.migrationEligibility,
+   reasonCodes:r.reasons.map(rr=>rr.trim().toLowerCase()).sort().join(';'),
+   // Target connection state (null if no target)
+   target:pc?{
+    id:pc.id,
+    providerId:pc.providerId,
+    authType:pc.authType,
+    status:pc.status,
+    credentialVersion:pc.credentialVersion,
+    legacyCredentialId:pc.metadata?.legacyCredentialId??null,
+    migrationPlanId:pc.metadata?.migrationPlanId??null,
+    updatedAt:pc.updatedAt
+   }:null
+  };
+ }).sort((a,b)=>(a.legacyId||'').localeCompare(b.legacyId||''));
+ return crypto.createHash('sha256').update(canonicalStringify(fingerprint)).digest('hex');
 }
 
 function audit(event:AuditEvent,opts:{planId?:string;legacyId?:string;providerConnectionId?:string;providerId?:string;result?:string;reason?:string;actor?:string}={}){
@@ -95,8 +181,8 @@ function audit(event:AuditEvent,opts:{planId?:string;legacyId?:string;providerCo
 
 function storePlan(plan:MigrationPlan){
  ensureMigrationSchema();
- getDB().prepare(`INSERT OR REPLACE INTO provider_connection_migration_plans(planId,schemaVersion,generatedAt,sourceMainSha,legacySchemaVersion,targetSchemaVersion,planJson,createdAt) VALUES(?,?,?,?,?,?,?,?)`).run(
-  plan.planId,plan.schemaVersion,plan.generatedAt,plan.sourceMainSha,plan.legacySchemaVersion,plan.targetSchemaVersion,JSON.stringify(plan),new Date().toISOString()
+ getDB().prepare(`INSERT OR REPLACE INTO provider_connection_migration_plans(planId,schemaVersion,generatedAt,sourceMainSha,legacySchemaVersion,targetSchemaVersion,planJson,checksum,createdAt) VALUES(?,?,?,?,?,?,?,?,?)`).run(
+  plan.planId,plan.schemaVersion,plan.generatedAt,plan.sourceMainSha,plan.legacySchemaVersion,plan.targetSchemaVersion,JSON.stringify(plan),plan.checksum,new Date().toISOString()
  );
 }
 
@@ -118,10 +204,6 @@ function entryStatuses(planId:string):{legacyId:string;status:MigrationEntryStat
  return (getDB().prepare('SELECT legacyId,status FROM provider_connection_migration_entries WHERE planId=? ORDER BY legacyId').all(planId) as any[]).map(r=>({legacyId:r.legacyId,status:r.status as MigrationEntryStatus}));
 }
 
-function planChecksum(plan:MigrationPlan):string{
- return crypto.createHash('sha256').update(JSON.stringify({planId:plan.planId,entries:plan.entries.map(e=>({legacyId:e.legacyId,action:e.action}))})).digest('hex').slice(0,16);
-}
-
 export async function buildMigrationPlan(opts:{providerId?:string;now?:string}={}):Promise<MigrationPlan>{
  const nowIso=opts.now||new Date().toISOString();
  const readers=await loadDefaultReaders();
@@ -134,8 +216,9 @@ export async function buildMigrationPlan(opts:{providerId?:string;now?:string}={
   const action:MigrationAction=r.migrationEligibility==='eligible'?(r.providerConnectionId?'update':'create'):r.migrationEligibility==='blocked'?'blocked':'skip';
   entries.push({legacyId:r.legacyId,providerId:r.providerId,label:r.label,authType:r.legacyAuthType||'unknown',targetAuthType:r.mappedAuthType||'api_key',targetConnectionId:r.providerConnectionId,action,reason:r.reasons.join('; '),migrationEligibility:r.migrationEligibility,credentialPresent:r.credentialPresent,expectedCredentialVersion:'enc:v1',metadataPatch:{legacyCredentialId:r.legacyId,migrationPlanId:'pending',migratedAt:nowIso,migrationVersion:'phase4b3-v1'},rollbackRef:null});
  }
- const planId=crypto.createHash('sha256').update(JSON.stringify(entries.map(e=>({lid:e.legacyId,act:e.action})))).digest('hex').slice(0,32);
- const plan:MigrationPlan={schemaVersion:'phase4b3-migration-plan-v1',planId,generatedAt:nowIso,sourceMainSha:'unknown',legacySchemaVersion:'connections-v1',targetSchemaVersion:'provider_connections-v1',mode:'dry_run',totalCandidates:entries.length,eligible:entries.filter(e=>e.action==='create'||e.action==='update').length,requiresReview:entries.filter(e=>e.action==='skip').length,blocked:entries.filter(e=>e.action==='blocked').length,entries:entries.map(e=>({...e,metadataPatch:{...e.metadataPatch,migrationPlanId:planId}}))};
+ const planId=canonicalFingerprint(entries);
+ const checksum=snapshotFingerprint(records,snap.providers);
+ const plan:MigrationPlan={schemaVersion:'phase4b3-migration-plan-v1',planId,generatedAt:nowIso,sourceMainSha:'unknown',legacySchemaVersion:'connections-v1',targetSchemaVersion:'provider_connections-v1',mode:'dry_run',totalCandidates:entries.length,eligible:entries.filter(e=>e.action==='create'||e.action==='update').length,requiresReview:entries.filter(e=>e.action==='skip').length,blocked:entries.filter(e=>e.action==='blocked').length,entries:entries.map(e=>({...e,metadataPatch:{...e.metadataPatch,migrationPlanId:planId}})),checksum};
  storePlan(plan); storeEntries(planId,plan.entries);
  audit('plan_generated',{planId,reason:`${plan.totalCandidates} candidates, ${plan.eligible} eligible`,result:'success'});
  return plan;
@@ -152,11 +235,22 @@ export function validateMigrationPlan(planId:string):{valid:boolean;reasons:stri
  return{valid,reasons};
 }
 
+/** Re-read current snapshot and compute fresh checksum for stale detection */
+async function computeCurrentChecksum():Promise<string>{
+ const readers=await loadDefaultReaders();
+ const snap=snapshotReaders(readers);
+ const records=reconcileSnapshots(snap.legacy,snap.providers,new Date().toISOString());
+ return snapshotFingerprint(records,snap.providers);
+}
+
 export function executeMigrationPlan(planId:string,confirm:string):MigrationResult{
  if(!isMigrationEnabled()) throw new Error('Provider connection migration is not enabled');
  const plan=loadPlan(planId); if(!plan) throw new Error('Plan not found');
  if(plan.planId!==confirm) throw new Error('Confirmation mismatch');
+ // Validate persisted plan
  const validation=validateMigrationPlan(planId); if(!validation.valid) throw new Error('Plan validation failed: '+validation.reasons.join('; '));
+ // Stale detection: compare stored checksum with current snapshot
+ // Note: full async stale check done via executeMigrationPlanAsync; sync path checks plan-level staleness
  const now=new Date().toISOString();
  audit('execution_started',{planId,result:'started'});
  const results:MigrationEntryResult[]=[];
@@ -180,7 +274,7 @@ export function executeMigrationPlan(planId:string,confirm:string):MigrationResu
     audit('entry_skipped',{planId,legacyId:entry.legacyId,providerConnectionId:existing.id,providerId:entry.providerId,result:'already_applied'});
     skipped++; continue;
    }
-   // Decrypt legacy credential
+   // Decrypt legacy credential (only for eligible entries)
    const rawCred=getDecryptedCredential(entry.legacyId);
    if(!rawCred){throw new Error('Legacy credential not found or not decryptable')}
    let targetId:string;
@@ -204,13 +298,12 @@ export function executeMigrationPlan(planId:string,confirm:string):MigrationResu
     if(!prior) throw new Error('Target connection not found');
     // Save rollback snapshot
     const priorRow=getDB().prepare('SELECT encryptedCredential,status,metadata FROM provider_connections WHERE id=?').get(entry.targetConnectionId) as any;
+    const rollbackChecksum=crypto.createHash('sha256').update(canonicalStringify({planId,legacyId:entry.legacyId,providerConnectionId:entry.targetConnectionId,encryptedCredential:priorRow?.encryptedCredential,status:priorRow?.status,metadata:priorRow?.metadata})).digest('hex').slice(0,32);
     db.prepare('INSERT OR REPLACE INTO provider_connection_migration_rollbacks(planId,legacyId,providerConnectionId,priorEncryptedCredential,priorMetadata,priorStatus,snapshotAt,checksum,createdAt) VALUES(?,?,?,?,?,?,?,?,?)').run(
-     planId,entry.legacyId,entry.targetConnectionId,priorRow?.encryptedCredential||null,priorRow?.metadata||null,priorRow?.status||null,now,
-     crypto.createHash('sha256').update([planId,entry.legacyId,entry.targetConnectionId,now].join('|')).digest('hex').slice(0,16),now
+     planId,entry.legacyId,entry.targetConnectionId,priorRow?.encryptedCredential||null,priorRow?.metadata||null,priorRow?.status||null,now,rollbackChecksum,now
     );
     updateCredential(entry.targetConnectionId,rawCred,entry.expectedCredentialVersion);
     // Update metadata with migration fields
-    // updateConnectionMetadata imported at top
     updateConnectionMetadata(entry.targetConnectionId,{metadata:{...prior.metadata,...entry.metadataPatch}} as any);
     targetId=entry.targetConnectionId;
     db.prepare('UPDATE provider_connection_migration_entries SET status=?,providerConnectionId=?,appliedAt=? WHERE planId=? AND legacyId=?').run('applied',targetId,now,planId,entry.legacyId);
@@ -229,6 +322,21 @@ export function executeMigrationPlan(planId:string,confirm:string):MigrationResu
  const success=created+updated+skipped;
  audit('execution_completed',{planId,result:failed>0?'partial':'success',reason:`created:${created} updated:${updated} skipped:${skipped} failed:${failed}`});
  return{planId,mode:'execute',startedAt:now,completedAt:new Date().toISOString(),totalEntries:plan.entries.length,created,updated,skipped,blocked,failed,results};
+}
+
+/** Async version with full stale detection (re-reads snapshot) */
+export async function executeMigrationPlanAsync(planId:string,confirm:string):Promise<MigrationResult>{
+ if(!isMigrationEnabled()) throw new Error('Provider connection migration is not enabled');
+ const plan=loadPlan(planId); if(!plan) throw new Error('Plan not found');
+ if(plan.planId!==confirm) throw new Error('Confirmation mismatch');
+ // Stale detection BEFORE decrypt
+ const currentChecksum=await computeCurrentChecksum();
+ if(plan.checksum!==currentChecksum){
+  audit('validation_failed',{planId,result:'stale',reason:'snapshot changed since plan generation'});
+  throw new Error('Plan is stale: snapshot has changed since plan generation');
+ }
+ // Delegate to sync execution
+ return executeMigrationPlan(planId,confirm);
 }
 
 export function rollbackMigrationPlan(planId:string,confirm:string):MigrationResult{
@@ -259,9 +367,12 @@ export function rollbackMigrationPlan(planId:string,confirm:string):MigrationRes
     created++;
    } else {
     // Restore prior state from rollback snapshot
-    const snapshot=getDB().prepare('SELECT priorEncryptedCredential,priorMetadata,priorStatus FROM provider_connection_migration_rollbacks WHERE planId=? AND legacyId=?').get(planId,entry.legacyId) as any;
+    const snapshot=getDB().prepare('SELECT priorEncryptedCredential,priorMetadata,priorStatus,checksum FROM provider_connection_migration_rollbacks WHERE planId=? AND legacyId=?').get(planId,entry.legacyId) as any;
     if(!snapshot) throw new Error('Rollback snapshot not found');
     if(!snapshot.priorEncryptedCredential) throw new Error('Prior encrypted credential missing');
+    // Verify snapshot integrity
+    const expectedChecksum=crypto.createHash('sha256').update(canonicalStringify({planId,legacyId:entry.legacyId,providerConnectionId:planEntry.targetConnectionId,encryptedCredential:snapshot.priorEncryptedCredential,status:snapshot.priorStatus,metadata:snapshot.priorMetadata})).digest('hex').slice(0,32);
+    if(snapshot.checksum!==expectedChecksum) throw new Error('Rollback snapshot integrity check failed');
     // Verify record hasn't drifted
     const current=getConnectionMetadataById(planEntry.targetConnectionId!);
     if(!current) throw new Error('Target connection not found');
@@ -277,7 +388,7 @@ export function rollbackMigrationPlan(planId:string,confirm:string):MigrationRes
   }catch(err){
    const msg=sanitizeError(err); failed++;
    results.push({legacyId:entry.legacyId,providerConnectionId:null,status:'blocked',reason:msg});
-   audit('entry_blocked',{planId,legacyId:entry.legacyId,result:'rollback_failed',reason:msg});
+   audit('rollback_failed',{planId,legacyId:entry.legacyId,result:'rollback_failed',reason:msg});
   }
  }
  getDB().prepare('UPDATE provider_connection_migration_plans SET rolledBackAt=? WHERE planId=?').run(now,planId);
