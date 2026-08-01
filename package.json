@@ -1,7 +1,7 @@
 {
   "name": "@kaidev18/eight-router",
   "version": "0.6.1",
-  "description": "8Router \u2014 AI routing gateway for 8Agents ecosystem",
+  "description": "8Router — AI routing gateway for 8Agents ecosystem",
   "author": "8Agents",
   "license": "MIT",
   "type": "module",
@@ -73,7 +73,8 @@
     "provider-connections:migrate": "node scripts/migrate.mjs",
     "provider-connections:rollback": "node scripts/rollback.mjs",
     "provider-connections:shadow-sync": "node scripts/shadow-sync-cli.mjs",
-    "test:provider-connection-migration": "tsx src/__tests__/run-provider-connection-migration.ts"
+    "test:provider-connection-migration": "tsx src/__tests__/run-provider-connection-migration.ts",
+    "test:terminal-console": "tsx src/__tests__/run-terminal-console.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
