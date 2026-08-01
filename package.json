@@ -74,7 +74,12 @@
     "provider-connections:rollback": "node scripts/rollback.mjs",
     "provider-connections:shadow-sync": "node scripts/shadow-sync-cli.mjs",
     "test:provider-connection-migration": "tsx src/__tests__/run-provider-connection-migration.ts",
-    "test:terminal-console": "tsx src/__tests__/run-terminal-console.ts"
+    "test:terminal-console": "tsx src/__tests__/run-terminal-console.ts",
+    "test:provider-foundation": "tsx src/__tests__/run-provider-foundation.ts",
+    "providers:list": "node scripts/providers-cli.mjs list",
+    "providers:models": "node scripts/providers-cli.mjs models",
+    "providers:capabilities": "node scripts/providers-cli.mjs capabilities",
+    "providers:discover": "node scripts/providers-cli.mjs discover"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
