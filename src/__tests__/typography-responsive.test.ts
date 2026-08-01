@@ -44,7 +44,7 @@ export function runTypographyResponsiveTests(): { passed: number; failed: number
   });
 
   test('default locale renders actual text', () => {
-    assert(getLandingHTML().includes('AI Routing Gateway'), 'default locale missing real hero text');
+    assert(getLandingHTML().includes('One endpoint'), 'default locale missing real hero text');
   });
 
   test('English locale renders actual text', () => {

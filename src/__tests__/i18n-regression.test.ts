@@ -38,7 +38,7 @@ export function runI18nRegressionTests(): { passed: number; failed: number } {
 
   test('default locale loads real text', () => {
     const html = getLandingHTML();
-    assert(html.includes('AI Routing Gateway'), 'default locale missing hero text');
+    assert(html.includes('One endpoint'), 'default locale missing hero text');
     assertNoRawKeys(html, 'default locale');
   });
 
@@ -75,7 +75,7 @@ export function runI18nRegressionTests(): { passed: number; failed: number } {
   test('unsupported locale falls back safely', () => {
     assert(normalizeLocale('miss') === null, 'unsupported locale should not normalize');
     const html = getLandingHTML(normalizeLocale('miss') ?? 'en');
-    assert(html.includes('AI Routing Gateway'), 'unsupported fallback missing English text');
+    assert(html.includes('One endpoint'), 'unsupported fallback missing English text');
     assertNoRawKeys(html, 'unsupported fallback');
   });
 
