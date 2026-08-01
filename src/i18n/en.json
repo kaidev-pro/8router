@@ -456,5 +456,8 @@
   "rv.openai_fail": "OpenAI unavailable",
   "rv.groq_ok": "Fallback to Groq",
   "rv.response": "Response returned",
-  "rv.client": "Client"
+  "rv.client": "Client",
+  "aliases.alias": "Alias",
+  "aliases.description": "Description",
+  "dash.title": "8Router Dashboard — Request Log"
 }

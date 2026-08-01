@@ -456,5 +456,8 @@
   "rv.openai_fail": "OpenAIは利用不可",
   "rv.groq_ok": "Groqへフォールバック",
   "rv.response": "レスポンスを返却",
-  "rv.client": "クライアント"
+  "rv.client": "クライアント",
+  "aliases.alias": "エイリアス",
+  "aliases.description": "説明",
+  "dash.title": "8Routerダッシュボード — リクエストログ"
 }

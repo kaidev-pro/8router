@@ -456,5 +456,8 @@
   "rv.openai_fail": "OpenAI tidak tersedia",
   "rv.groq_ok": "Dialihkan ke Groq",
   "rv.response": "Respons dikirim",
-  "rv.client": "Klien"
+  "rv.client": "Klien",
+  "aliases.alias": "Alias",
+  "aliases.description": "Deskripsi",
+  "dash.title": "8Router Dashboard — Log Request"
 }
