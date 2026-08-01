@@ -80,7 +80,14 @@
     "providers:models": "node scripts/providers-cli.mjs models",
     "providers:capabilities": "node scripts/providers-cli.mjs capabilities",
     "providers:discover": "node scripts/providers-cli.mjs discover",
-    "test:provider-foundation-api": "tsx src/__tests__/run-provider-foundation-api.ts"
+    "test:provider-foundation-api": "tsx src/__tests__/run-provider-foundation-api.ts",
+    "test:dynamic-state": "tsx src/__tests__/run-dynamic-provider-state.ts",
+    "test:discovery": "tsx src/__tests__/run-provider-discovery.ts",
+    "providers:state": "node scripts/providers-cli.mjs state",
+    "providers:discovery-plan": "node scripts/providers-cli.mjs discovery-plan",
+    "providers:discovery-history": "node scripts/providers-cli.mjs discovery-history",
+    "providers:certifications": "node scripts/providers-cli.mjs certifications",
+    "providers:overrides": "node scripts/providers-cli.mjs overrides"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",

@@ -1935,6 +1935,72 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
 
 
   // ═══════════════════════════════════════════════════════════════
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 5B — Dynamic Provider State API (read-only)
+  // ═══════════════════════════════════════════════════════════════
+
+  // GET /8router/api/providers/state
+  app.get('/8router/api/providers/state', requireAuth(oauth, sessionManager), (_req, res) => {
+    try {
+      noStore(res);
+      const descriptors = buildProviderDescriptors();
+      const state = descriptors.map(d => ({
+        id: d.id, displayName: d.displayName, protocol: d.protocol, status: d.status,
+        tier: d.tier, dynamicModels: d.features.dynamicModels,
+      }));
+      res.json({ providers: state, total: state.length });
+    } catch { res.status(500).json({ error: { message: 'Failed to load state', type: 'internal' } }); }
+  });
+
+  // GET /8router/api/providers/models/dynamic
+  app.get('/8router/api/providers/models/dynamic', requireAuth(oauth, sessionManager), (_req, res) => {
+    try {
+      noStore(res);
+      const reg = getModelRegistry();
+      const models = reg.getAllModels().filter(m => m.source !== 'static');
+      res.json({ models, total: models.length });
+    } catch { res.status(500).json({ error: { message: 'Failed to load dynamic models', type: 'internal' } }); }
+  });
+
+  // GET /8router/api/providers/discovery/history
+  app.get('/8router/api/providers/discovery/history', requireAuth(oauth, sessionManager), (_req, res) => {
+    try {
+      noStore(res);
+      res.json({ history: [], total: 0, note: 'Discovery history requires DB persistence (Phase 5B)' });
+    } catch { res.status(500).json({ error: { message: 'Failed to load history', type: 'internal' } }); }
+  });
+
+  // GET /8router/api/providers/certification/evidence
+  app.get('/8router/api/providers/certification/evidence', requireAuth(oauth, sessionManager), (_req, res) => {
+    try {
+      noStore(res);
+      const certs = getCertificationRegistry().getAllCertifications();
+      res.json({ certifications: certs, total: certs.length });
+    } catch { res.status(500).json({ error: { message: 'Failed to load evidence', type: 'internal' } }); }
+  });
+
+  // GET /8router/api/providers/overrides
+  app.get('/8router/api/providers/overrides', requireAuth(oauth, sessionManager), (_req, res) => {
+    try {
+      noStore(res);
+      res.json({ overrides: [], total: 0, note: 'Overrides require DB persistence (Phase 5B)' });
+    } catch { res.status(500).json({ error: { message: 'Failed to load overrides', type: 'internal' } }); }
+  });
+
+  // GET /8router/api/providers/state/:id
+  app.get('/8router/api/providers/state/:id', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      const d = buildProviderDescriptors().find(p => p.id === req.params.id);
+      if (!d) return res.status(404).json({ error: { message: 'Provider not found', type: 'not_found' } });
+      res.json({
+        id: d.id, displayName: d.displayName, protocol: d.protocol, status: d.status,
+        tier: d.tier, dynamicModels: d.features.dynamicModels, capabilities: d.capabilities,
+      });
+    } catch { res.status(500).json({ error: { message: 'Failed to load provider state', type: 'internal' } }); }
+  });
+
   // Provider Foundation API (Phase 5A) — Read-only
   // ═══════════════════════════════════════════════════════════════
 
