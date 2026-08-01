@@ -13,7 +13,7 @@ export function getLandingHTML(locale: Locale = 'en', donationUrl?: string): str
   const LOGO_FOOTER = 'https://8agents.xyz/assets/8router-logo-dashboard.png';
 
   return `<!DOCTYPE html>
-<!-- 8Router landing build: ea311a1b56445ba3abacf71b7640d5fbe7518086 -->
+<!-- 8Router landing build: 51d065931ca0b028dfc9fc53fed260f444e7e997 -->
 <html lang="${locale}">
 <head>
 <meta charset="UTF-8">
@@ -234,7 +234,7 @@ pre { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100% }
       </div>
     </div>
     <div class="routing-visual">
-      <div class="rv-header"><span class="dot"></span> <span>Example route</span></div>
+      <div class="rv-header"><span class="dot"></span> <span>${_('rv.title')}</span></div>
       <div class="rv-row"><span class="rv-node active">Client</span> <span class="arrow">→</span> <span class="rv-node active">8Router</span></div>
       <div class="rv-divider"></div>
       <div class="rv-row"><span class="arrow">→</span> <span class="rv-node failed">openai</span> <span class="status-fail">429</span> <span class="model">gpt-4o</span></div>
