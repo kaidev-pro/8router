@@ -17,6 +17,7 @@ export function getLandingHTML(locale: Locale = 'en', donationUrl?: string): str
 <title>${_('meta.title')}</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- 8Router landing build: f03a18b5c87f9ea2315735c58aaa1d36643cffe4 -->
+<!-- branch-head: d514a62af73af8c07cfe9758631000edf2b2a344 -->
 <style>
 :root {
   --bg: #050810;
