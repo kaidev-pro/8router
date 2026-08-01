@@ -51,10 +51,22 @@ planId is a SHA-256 hash of a canonical serialization of all execution-relevant 
 ### Snapshot Checksum
 
 A separate checksum tracks the full reconciliation snapshot for stale detection.
-Includes: legacyId, providerId, label, legacyAuthType, legacyActive, credentialPresent,
-matchStatus, migrationEligibility, providerConnectionId, connectionStatus, reasonCodes.
+Includes per-entry:
 
-**NOT included:** generatedAt, diagnostic text, order.
+**Legacy state:**
+- legacyId, providerId, label (normalized), legacyAuthType, legacyActive, credentialPresent
+
+**Match/eligibility state:**
+- matchStatus, migrationEligibility, reasonCodes (normalized sorted)
+
+**Target connection state (null if no target):**
+- id (existence), providerId, authType, status, credentialVersion
+- metadata.legacyCredentialId, metadata.migrationPlanId
+- updatedAt (concurrency version)
+
+**NOT included:** generatedAt, diagnostic text, order, plaintext/ciphertext credentials, tokens.
+
+Any change to legacy state, match state, or target state triggers stale detection.
 
 ### Stale Detection
 

@@ -140,20 +140,33 @@ function canonicalFingerprint(entries:MigrationPlanEntry[]):string{
 }
 
 /** Build canonical snapshot fingerprint for stale detection */
-function snapshotFingerprint(records:ReconciliationRecord[]):string{
- const fingerprint=records.filter(r=>r.legacyId).map(r=>({
-  legacyId:r.legacyId,
-  providerId:r.providerId,
-  label:r.label.toLowerCase().trim(),
-  legacyAuthType:r.legacyAuthType,
-  legacyActive:r.legacyActive,
-  credentialPresent:r.credentialPresent,
-  matchStatus:r.matchStatus,
-  migrationEligibility:r.migrationEligibility,
-  providerConnectionId:r.providerConnectionId,
-  connectionStatus:r.connectionStatus,
-  reasonCodes:r.reasons.map(rr=>rr.trim().toLowerCase()).sort().join(';')
- })).sort((a,b)=>(a.legacyId||'').localeCompare(b.legacyId||''));
+function snapshotFingerprint(records:ReconciliationRecord[],pcs:ProviderConnectionMetadata[]):string{
+ const pcMap=new Map(pcs.map(p=>[p.id,p]));
+ const fingerprint=records.filter(r=>r.legacyId).map(r=>{
+  const pc=r.providerConnectionId?pcMap.get(r.providerConnectionId):undefined;
+  return{
+   legacyId:r.legacyId,
+   providerId:r.providerId,
+   label:r.label.toLowerCase().trim(),
+   legacyAuthType:r.legacyAuthType,
+   legacyActive:r.legacyActive,
+   credentialPresent:r.credentialPresent,
+   matchStatus:r.matchStatus,
+   migrationEligibility:r.migrationEligibility,
+   reasonCodes:r.reasons.map(rr=>rr.trim().toLowerCase()).sort().join(';'),
+   // Target connection state (null if no target)
+   target:pc?{
+    id:pc.id,
+    providerId:pc.providerId,
+    authType:pc.authType,
+    status:pc.status,
+    credentialVersion:pc.credentialVersion,
+    legacyCredentialId:pc.metadata?.legacyCredentialId??null,
+    migrationPlanId:pc.metadata?.migrationPlanId??null,
+    updatedAt:pc.updatedAt
+   }:null
+  };
+ }).sort((a,b)=>(a.legacyId||'').localeCompare(b.legacyId||''));
  return crypto.createHash('sha256').update(canonicalStringify(fingerprint)).digest('hex');
 }
 
@@ -204,7 +217,7 @@ export async function buildMigrationPlan(opts:{providerId?:string;now?:string}={
   entries.push({legacyId:r.legacyId,providerId:r.providerId,label:r.label,authType:r.legacyAuthType||'unknown',targetAuthType:r.mappedAuthType||'api_key',targetConnectionId:r.providerConnectionId,action,reason:r.reasons.join('; '),migrationEligibility:r.migrationEligibility,credentialPresent:r.credentialPresent,expectedCredentialVersion:'enc:v1',metadataPatch:{legacyCredentialId:r.legacyId,migrationPlanId:'pending',migratedAt:nowIso,migrationVersion:'phase4b3-v1'},rollbackRef:null});
  }
  const planId=canonicalFingerprint(entries);
- const checksum=snapshotFingerprint(records);
+ const checksum=snapshotFingerprint(records,snap.providers);
  const plan:MigrationPlan={schemaVersion:'phase4b3-migration-plan-v1',planId,generatedAt:nowIso,sourceMainSha:'unknown',legacySchemaVersion:'connections-v1',targetSchemaVersion:'provider_connections-v1',mode:'dry_run',totalCandidates:entries.length,eligible:entries.filter(e=>e.action==='create'||e.action==='update').length,requiresReview:entries.filter(e=>e.action==='skip').length,blocked:entries.filter(e=>e.action==='blocked').length,entries:entries.map(e=>({...e,metadataPatch:{...e.metadataPatch,migrationPlanId:planId}})),checksum};
  storePlan(plan); storeEntries(planId,plan.entries);
  audit('plan_generated',{planId,reason:`${plan.totalCandidates} candidates, ${plan.eligible} eligible`,result:'success'});
@@ -227,7 +240,7 @@ async function computeCurrentChecksum():Promise<string>{
  const readers=await loadDefaultReaders();
  const snap=snapshotReaders(readers);
  const records=reconcileSnapshots(snap.legacy,snap.providers,new Date().toISOString());
- return snapshotFingerprint(records);
+ return snapshotFingerprint(records,snap.providers);
 }
 
 export function executeMigrationPlan(planId:string,confirm:string):MigrationResult{

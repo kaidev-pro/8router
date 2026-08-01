@@ -145,6 +145,18 @@ export async function runProviderConnectionMigrationTests(){
  test('active routing has no migration import',()=>{const out=spawnSync('grep',['-RIn','connection-migration','src/runtime','src/index.ts'],{encoding:'utf8'});assert(out.status!==0,'no routing import')});
  test('shadow sync has no migration import',()=>{const src=String(readFileSync('src/providers/shadow-sync.ts'));assert(!src.includes('executeMigrationPlan')&&!src.includes('rollbackMigrationPlan'),'no migration in shadow')});
 
+
+ // ── Target fingerprint coverage (stale detection) ──
+ test('target authType in snapshot fingerprint',()=>{const src=String(readFileSync('src/providers/connection-migration.ts'));assert(src.includes('pc.authType')&&src.includes('target'),'target authType in fingerprint')});
+ test('target credentialVersion in snapshot fingerprint',()=>{const src=String(readFileSync('src/providers/connection-migration.ts'));assert(src.includes('pc.credentialVersion'),'target credentialVersion in fingerprint')});
+ test('target status in snapshot fingerprint',()=>{const src=String(readFileSync('src/providers/connection-migration.ts'));assert(src.includes('pc.status'),'target status in fingerprint')});
+ test('target legacyCredentialId in snapshot fingerprint',()=>{const src=String(readFileSync('src/providers/connection-migration.ts'));assert(src.includes('legacyCredentialId')&&src.includes('pc.metadata'),'target legacyCredentialId in fingerprint')});
+ test('target migrationPlanId in snapshot fingerprint',()=>{const src=String(readFileSync('src/providers/connection-migration.ts'));assert(src.includes('migrationPlanId')&&src.includes('pc.metadata'),'target migrationPlanId in fingerprint')});
+ test('target updatedAt in snapshot fingerprint',()=>{const src=String(readFileSync('src/providers/connection-migration.ts'));assert(src.includes('pc.updatedAt'),'target updatedAt in fingerprint')});
+ test('target providerId in snapshot fingerprint',()=>{const src=String(readFileSync('src/providers/connection-migration.ts'));assert(src.includes('pc.providerId'),'target providerId in fingerprint')});
+ test('target existence (null vs object) in snapshot fingerprint',()=>{const src=String(readFileSync('src/providers/connection-migration.ts'));assert(src.includes('target:pc')||src.includes('target:null'),'target existence in fingerprint')});
+ test('snapshot fingerprint includes target map',()=>{const src=String(readFileSync('src/providers/connection-migration.ts'));assert(src.includes('pcMap')||src.includes('ProviderConnectionMetadata'),'target resolution in fingerprint')});
+
  // ── Plaintext scan ──
  test('DB scan: no plaintext secrets in migration tables',()=>{
   const tables=['provider_connection_migration_plans','provider_connection_migration_entries','provider_connection_migration_audit','provider_connection_migration_rollbacks','provider_connection_shadow_diagnostics'];
