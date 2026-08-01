@@ -156,7 +156,7 @@ export class ProviderModelRegistry {
   }
 
   getModels(providerId: string): RegisteredModel[] {
-    return this.models.get(providerId) ?? [];
+    return [...(this.models.get(providerId) ?? [])];
   }
 
   getAllModels(): RegisteredModel[] {

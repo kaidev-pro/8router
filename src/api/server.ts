@@ -41,6 +41,7 @@ import { listConnections, getConnectionMetadataById } from '../providers/connect
 import { buildDefaultPreviewReport, filterPreviewReport } from '../providers/connection-reconciliation.js';
 import { listMigrationPlans, getMigrationStatus, buildMigrationPlan, isMigrationEnabled } from '../providers/connection-migration.js';
 import { pickBestModel } from '../providers/smart-picker.js';
+import { buildProviderDescriptors, getCapabilityRegistry, getModelRegistry, getCertificationRegistry } from '../providers/provider-foundation.js';
 import { createAccessKey, listAccessKeys, getAccessKeyById, updateAccessKey, revokeAccessKey, rotateAccessKey, deleteAccessKey } from '../security/access-keys/manager.js';
 import { handleChatCompletions as runtimeChatCompletions, handleModels as runtimeModels, getUserHealthSummary, resetProviderHealth as resetHealth } from '../runtime/index.js';
 import { loadCompressionConfig, compressContent, toMetrics } from '../runtime/compression/index.js';
@@ -1930,6 +1931,87 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
       if (!row) return res.status(404).json({ error: { message: 'Provider connection not found', type: 'not_found' } });
       res.json({ connection: row });
     } catch { res.status(500).json({ error: { message: 'Failed to load provider connection', type: 'internal' } }); }
+  });
+
+
+  // ═══════════════════════════════════════════════════════════════
+  // Provider Foundation API (Phase 5A) — Read-only
+  // ═══════════════════════════════════════════════════════════════
+
+  // GET /8router/api/providers/catalog
+  app.get('/8router/api/providers/catalog', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      let descriptors = buildProviderDescriptors();
+      const { providerId, protocol, status, capability, page: pageStr, limit: limitStr } = req.query as Record<string, string | undefined>;
+      if (providerId) descriptors = descriptors.filter(d => d.id === providerId);
+      if (protocol) descriptors = descriptors.filter(d => d.protocol === protocol);
+      if (status) descriptors = descriptors.filter(d => d.status === status);
+      if (capability) descriptors = descriptors.filter(d => (d.capabilities as any)[capability] === true);
+      const page = Math.max(1, parseInt(pageStr || '1', 10) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(limitStr || '50', 10) || 50));
+      const total = descriptors.length;
+      const start = (page - 1) * limit;
+      const items = descriptors.slice(start, start + limit).map(d => ({
+        id: d.id, displayName: d.displayName, vendor: d.vendor, protocol: d.protocol,
+        auth: d.auth, status: d.status, tier: d.tier, description: d.description,
+        capabilities: d.capabilities, features: d.features,
+      }));
+      res.json({ providers: items, total, page, limit, pages: Math.ceil(total / limit) });
+    } catch { res.status(500).json({ error: { message: 'Failed to load catalog', type: 'internal' } }); }
+  });
+
+  // GET /8router/api/providers/catalog/:id
+  app.get('/8router/api/providers/catalog/:id', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      const d = buildProviderDescriptors().find(p => p.id === req.params.id);
+      if (!d) return res.status(404).json({ error: { message: 'Provider not found', type: 'not_found' } });
+      res.json({
+        id: d.id, displayName: d.displayName, vendor: d.vendor, protocol: d.protocol,
+        auth: d.auth, status: d.status, tier: d.tier, description: d.description,
+        capabilities: d.capabilities, features: d.features, metadata: d.metadata,
+      });
+    } catch { res.status(500).json({ error: { message: 'Failed to load provider', type: 'internal' } }); }
+  });
+
+  // GET /8router/api/providers/capabilities
+  app.get('/8router/api/providers/capabilities', requireAuth(oauth, sessionManager), (_req, res) => {
+    try {
+      noStore(res);
+      const reg = getCapabilityRegistry();
+      const result = reg.getAllDescriptors().map(d => ({ id: d.id, displayName: d.displayName, capabilities: d.capabilities }));
+      res.json({ capabilities: result, total: result.length });
+    } catch { res.status(500).json({ error: { message: 'Failed to load capabilities', type: 'internal' } }); }
+  });
+
+  // GET /8router/api/providers/models
+  app.get('/8router/api/providers/models', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      const reg = getModelRegistry();
+      let models = reg.getAllModels();
+      const { providerId, source, page: pageStr, limit: limitStr } = req.query as Record<string, string | undefined>;
+      if (providerId) models = models.filter(m => m.providerId === providerId);
+      if (source) models = models.filter(m => m.source === source);
+      const page = Math.max(1, parseInt(pageStr || '1', 10) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(limitStr || '50', 10) || 50));
+      const total = models.length;
+      const start = (page - 1) * limit;
+      const items = models.slice(start, start + limit).map(m => ({
+        id: m.id, providerId: m.providerId, displayName: m.displayName, source: m.source,
+      }));
+      res.json({ models: items, total, page, limit, pages: Math.ceil(total / limit) });
+    } catch { res.status(500).json({ error: { message: 'Failed to load models', type: 'internal' } }); }
+  });
+
+  // GET /8router/api/providers/certifications
+  app.get('/8router/api/providers/certifications', requireAuth(oauth, sessionManager), (_req, res) => {
+    try {
+      noStore(res);
+      const certs = getCertificationRegistry().getAllCertifications();
+      res.json({ certifications: certs, total: certs.length });
+    } catch { res.status(500).json({ error: { message: 'Failed to load certifications', type: 'internal' } }); }
   });
 
   // ── Provider Credentials API ──────────────────────────────────────
