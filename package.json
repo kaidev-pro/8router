@@ -79,7 +79,8 @@
     "providers:list": "node scripts/providers-cli.mjs list",
     "providers:models": "node scripts/providers-cli.mjs models",
     "providers:capabilities": "node scripts/providers-cli.mjs capabilities",
-    "providers:discover": "node scripts/providers-cli.mjs discover"
+    "providers:discover": "node scripts/providers-cli.mjs discover",
+    "test:provider-foundation-api": "tsx src/__tests__/run-provider-foundation-api.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
