@@ -450,5 +450,11 @@
   "support.donate": "Donate",
   "support.continue": "Continue for Free",
   "support.dashboard": "Open Dashboard",
-  "footer.api": "API"
+  "footer.api": "API",
+  "rv.title": "Example route",
+  "rv.request": "Request received",
+  "rv.openai_fail": "OpenAI unavailable",
+  "rv.groq_ok": "Fallback to Groq",
+  "rv.response": "Response returned",
+  "rv.client": "Client"
 }

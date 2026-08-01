@@ -13,7 +13,7 @@ export function getLandingHTML(locale: Locale = 'en', donationUrl?: string): str
   const LOGO_FOOTER = 'https://8agents.xyz/assets/8router-logo-dashboard.png';
 
   return `<!DOCTYPE html>
-<!-- 8Router landing build: 696ea559b7295b4d22d4d0ac84b746f1150819e6 -->
+<!-- 8Router landing build: ea311a1b56445ba3abacf71b7640d5fbe7518086 -->
 <html lang="${locale}">
 <head>
 <meta charset="UTF-8">
@@ -319,7 +319,7 @@ pre { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100% }
       <span class="title">8Router Dashboard — Request Log</span>
     </div>
     <div class="dash-body">
-      <div class="label-example">${_('how.title')}</div>
+      <div class="label-example">${_('rv.title')}</div>
       <div class="row"><span class="ts">10:42:01</span><span class="provider">openai</span><span class="model">gpt-4o</span><span class="fail">429</span></div>
       <div class="row"><span class="ts">10:42:01</span><span class="fallback">fallback</span> → <span class="provider">groq</span><span class="model">llama-3.1-8b</span><span class="ok">200</span><span style="color:var(--text-3)">142ms</span></div>
       <div class="row"><span class="ts">10:42:03</span><span class="provider">deepseek</span><span class="model">deepseek-chat</span><span class="fail">503</span></div>
@@ -347,6 +347,15 @@ pre { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100% }
   <div class="s-label">${_('integrations.title')}</div>
   <h2 class="s-title">${_('integrations.title')}</h2>
   <p class="s-desc">${_('integrations.desc')}</p>
+</div>
+</section>
+
+<!-- ═══ FEATURES ═══ -->
+<section>
+<div class="container">
+  <div class="s-label">${_('features.title')}</div>
+  <h2 class="s-title">${_('features.title')}</h2>
+  <p class="s-desc">${_('features.desc')}</p>
 </div>
 </section>
 
@@ -407,34 +416,19 @@ pre { overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100% }
 </section>
 
 
-<!-- ═══ SECURITY ═══ -->
-<section class="s-surface">
-<div class="container">
-  <div class="s-label">${_('security.title')}</div>
-  <h2 class="s-title">${_('security.title')}</h2>
-  <p class="s-desc">${_('security.warning')}</p>
-</div>
-</section>
-
-<!-- ═══ TESTS ═══ -->
-<section>
-<div class="container">
-  <div class="s-label">${_('tests.title')}</div>
-  <h2 class="s-title">${_('tests.title')}</h2>
-  <p class="s-desc">${_('tests.desc')}</p>
-</div>
-</section>
-
 <!-- ═══ CLOSE ═══ -->
 <section class="close">
 <div class="container">
   <h2 class="s-title">${_('hero.title1')}</h2>
+  <h2 class="s-title">${_('security.title')}</h2>
   <p>${_('footer.builtFor')}</p>
   <div class="close-badges">
     <span>MIT License</span>
     <span>Your keys</span>
     <span>Your routes</span>
     <span>Local-first</span>
+    <span>${_('security.title')}</span>
+    <span>${_('tests.title')}</span>
   </div>
   <div class="hero-actions" style="justify-content:center">
     <a href="#setup" class="btn-primary">${_('hero.getStarted')}</a>
