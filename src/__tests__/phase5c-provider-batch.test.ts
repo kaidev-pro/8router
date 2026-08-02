@@ -57,6 +57,7 @@ export async function runPhase5CTests(){
  test('endpoint policy has allowed hosts',()=>{const p=getEndpointPolicy('openai');assert(p!==undefined&&p.allowedHosts.length>0,'hosts')});
  test('endpoint policy has allowed paths',()=>{const p=getEndpointPolicy('openai');assert(p!==undefined&&p.allowedPaths.length>0,'paths')});
  test('endpoint policy has timeout',()=>{const p=getEndpointPolicy('openai');assert(p!==undefined&&p.timeoutMs>0,'timeout')});
+ test('all target providers have endpoint policy',()=>{for(const id of TARGET_PROVIDER_BATCH){assert(getEndpointPolicy(id)!==undefined,id+' has policy')}});
 
  if(failed)throw new Error(failures.join('; '));
  console.log(`\n   Phase5C results: ${passed} passed, ${failed} failed`);
