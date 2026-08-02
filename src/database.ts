@@ -965,12 +965,12 @@ export function getAllAPIKeys(): APIKeyRow[] {
   return db.prepare('SELECT * FROM apiKeys ORDER BY createdAt DESC').all() as APIKeyRow[];
 }
 
-export function createAPIKey(name: string, permissions: string = 'chat,models'): APIKeyRow {
+export function createAPIKey(name: string, permissions: string = 'chat,models', customKey?: string): APIKeyRow {
   const db = getDB();
   const now = new Date().toISOString();
   const id = `key-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const randomHex = crypto.randomBytes(4).toString('hex');
-  const key = `sk-8router-${randomHex}`;
+  const key = customKey || `sk-8router-${randomHex}`;
 
   db.prepare(
     'INSERT INTO apiKeys (id, key, name, permissions, active, createdAt) VALUES (?, ?, ?, ?, 1, ?)'

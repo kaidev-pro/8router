@@ -52,8 +52,8 @@ export function ensureDefaultCombos(): void {
   console.log('[8Router] Creating default combos...');
   
   createCombo('MIMO', 'Xiaomi MiMo model pool', [
-    { provider: 'xiaomi-tokenplan', model: 'mimo-v2-pro' },
-    { provider: 'xiaomi-tokenplan', model: 'mimo-v2-omni' },
+    { provider: 'mimo', model: 'mimo-v2.5-pro' },
+    { provider: 'mimo', model: 'mimo-v2-omni' },
     { provider: 'mimo', model: '*' },
   ]);
   
@@ -95,3 +95,39 @@ export function ensureDefaultCombos(): void {
 export function getComboRoutes(comboName: string): { provider: string; model: string }[] {
   return resolveCombo(comboName);
 }
+
+// Phase 6B — Proxy Aggregator Combos
+createCombo("Antigravity", "Google Antigravity proxy", [
+  { provider: "antigravity", model: "claude-opus-4-6-thinking" },
+  { provider: "antigravity", model: "claude-sonnet-4-6" },
+  { provider: "antigravity", model: "gemini-3-flash-agent" },
+  { provider: "antigravity", model: "gpt-oss-120b-medium" },
+]);
+
+createCombo("OpenAICODEX", "OpenAI Codex proxy", [
+  { provider: "codex", model: "gpt-5.5" },
+  { provider: "codex", model: "gpt-5.4" },
+  { provider: "codex", model: "gpt-5.3-codex" },
+  { provider: "codex", model: "gpt-5.2" },
+]);
+
+createCombo("githubcopilot", "GitHub Copilot proxy", [
+  { provider: "github-copilot", model: "claude-sonnet-4.5" },
+  { provider: "github-copilot", model: "gpt-5.4" },
+  { provider: "github-copilot", model: "gemini-3-flash-preview" },
+  { provider: "github-copilot", model: "grok-code-fast-1" },
+]);
+
+createCombo("KiroAI", "Moonshot Kimi proxy", [
+  { provider: "kimi", model: "claude-sonnet-4.5" },
+  { provider: "kimi", model: "deepseek-3.2" },
+  { provider: "kimi", model: "qwen3-coder-next" },
+  { provider: "kimi", model: "glm-5" },
+]);
+
+createCombo("OpenGO", "OCG proxy aggregator", [
+  { provider: "ocg", model: "glm-5.2" },
+  { provider: "ocg", model: "kimi-k2.7-code" },
+  { provider: "ocg", model: "deepseek-v4-pro" },
+  { provider: "ocg", model: "mimo-v2.5-pro" },
+]);

@@ -170,6 +170,66 @@ export const PROVIDER_CATALOG: ProviderDef[] = [
     description: 'vLLM — high-performance local serving', requiresKey: false,
   },
 
+
+  // ── Tier: Cheap (API) ──
+  {
+    id: 'minimax', name: 'MiniMax', tier: 'cheap',
+    baseUrl: 'https://api.minimax.chat/v1', adapter: 'openai',
+    envKey: 'MINIMAX_API_KEY',
+    models: ['MiniMax-M3', 'MiniMax-M2.7', 'MiniMax-M2.5', 'MiniMax-M2.1'],
+    description: 'MiniMax AI models', requiresKey: true,
+  },
+  {
+    id: 'nvidia', name: 'NVIDIA NIM', tier: 'cheap',
+    baseUrl: 'https://integrate.api.nvidia.com/v1', adapter: 'openai',
+    envKey: 'NVIDIA_API_KEY',
+    models: ['minimaxai/minimax-m2.7', 'z-ai/glm4.7', 'parakeet-ctc-1.1b-asr'],
+    description: 'NVIDIA NIM inference', requiresKey: true,
+  },
+  {
+    id: 'mimo', name: 'Xiaomi MiMo', tier: 'cheap',
+    baseUrl: 'https://api.mimo.ai/v1', adapter: 'openai',
+    envKey: 'MIMO_API_KEY',
+    models: ['mimo-v2.5-pro', 'mimo-v2.5', 'mimo-v2-pro', 'mimo-v2-omni', 'mimo-v2-flash'],
+    description: 'Xiaomi MiMo models', requiresKey: true,
+  },
+
+  // ── Proxy Aggregator Providers (Phase 6B) ──
+  {
+    id: 'antigravity', name: 'Antigravity (Google)', tier: 'cheap',
+    baseUrl: 'https://api.mimo.ai/v1', adapter: 'openai',
+    envKey: 'ANTIGRAVITY_API_KEY',
+    models: ['gemini-3-flash-agent', 'gemini-3.5-flash-low', 'gemini-3.5-flash-extra-low', 'gemini-pro-agent', 'gemini-3.1-pro-low', 'gemini-3.1-pro-high', 'claude-sonnet-4-6', 'claude-opus-4-6-thinking', 'gpt-oss-120b-medium'],
+    description: 'Antigravity Google proxy', requiresKey: true,
+  },
+  {
+    id: 'codex', name: 'OpenAI Codex', tier: 'cheap',
+    baseUrl: 'https://api.openai.com/v1', adapter: 'openai',
+    envKey: 'CODEX_API_KEY',
+    models: ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.3-codex', 'gpt-5.2', 'gpt-5.1', 'gpt-5-codex'],
+    description: 'OpenAI Codex proxy', requiresKey: true,
+  },
+  {
+    id: 'github-copilot', name: 'GitHub Copilot', tier: 'cheap',
+    baseUrl: 'https://api.github.com/copilot', adapter: 'openai',
+    envKey: 'GITHUB_API_KEY',
+    models: ['gpt-5.2', 'gpt-5.3-codex', 'gpt-5.4', 'gpt-5.4-mini', 'claude-haiku-4.5', 'claude-opus-4.5', 'claude-sonnet-4.5', 'gemini-2.5-pro', 'gemini-3-flash-preview', 'grok-code-fast-1'],
+    description: 'GitHub Copilot proxy', requiresKey: true,
+  },
+  {
+    id: 'kimi', name: 'Moonshot Kimi', tier: 'cheap',
+    baseUrl: 'https://api.moonshot.cn/v1', adapter: 'openai',
+    envKey: 'KIMI_API_KEY',
+    models: ['claude-sonnet-4.5', 'claude-haiku-4.5', 'deepseek-3.2', 'qwen3-coder-next', 'glm-5', 'MiniMax-M2.5', 'claude-sonnet-4.5-thinking', 'claude-haiku-4.5-thinking'],
+    description: 'Moonshot Kimi proxy', requiresKey: true,
+  },
+  {
+    id: 'ocg', name: 'OCG Proxy', tier: 'cheap',
+    baseUrl: 'https://api.openai.com/v1', adapter: 'openai',
+    envKey: 'OPENAI-COMPATIBLE-AGENTROUTER_API_KEY',
+    models: ['glm-5.2', 'glm-5.1', 'kimi-k2.7-code', 'kimi-k2.6', 'deepseek-v4-pro', 'deepseek-v4-flash', 'mimo-v2.5', 'mimo-v2.5-pro', 'minimax-m3', 'minimax-m2.7', 'qwen3.7-max', 'qwen3.7-plus', 'qwen3.6-plus'],
+    description: 'OCG proxy aggregator', requiresKey: true,
+  },
   // ── Service Providers (TTS, STT, Images, Search) ──
   {
     id: 'elevenlabs', name: 'ElevenLabs', tier: 'subscription' as const,

@@ -27,6 +27,7 @@ import {
   getDetailedHealth, getProviderDetailed, getRecentRequestsWithFallback, getDetailedStats,
   } from '../database.js';
   import { getDB } from '../database.js';
+import { listTools, getToolSettings, configureTool, removeToolConfig } from './cli-tools.js';
   import { applyGuardrails, getGuardrailsConfig, setGuardrailsConfig } from '../guardrails.js';
 import { getLandingHTML } from '../landing.js';
 import { getLocale, setLocaleCookie, type Locale } from '../i18n/index.js';
@@ -1278,12 +1279,12 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
 
   app.post('/8router/api-keys', (req, res) => {
     try {
-      const { name, permissions } = req.body;
+      const { name, permissions, key: customKey } = req.body;
       if (!name) {
         res.status(400).json({ error: 'Missing required field: name' });
         return;
       }
-      const newKey = dbCreateAPIKey(name, permissions || 'chat,models');
+      const newKey = dbCreateAPIKey(name, permissions || 'chat,models', customKey);
       res.json({ ok: true, key: newKey });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -2819,6 +2820,14 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
   app.get('/8router/v1/models', (req, res) => runtimeModels(req, res));
   app.post('/8router/v1/chat/completions', (req, res) => runtimeChatCompletions(req, res));
 
+
+  // CLI Tools Settings (Phase 6C)
+
+  app.get("/8router/api/cli-tools", listTools);
+  app.get("/8router/api/cli-tools/:tool", getToolSettings);
+  app.post("/8router/api/cli-tools/:tool", configureTool);
+  app.delete("/8router/api/cli-tools/:tool", removeToolConfig);
+
   // Catch-all
   app.all('*', (_req, res) => {
     res.status(404).json({
@@ -2829,5 +2838,7 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
     });
   });
 
+
   return app;
 }
+
