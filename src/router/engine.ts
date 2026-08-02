@@ -264,7 +264,19 @@ export class RouterEngine {
     }
     
     // Regular model - get providers from registry
-    const providers = this.registry.getProvidersForModel(model);
+    let providers = this.registry.getProvidersForModel(model);
+    
+    // If no exact match and model has prefix (e.g. "ag/gemini-3-flash-agent"),
+    // try stripping the prefix and matching the base model name
+    if (providers.length === 0 && model.includes('/')) {
+      const baseModel = model.split('/').slice(1).join('/');
+      providers = this.registry.getProvidersForModel(baseModel);
+      if (providers.length > 0) {
+        const routes = providers.map(p => ({ provider: p.id, model: baseModel }));
+        return this.applyPrivacyFilter(routes);
+      }
+    }
+    
     const routes = providers.map(p => ({ provider: p.id, model }));
     return this.applyPrivacyFilter(routes);
   }
