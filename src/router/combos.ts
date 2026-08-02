@@ -131,3 +131,21 @@ createCombo("OpenGO", "OCG proxy aggregator", [
   { provider: "ocg", model: "deepseek-v4-pro" },
   { provider: "ocg", model: "mimo-v2.5-pro" },
 ]);
+
+// Phase 6E — Model Gap Closure Combos
+createCombo("GeminiCLI", "Gemini CLI proxy models", [
+  { provider: "gc", model: "gemini-3.1-pro-preview" },
+  { provider: "gc", model: "gemini-2.5-pro" },
+  { provider: "gc", model: "gemini-2.5-flash" },
+]);
+
+createCombo("XMTP", "XMTP MiMo proxy", [
+  { provider: "xmtp", model: "mimo-v2.5-pro" },
+  { provider: "xmtp", model: "mimo-v2.5" },
+  { provider: "xmtp", model: "mimo-v2-omni" },
+]);
+
+createCombo("DeepSeekV4", "DeepSeek V4 models", [
+  { provider: "ds-v4", model: "deepseek-v4-pro" },
+  { provider: "ds-v4", model: "deepseek-v4-flash" },
+]);

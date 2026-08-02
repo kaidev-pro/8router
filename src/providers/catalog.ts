@@ -230,6 +230,50 @@ export const PROVIDER_CATALOG: ProviderDef[] = [
     models: ['glm-5.2', 'glm-5.1', 'kimi-k2.7-code', 'kimi-k2.6', 'deepseek-v4-pro', 'deepseek-v4-flash', 'mimo-v2.5', 'mimo-v2.5-pro', 'minimax-m3', 'minimax-m2.7', 'qwen3.7-max', 'qwen3.7-plus', 'qwen3.6-plus'],
     description: 'OCG proxy aggregator', requiresKey: true,
   },
+
+  // ── Phase 6E — Model Gap Closure ──
+  {
+    id: 'gc', name: 'Gemini CLI Proxy', tier: 'cheap',
+    baseUrl: 'https://api.mimo.ai/v1', adapter: 'openai',
+    envKey: 'GEMINI-CLI_API_KEY',
+    models: ['gemini-3.1-pro-preview', 'gemini-3-pro-preview', 'gemini-3-flash-preview', 'gemini-3.1-flash-lite-preview', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'],
+    description: 'Gemini CLI proxy (Antigravity)', requiresKey: true,
+  },
+  {
+    id: 'xmtp', name: 'XMTP MiMo Proxy', tier: 'cheap',
+    baseUrl: 'https://api.mimo.ai/v1', adapter: 'openai',
+    envKey: 'MIMO_API_KEY',
+    models: ['mimo-v2.5-pro', 'mimo-v2.5-pro-claude', 'mimo-v2.5', 'mimo-v2-pro', 'mimo-v2-omni', 'mimo-v2-tts', 'mimo-v2.5-tts', 'mimo-v2.5-tts-voiceclone', 'mimo-v2.5-tts-voicedesign'],
+    description: 'XMTP MiMo proxy', requiresKey: true,
+  },
+  {
+    id: 'gemini-vertex', name: 'Google Vertex AI', tier: 'subscription',
+    baseUrl: 'https://aiplatform.googleapis.com/v1', adapter: 'openai',
+    envKey: 'GOOGLE_API_KEY',
+    models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'grok-4.3'],
+    description: 'Google Vertex AI Gemini', requiresKey: true,
+  },
+  {
+    id: 'vikey', name: 'Vikey AI', tier: 'cheap',
+    baseUrl: 'https://api.vikey.ai/v1', adapter: 'openai',
+    envKey: 'VIKEY_API_KEY',
+    models: ['vclaw'],
+    description: 'Vikey AI models', requiresKey: true,
+  },
+  {
+    id: 'ds-v4', name: 'DeepSeek V4', tier: 'cheap',
+    baseUrl: 'https://api.deepseek.com/v1', adapter: 'openai',
+    envKey: 'DEEPSEEK_API_KEY',
+    models: ['deepseek-v4-pro', 'deepseek-v4-pro-max', 'deepseek-v4-pro-none', 'deepseek-v4-flash'],
+    description: 'DeepSeek V4 models', requiresKey: true,
+  },
+  {
+    id: 'gemini-api', name: 'Google Gemini API', tier: 'subscription',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta', adapter: 'gemini',
+    envKey: 'GOOGLE_API_KEY',
+    models: ['gemini-3.1-pro-preview', 'gemini-3.1-flash-lite-preview', 'gemini-3-flash-preview', 'gemma-4-31b-it'],
+    description: 'Google Gemini API (latest)', requiresKey: true,
+  },
   // ── Service Providers (TTS, STT, Images, Search) ──
   {
     id: 'elevenlabs', name: 'ElevenLabs', tier: 'subscription' as const,
