@@ -15,3 +15,5 @@ dist/
 8router.yaml
 .env
 eight-router.db
+.env*
+data/*.db

@@ -64,7 +64,8 @@ export function loadConfig(configPath?: string): RouterConfig {
 
   // Auto-detect providers from environment
   const envProviders = detectEnvProviders();
-  return { ...DEFAULT_CONFIG, providers: envProviders };
+  const normalizedProviders = envProviders.map(p => normalizeProvider(p));
+  return { ...DEFAULT_CONFIG, providers: normalizedProviders };
 }
 
 function mergeConfig(base: RouterConfig, override: Partial<RouterConfig>): RouterConfig {
@@ -96,7 +97,7 @@ function mergeConfig(base: RouterConfig, override: Partial<RouterConfig>): Route
 function normalizeProvider(p: any): RouterConfig['providers'][number] {
   // If apiKeys array is present, ensure the first key (or the apiKey) is the active one
   const apiKeys: string[] | undefined = Array.isArray(p.apiKeys) ? p.apiKeys : undefined;
-  const rotation: 'round-robin' | undefined = p.rotation === 'round-robin' ? 'round-robin' : undefined;
+  const rotation: 'round-robin' | undefined = (p.rotation === 'round-robin' || (Array.isArray(p.apiKeys) && p.apiKeys.length > 1)) ? 'round-robin' : undefined;
 
   // If apiKey not set but apiKeys array exists, use first element
   const apiKey = p.apiKey || (apiKeys && apiKeys.length > 0 ? apiKeys[0] : '');
@@ -122,6 +123,7 @@ function detectEnvProviders(): RouterConfig['providers'] {
       id: def.id,
       name: def.name,
       apiKey: d.apiKey,
+      apiKeys: d.apiKeys,
       tier: def.tier,
       baseUrl: d.baseUrl || def.baseUrl,
       models: def.models,

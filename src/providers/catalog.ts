@@ -106,7 +106,7 @@ export const PROVIDER_CATALOG: ProviderDef[] = [
     id: 'cerebras', name: 'Cerebras', tier: 'cheap',
     baseUrl: 'https://api.cerebras.ai/v1', adapter: 'openai',
     envKey: 'CEREBRAS_API_KEY',
-    models: ['llama3.1-8b', 'llama3.1-70b'],
+    models: ['llama-3.3-70b', 'llama-4-scout-17b-16e-instruct', 'qwen-3-235b-a22b-instruct-2507', 'qwen-3-32b', 'zai-glm-4.7'],
     description: 'Cerebras — ultra-fast inference', requiresKey: true,
   },
   {
@@ -400,16 +400,29 @@ export function resolveModelAlias(model: string): string {
 }
 
 // Auto-detect available providers from environment
-export function autoDetectProviders(): { id: string; apiKey: string; baseUrl?: string }[] {
-  const detected: { id: string; apiKey: string; baseUrl?: string }[] = [];
+export function autoDetectProviders(): { id: string; apiKey: string; apiKeys?: string[]; baseUrl?: string }[] {
+  const detected: { id: string; apiKey: string; apiKeys?: string[]; baseUrl?: string }[] = [];
 
   for (const def of PROVIDER_CATALOG) {
     const envVal = process.env[def.envKey];
     if (envVal) {
+      // Collect all keys (primary + numbered KEY_1, KEY_2, etc.)
+      const allKeys: string[] = [envVal];
+      const prefix = def.envKey.replace('_API_KEY', '').replace('_KEY', '').replace('_TOKEN', '').replace('_PROJECT', '');
+      for (let i = 1; i <= 200; i++) {
+        const extraKey = process.env[`${prefix}_API_KEY_KEY_${i}`];
+        if (extraKey) {
+          allKeys.push(extraKey);
+        } else {
+          break;
+        }
+      }
+      
       detected.push({
         id: def.id,
         apiKey: envVal,
-        baseUrl: process.env[`${def.envKey.replace('_KEY', '').replace('_TOKEN', '').replace('_PROJECT', '')}_BASE_URL`] || def.baseUrl,
+        apiKeys: allKeys.length > 1 ? allKeys : undefined,
+        baseUrl: process.env[`${prefix}_BASE_URL`] || def.baseUrl,
       });
     }
   }
