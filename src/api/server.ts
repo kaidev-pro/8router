@@ -42,6 +42,7 @@ import { buildDefaultPreviewReport, filterPreviewReport } from '../providers/con
 import { listMigrationPlans, getMigrationStatus, buildMigrationPlan, isMigrationEnabled } from '../providers/connection-migration.js';
 import { pickBestModel } from '../providers/smart-picker.js';
 import { buildProviderDescriptors, getCapabilityRegistry, getModelRegistry, getCertificationRegistry } from '../providers/provider-foundation.js';
+import { createOverride, removeOverride, triggerCertification, triggerDiscovery, getAuditLog, getJob, getJobs, cancelJob, isMutationEnabled } from '../providers/provider-operations-mutations.js';
 import { createAccessKey, listAccessKeys, getAccessKeyById, updateAccessKey, revokeAccessKey, rotateAccessKey, deleteAccessKey } from '../security/access-keys/manager.js';
 import { handleChatCompletions as runtimeChatCompletions, handleModels as runtimeModels, getUserHealthSummary, resetProviderHealth as resetHealth } from '../runtime/index.js';
 import { loadCompressionConfig, compressContent, toMetrics } from '../runtime/compression/index.js';
@@ -1937,6 +1938,106 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
   // ═══════════════════════════════════════════════════════════════
 
   // ═══════════════════════════════════════════════════════════════
+
+  // ═══════════════════════════════════════════════════════════════
+  // Phase 5D — Provider Operations Mutations (authenticated)
+  // ═══════════════════════════════════════════════════════════════
+
+
+  // GET /8router/api/providers/operations/audit
+  app.get('/8router/api/providers/operations/audit', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      const { providerId, limit: limitStr } = req.query as Record<string, string | undefined>;
+      const limit = Math.min(100, Math.max(1, parseInt(limitStr || '50', 10) || 50));
+      const entries = getAuditLog(providerId, limit);
+      res.json({ entries, total: entries.length });
+    } catch { res.status(500).json({ error: { message: 'Failed to load audit log', type: 'internal' } }); }
+  });
+
+  // GET /8router/api/providers/operations/jobs
+  app.get('/8router/api/providers/operations/jobs', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      const { providerId, limit: limitStr } = req.query as Record<string, string | undefined>;
+      const limit = Math.min(100, Math.max(1, parseInt(limitStr || '50', 10) || 50));
+      const entries = getJobs(providerId, limit);
+      res.json({ jobs: entries, total: entries.length });
+    } catch { res.status(500).json({ error: { message: 'Failed to load jobs', type: 'internal' } }); }
+  });
+
+  // GET /8router/api/providers/operations/jobs/:id
+  app.get('/8router/api/providers/operations/jobs/:id', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      const job = getJob(req.params.id);
+      if (!job) return res.status(404).json({ error: { message: 'Job not found', type: 'not_found' } });
+      res.json({ job });
+    } catch { res.status(500).json({ error: { message: 'Failed to load job', type: 'internal' } }); }
+  });
+
+  // POST /8router/api/providers/operations/override
+  app.post('/8router/api/providers/operations/override', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      if (!isMutationEnabled()) return res.status(403).json({ error: { message: 'Mutations not enabled', type: 'forbidden' } });
+      const { providerId, modelId, displayName, enabled, reason } = req.body || {};
+      if (!providerId || !modelId || !displayName) return res.status(400).json({ error: { message: 'providerId, modelId, displayName required', type: 'validation' } });
+      const result = createOverride(providerId, modelId, displayName, enabled !== false, reason || '');
+      if (!result.success) return res.status(422).json({ error: { message: result.error, type: 'operation' }, audit: result.audit });
+      res.json({ success: true, audit: result.audit });
+    } catch { res.status(500).json({ error: { message: 'Failed to create override', type: 'internal' } }); }
+  });
+
+  // DELETE /8router/api/providers/operations/override
+  app.delete('/8router/api/providers/operations/override', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      if (!isMutationEnabled()) return res.status(403).json({ error: { message: 'Mutations not enabled', type: 'forbidden' } });
+      const { providerId, modelId } = req.body || {};
+      if (!providerId || !modelId) return res.status(400).json({ error: { message: 'providerId, modelId required', type: 'validation' } });
+      const result = removeOverride(providerId, modelId);
+      if (!result.success) return res.status(422).json({ error: { message: result.error, type: 'operation' }, audit: result.audit });
+      res.json({ success: true, audit: result.audit });
+    } catch { res.status(500).json({ error: { message: 'Failed to remove override', type: 'internal' } }); }
+  });
+
+  // POST /8router/api/providers/operations/discovery
+  app.post('/8router/api/providers/operations/discovery', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      if (!isMutationEnabled()) return res.status(403).json({ error: { message: 'Mutations not enabled', type: 'forbidden' } });
+      const { providerId, dryRun } = req.body || {};
+      if (!providerId) return res.status(400).json({ error: { message: 'providerId required', type: 'validation' } });
+      const result = triggerDiscovery(providerId, dryRun !== false);
+      if (!result.success) return res.status(422).json({ error: { message: result.error, type: 'operation' }, audit: result.audit });
+      res.json({ success: true, jobId: result.jobId, audit: result.audit });
+    } catch { res.status(500).json({ error: { message: 'Failed to trigger discovery', type: 'internal' } }); }
+  });
+
+  // POST /8router/api/providers/operations/certification
+  app.post('/8router/api/providers/operations/certification', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      if (!isMutationEnabled()) return res.status(403).json({ error: { message: 'Mutations not enabled', type: 'forbidden' } });
+      const { providerId, profile } = req.body || {};
+      if (!providerId || !profile) return res.status(400).json({ error: { message: 'providerId, profile required', type: 'validation' } });
+      const result = triggerCertification(providerId, profile);
+      if (!result.success) return res.status(422).json({ error: { message: result.error, type: 'operation' }, audit: result.audit });
+      res.json({ success: true, jobId: result.jobId, audit: result.audit });
+    } catch { res.status(500).json({ error: { message: 'Failed to trigger certification', type: 'internal' } }); }
+  });
+
+  // POST /8router/api/providers/operations/jobs/:id/cancel
+  app.post('/8router/api/providers/operations/jobs/:id/cancel', requireAuth(oauth, sessionManager), (req, res) => {
+    try {
+      noStore(res);
+      const result = cancelJob(req.params.id);
+      if (!result.success) return res.status(422).json({ error: { message: result.error, type: 'operation' } });
+      res.json({ success: true });
+    } catch { res.status(500).json({ error: { message: 'Failed to cancel job', type: 'internal' } }); }
+  });
+
   // Phase 5B — Dynamic Provider State API (read-only)
   // ═══════════════════════════════════════════════════════════════
 
