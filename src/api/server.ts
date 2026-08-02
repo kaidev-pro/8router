@@ -28,6 +28,8 @@ import {
   } from '../database.js';
   import { getDB } from '../database.js';
 import { listTools, getToolSettings, configureTool, removeToolConfig } from './cli-tools.js';
+import { listTTSVoices, listProviderVoices } from './tts.js';
+import { listMCPPlugins, mcpSSE, mcpMessage } from './mcp.js';
   import { applyGuardrails, getGuardrailsConfig, setGuardrailsConfig } from '../guardrails.js';
 import { getLandingHTML } from '../landing.js';
 import { getLocale, setLocaleCookie, type Locale } from '../i18n/index.js';
@@ -2827,6 +2829,18 @@ export function createServer(engine: RouterEngine, tunnelManager?: TunnelManager
   app.get("/8router/api/cli-tools/:tool", getToolSettings);
   app.post("/8router/api/cli-tools/:tool", configureTool);
   app.delete("/8router/api/cli-tools/:tool", removeToolConfig);
+
+
+  // TTS Media Providers (Phase 6D)
+
+  app.get("/8router/api/tts/voices", listTTSVoices);
+  app.get("/8router/api/tts/voices/:provider", listProviderVoices);
+
+  // MCP Server (Phase 6D)
+
+  app.get("/8router/api/mcp/plugins", listMCPPlugins);
+  app.get("/8router/api/mcp/:plugin/sse", mcpSSE);
+  app.post("/8router/api/mcp/:plugin/message", mcpMessage);
 
   // Catch-all
   app.all('*', (_req, res) => {
