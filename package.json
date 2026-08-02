@@ -87,7 +87,8 @@
     "providers:discovery-plan": "node scripts/providers-cli.mjs discovery-plan",
     "providers:discovery-history": "node scripts/providers-cli.mjs discovery-history",
     "providers:certifications": "node scripts/providers-cli.mjs certifications",
-    "providers:overrides": "node scripts/providers-cli.mjs overrides"
+    "providers:overrides": "node scripts/providers-cli.mjs overrides",
+    "test:phase5c": "tsx src/__tests__/run-phase5c-provider-batch.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
